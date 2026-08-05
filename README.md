@@ -85,6 +85,25 @@ Buka browser Anda dan kunjungi:
 
 ---
 
+## 🛠️ Catatan Penting & Troubleshooting
+
+### 1. Hak Akses (Role & Permission) Tidak Muncul?
+Jika Anda baru saja menarik (*pull*) kode terbaru dari GitHub atau jika ada penambahan menu/Resource baru (seperti modul Integrasi API), menu tersebut mungkin **disembunyikan** karena akun Anda belum diberi hak akses (*permission*) untuk menu baru tersebut.
+
+Untuk meng-generate ulang seluruh *permission* sistem secara otomatis (menggunakan *Filament Shield*), jalankan perintah berikut di terminal:
+
+```bash
+php artisan shield:generate --all
+```
+
+Setelah perintah sukses dijalankan:
+1. Login ke Dashboard Admin.
+2. Buka menu **Roles** (di bawah kategori Filament Shield).
+3. Edit role `super_admin` atau role lainnya, lalu pastikan hak akses untuk resource yang baru telah dicentang (Select All).
+4. Simpan, dan menu baru akan langsung muncul!
+
+---
+
 ## 👨‍💻 Pengembang
 - **Irham Karaman** 
 
