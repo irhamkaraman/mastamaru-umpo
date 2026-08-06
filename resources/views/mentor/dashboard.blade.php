@@ -3,10 +3,10 @@
 @section('title', 'Dashboard Pemandu')
 
 @section('content')
-    <div class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <div class="container mx-auto px-4 py-6 sm:py-8 max-w-md md:max-w-4xl lg:max-w-6xl">
+    <div class="mentor-dashboard-page min-h-screen">
+        <div class="mentor-dashboard-container container mx-auto px-4 py-6 sm:py-8 max-w-md md:max-w-4xl lg:max-w-6xl">
             <!-- Header dengan Gradient -->
-            <div class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-3xl shadow-2xl p-6 sm:p-8 mb-8 relative overflow-hidden">
+            <div class="mentor-dashboard-hero rounded-3xl shadow-2xl p-6 sm:p-8 mb-8 relative overflow-hidden">
                 <!-- Background Pattern -->
                 <div class="absolute inset-0 opacity-10">
                     <div class="absolute top-0 left-0 w-40 h-40 bg-white rounded-full -translate-x-20 -translate-y-20"></div>
@@ -81,7 +81,7 @@
         @endif
 
             <!-- Daftar Sesi Presensi -->
-            <div class="bg-white rounded-3xl shadow-2xl p-6 md:p-8 mb-8 border border-gray-100">
+            <div class="mentor-sessions-panel bg-white rounded-3xl shadow-2xl p-6 md:p-8 mb-8 border border-gray-100">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 space-y-4 md:space-y-0">
                     <div class="flex items-center">
                         <div class="bg-gradient-to-r from-green-400 to-blue-500 p-3 rounded-2xl mr-4">
@@ -103,7 +103,7 @@
                 @if ($activeSessions->count() > 0)
                     <div class="space-y-6">
                         @foreach ($activeSessions as $session)
-                            <div class="bg-gradient-to-r from-white to-gray-50 border border-gray-200 rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
+                             <div class="mentor-session-card bg-gradient-to-r from-white to-gray-50 border border-gray-200 rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
                                 <!-- Decorative Elements -->
                                 <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full -translate-y-16 translate-x-16 opacity-50"></div>
                                 <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-green-100 to-blue-100 rounded-full translate-y-12 -translate-x-12 opacity-50"></div>
@@ -305,7 +305,7 @@
         <!-- Info Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
             <!-- Info Kelompok -->
-            <div class="bg-white rounded-xl shadow-lg p-4 md:p-6">
+             <div class="mentor-info-card bg-white rounded-xl shadow-lg p-4 md:p-6">
                 <div class="flex items-center">
                     <div class="bg-green-100 p-2 md:p-3 rounded-full flex-shrink-0">
                         <svg class="h-6 w-6 md:h-8 md:w-8 text-green-600" fill="none" stroke="currentColor"
@@ -328,7 +328,7 @@
             </div>
 
             <!-- Statistik -->
-            <div class="bg-white rounded-xl shadow-lg p-4 md:p-6">
+             <div class="mentor-info-card bg-white rounded-xl shadow-lg p-4 md:p-6">
                 <div class="flex items-center">
                     <div class="bg-purple-100 p-2 md:p-3 rounded-full flex-shrink-0">
                         <svg class="h-6 w-6 md:h-8 md:w-8 text-purple-600" fill="none" stroke="currentColor"
@@ -348,7 +348,7 @@
 
             <!-- Quick Stats Card (Mobile Only) -->
             <div
-                class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl shadow-lg p-4 md:p-6 text-white md:col-span-2 lg:col-span-1">
+                 class="mentor-today-card bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl shadow-lg p-4 md:p-6 text-white md:col-span-2 lg:col-span-1">
                 <div class="flex items-center justify-between">
                     <div>
                         <h3 class="text-base md:text-lg font-semibold">Status Hari Ini</h3>
@@ -395,6 +395,30 @@
             </div>
         </div>
     </div>
+
+    <style>
+        .mentor-dashboard-page { position:relative; isolation:isolate; }
+        .mentor-dashboard-page::before,.mentor-dashboard-page::after { content:''; position:fixed; border-radius:999px; pointer-events:none; z-index:-1; }
+        .mentor-dashboard-page::before { width:360px; height:360px; top:120px; right:-210px; background:rgba(186,230,253,.28); }
+        .mentor-dashboard-page::after { width:280px; height:280px; bottom:120px; left:-170px; background:rgba(221,214,254,.28); }
+        .mentor-dashboard-container { width:calc(100% - 32px); max-width:1180px; }
+        .mentor-dashboard-hero { background:linear-gradient(135deg,#eaf6ff 0%,#f1edff 58%,#effbf5 100%); border:1px solid rgba(155,173,204,.2); color:#25204b; }
+        .mentor-dashboard-hero .text-white { color:#25204b!important; }
+        .mentor-dashboard-hero .text-blue-100,.mentor-dashboard-hero .text-blue-200 { color:#68708a!important; }
+        .mentor-dashboard-hero .bg-white.bg-opacity-20 { background:rgba(255,255,255,.62); }
+        .mentor-dashboard-hero .border-white.border-opacity-30 { border-color:rgba(255,255,255,.85); }
+        .mentor-dashboard-hero .hover\:bg-opacity-30:hover { background:rgba(255,255,255,.84); }
+        .mentor-dashboard-hero .bg-white.bg-opacity-20 svg { color:#5a8aa6; }
+        .mentor-sessions-panel,.mentor-info-card { background:rgba(255,255,255,.82); border-color:rgba(255,255,255,.9); backdrop-filter:blur(12px); }
+        .mentor-session-card { border-color:rgba(148,163,184,.18); }
+        .mentor-session-card a { background:linear-gradient(135deg,#5a8aa6,#6873b5); }
+        .mentor-session-card a:hover { background:linear-gradient(135deg,#4f7d98,#5b63a5); }
+        .mentor-today-card { background:linear-gradient(135deg,#769fb5,#8681b9); }
+        .mentor-dashboard-container .bg-gradient-to-r.from-green-400.to-blue-500 { background:linear-gradient(135deg,#9bd6c4,#81b7d0); }
+        .mentor-dashboard-container .bg-gradient-to-r.from-blue-500.to-purple-500 { background:linear-gradient(135deg,#81b7d0,#938bc8); }
+        @media(max-width:640px) { .mentor-dashboard-container{width:calc(100% - 24px)}.mentor-dashboard-hero{border-radius:1.65rem;padding:20px!important}.mentor-dashboard-hero h1{font-size:2rem}.mentor-dashboard-hero .text-2xl{font-size:1.35rem}.mentor-sessions-panel{padding:18px!important;border-radius:1.65rem}.mentor-session-card{padding:16px!important}.mentor-info-card,.mentor-today-card{border-radius:1.2rem}.mentor-dashboard-container .grid-cols-2{gap:10px}.mentor-dashboard-container .grid-cols-2>div{padding:12px} }
+        @media(min-width:641px) and (max-width:1023px) { .mentor-dashboard-container{max-width:760px}.mentor-session-card{padding:18px}.mentor-dashboard-hero{padding:24px!important} }
+    </style>
 
     <script>
         function confirmLogout() {
