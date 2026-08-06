@@ -3,17 +3,20 @@
 @section('title', 'Login Pemandu')
 
 @section('content')
-<div class="w-full max-w-md space-y-8 z-10">
-    <!-- Logo/Header Section -->
-    <div class="text-center">
-        <div class="mx-auto h-20 w-20 bg-blue-500/20 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm border border-blue-500/30">
-            <svg class="h-10 w-10 " fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-            </svg>
+<div class="mentor-login-shell w-full max-w-5xl z-10">
+    <div class="mentor-login-brand">
+        <div class="mentor-brand-logos">
+            <span class="mentor-logo mentor-logo-masta"><img src="{{ asset('img/logo_mastamaru_2025.png') }}" alt="Logo MASTAMARU"></span>
+            <span class="mentor-logo mentor-logo-campus"><img src="{{ asset('img/logo_Universitas-Muhammadiyah-Ponorogo-1.png') }}" alt="Logo Universitas Muhammadiyah Ponorogo"></span>
         </div>
-        <h2 class="text-3xl font-bold  mb-2">Selamat Datang</h2>
-        <p class="/80 text-lg">Login sebagai Pemandu</p>
+        <p class="mentor-eyebrow">Area pemandu</p>
+        <h1>Selamat datang kembali.</h1>
+        <p>Masuk untuk mengelola presensi dan mendampingi peserta MASTAMARU.</p>
+        <div class="mentor-trust-note"><span class="mentor-trust-dot"></span><span>Akses khusus pemandu terdaftar</span></div>
     </div>
+    <div class="mentor-login-form-wrap">
+    <!-- Logo/Header Section -->
+    <div class="mentor-form-heading"><p class="mentor-eyebrow">Secure sign-in</p><h2>Login Pemandu</h2><p>Gunakan NIM dan kata sandi yang diberikan administrator.</p></div>
 
     <!-- Notifikasi dengan SweetAlert2 -->
     @if(session('success'))
@@ -45,7 +48,7 @@
     @endif
 
     <!-- Login Form -->
-    <div class="glass-effect rounded-2xl p-8 shadow-2xl">
+    <div class="glass-effect mentor-form-card rounded-2xl p-6 sm:p-8">
         <form class="space-y-6" action="{{ route('mentor.login.post') }}" method="POST">
             @csrf
 
@@ -65,7 +68,7 @@
                         name="student_id"
                         type="text"
                         required
-                        class="input-focus block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/90 backdrop-blur-sm"
+                         class="input-focus block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-transparent bg-white/90 backdrop-blur-sm"
                         placeholder="Masukkan NIM Anda"
                         value="{{ old('student_id') }}"
                     >
@@ -91,7 +94,7 @@
                         name="password"
                         type="password"
                         required
-                        class="input-focus block w-full pl-10 pr-12 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/90 backdrop-blur-sm"
+                         class="input-focus block w-full pl-10 pr-12 py-3 border border-slate-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-transparent bg-white/90 backdrop-blur-sm"
                         placeholder="Masukkan kata sandi"
                     >
                     <button
@@ -132,7 +135,7 @@
             <div>
                 <button
                     type="submit"
-                    class="btn-hover flex justify-center items-center gap-2 group w-full py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 shadow-lg"
+                    class="btn-hover mentor-submit flex justify-center items-center gap-2 group w-full py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-slate-700 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all duration-300 shadow-lg"
                 >
                     <span class="font-bold">Masuk</span>
                 </button>
@@ -151,12 +154,41 @@
     </div>
 
     <!-- Footer Info -->
-    <div class="text-center">
-        <p class="text-white/70 text-sm">
+    <div class="text-center mentor-login-footer">
+        <p class="text-slate-500 text-sm">
             © {{ config('app.name') }}.
         </p>
     </div>
 </div>
+</div>
+
+<style>
+    .mentor-login-shell { display:grid; grid-template-columns:minmax(0,1fr) minmax(360px,.85fr); gap:34px; align-items:center; }
+    .mentor-login-brand { padding:18px 12px 18px 4px; color:var(--auth-ink); }
+    .mentor-brand-logos { display:flex; align-items:center; gap:10px; margin-bottom:34px; }
+    .mentor-logo { display:grid; place-items:center; background:rgba(255,255,255,.8); border:1px solid rgba(255,255,255,.9); box-shadow:0 12px 28px rgba(75,58,146,.10); }
+    .mentor-logo img { width:100%; height:100%; object-fit:contain; }
+    .mentor-logo-masta { width:64px; height:64px; padding:7px; border-radius:18px; }
+    .mentor-logo-campus { width:52px; height:52px; padding:5px; border-radius:15px; }
+    .mentor-eyebrow { margin:0 0 9px; color:#5a8aa6; font-size:11px; font-weight:800; letter-spacing:.18em; text-transform:uppercase; }
+    .mentor-login-brand h1 { max-width:520px; margin:0; font-size:clamp(2rem,4vw,3.5rem); line-height:1.08; letter-spacing:-.05em; }
+    .mentor-login-brand > p:not(.mentor-eyebrow) { max-width:440px; margin:18px 0 0; color:var(--auth-muted); font-size:16px; line-height:1.7; }
+    .mentor-trust-note { display:flex; align-items:center; gap:9px; margin-top:28px; color:#748198; font-size:12px; font-weight:600; }
+    .mentor-trust-dot { width:8px; height:8px; border-radius:999px; background:#9bd6c4; box-shadow:0 0 0 5px rgba(155,214,196,.16); }
+    .mentor-login-form-wrap { min-width:0; }
+    .mentor-form-heading { margin:0 0 18px; padding:0 4px; }
+    .mentor-form-heading h2 { margin:0; color:var(--auth-ink); font-size:28px; letter-spacing:-.04em; }
+    .mentor-form-heading p:last-child { margin:7px 0 0; color:var(--auth-muted); font-size:13px; line-height:1.5; }
+    .mentor-form-card { background:rgba(255,255,255,.82); }
+    .mentor-form-card label { color:#46536b; }
+    .mentor-login-footer { margin-top:18px; }
+    .mentor-submit-loading { display:inline-flex; align-items:center; justify-content:center; gap:.7rem; }
+    .mentor-submit-spinner { width:1.05em; height:1.05em; border:2px solid currentColor; border-right-color:transparent; border-radius:999px; animation:mentor-spin 1.25s linear infinite; flex:0 0 auto; }
+    @keyframes mentor-spin { to { transform:rotate(360deg); } }
+    @media (max-width:900px) { .mentor-login-shell { grid-template-columns:minmax(0,1fr) minmax(320px,.9fr); gap:22px; } .mentor-login-brand h1{font-size:2.35rem}.mentor-brand-logos{margin-bottom:24px} }
+    @media (max-width:700px) { .mentor-login-shell { display:block; max-width:500px; } .mentor-login-brand { padding:0 4px 24px; text-align:center; } .mentor-brand-logos{justify-content:center;margin-bottom:20px}.mentor-login-brand > p:not(.mentor-eyebrow){margin-left:auto;margin-right:auto;font-size:14px}.mentor-trust-note{justify-content:center;margin-top:18px}.mentor-login-brand h1{font-size:2rem}.mentor-form-heading{text-align:center}.mentor-login-footer{margin-bottom:4px} }
+    @media (max-width:420px) { .mentor-login-brand h1{font-size:1.75rem}.mentor-login-brand > p:not(.mentor-eyebrow){font-size:13px}.mentor-form-card{padding:20px!important}.mentor-logo-masta{width:54px;height:54px}.mentor-logo-campus{width:44px;height:44px} }
+</style>
 
 <script>
 function togglePassword() {
@@ -194,13 +226,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.querySelector('button[type="submit"]');
 
     form.addEventListener('submit', function() {
-        submitBtn.innerHTML = `
-            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Memproses...
-        `;
+        submitBtn.innerHTML = '<span class="mentor-submit-loading"><span class="mentor-submit-spinner" aria-hidden="true"></span><span>Memproses...</span></span>';
         submitBtn.disabled = true;
     });
 });

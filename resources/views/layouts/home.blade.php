@@ -47,11 +47,20 @@
     </header>
     @yield('content')
     <!-- Footer -->
-    <div class="site-footer container mx-auto px-4 py-4 sm:py-8 max-w-md lg:max-w-4xl relative z-10">
-        <div class="ui-panel rounded-xl p-4 sm:p-6 text-center">
-            <p class="text-gray-600 text-sm sm:text-base">&copy; {{ config('app.name') }}. All rights
-                reserved.</p>
-            <p class="text-xs sm:text-sm text-gray-500 mt-2">Developed with ❤️ Mastamaru 2026</p>
+    <div class="site-footer relative z-10">
+        <div class="site-footer-inner">
+            <div class="site-footer-brand">
+                <span class="site-footer-mark">M</span>
+                <div>
+                    <strong>MASTAMARU</strong>
+                    <span>Presensi mahasiswa baru</span>
+                </div>
+            </div>
+            <div class="site-footer-meta">
+                <span>&copy; {{ config('app.name') }}</span>
+                <span class="site-footer-dot" aria-hidden="true"></span>
+                <span>MASTAMARU 2026</span>
+            </div>
         </div>
     </div>
     <!-- Additional Scripts -->
@@ -66,7 +75,7 @@
                     button.disabled = true;
                     button.classList.add('is-loading');
                     button.setAttribute('aria-busy', 'true');
-                    button.innerHTML = '<span class="ui-spinner" aria-hidden="true"></span><span>Memproses...</span>';
+                    button.innerHTML = '<span class="ui-loading-content"><span class="ui-spinner" aria-hidden="true"></span><span>Memproses...</span></span>';
                 });
             });
             document.querySelectorAll('[data-loading-button]').forEach(function (button) {
@@ -75,7 +84,7 @@
                     button.disabled = true;
                     button.classList.add('is-loading');
                     button.setAttribute('aria-busy', 'true');
-                    button.innerHTML = '<span class="ui-spinner" aria-hidden="true"></span><span>Memproses...</span>';
+                    button.innerHTML = '<span class="ui-loading-content"><span class="ui-spinner" aria-hidden="true"></span><span>Memproses...</span></span>';
                 });
             });
         });
@@ -105,9 +114,20 @@
         .campus-lockup { text-align:right; }
         .campus-copy { font-weight:700; color:var(--purple); text-transform:uppercase; letter-spacing:.04em; }
         .ui-panel { background:rgba(255,255,255,.82); border:1px solid rgba(255,255,255,.9); box-shadow:0 18px 50px rgba(75,58,146,.10); backdrop-filter:blur(16px); }
-        .ui-spinner { width:1.05em; height:1.05em; border:2px solid currentColor; border-right-color:transparent; border-radius:999px; animation:ui-spin .7s linear infinite; display:inline-block; vertical-align:-.15em; }
+        .ui-loading-content { display:inline-flex; align-items:center; justify-content:center; gap:.7rem; }
+        .ui-spinner { width:1.05em; height:1.05em; border:2px solid currentColor; border-right-color:transparent; border-radius:999px; animation:ui-spin 1.25s linear infinite; display:inline-block; flex:0 0 auto; }
         .is-loading { cursor:wait!important; opacity:.86; transform:none!important; }
         @keyframes ui-spin { to { transform:rotate(360deg); } }
+        .site-footer { width:calc(100% - 32px); max-width:1180px; margin:14px auto 0; padding:0 0 28px; }
+        .site-footer-inner { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:18px 22px; border:1px solid rgba(255,255,255,.9); border-radius:22px; background:rgba(255,255,255,.68); box-shadow:0 14px 36px rgba(75,58,146,.08); backdrop-filter:blur(14px); }
+        .site-footer-brand { display:flex; align-items:center; gap:10px; color:var(--ink); }
+        .site-footer-mark { display:grid; place-items:center; width:32px; height:32px; border-radius:11px; background:linear-gradient(135deg,#dff3ff,#eee8ff); color:#536a9b; font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:800; }
+        .site-footer-brand div { display:grid; gap:2px; }
+        .site-footer-brand strong { font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; letter-spacing:.14em; }
+        .site-footer-brand span { color:var(--muted); font-size:10px; }
+        .site-footer-meta { display:flex; align-items:center; gap:10px; color:#7b8498; font-size:11px; }
+        .site-footer-dot { width:4px; height:4px; border-radius:999px; background:#a7d8cb; }
+        @media(max-width:640px) { .site-footer{width:calc(100% - 24px);padding-bottom:18px}.site-footer-inner{align-items:flex-start;flex-direction:column;gap:10px;padding:16px 18px}.site-footer-meta{font-size:10px;gap:8px} }
         @media(max-width:640px) { .site-header{padding-top:12px}.site-header-inner{align-items:flex-start}.brand-logo-mastamaru{width:48px;height:48px;border-radius:14px}.brand-logo-campus{width:40px;height:40px;border-radius:12px}.brand-copy strong{font-size:12px}.brand-copy span,.campus-copy{font-size:9px}.campus-copy{display:none} }
         @media(prefers-reduced-motion:reduce) { *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important} }
     </style>
