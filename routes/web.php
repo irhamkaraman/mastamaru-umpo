@@ -45,7 +45,23 @@ Route::get('/super-fix', function () {
         Artisan::call('permission:cache-reset');
         Artisan::call('shield:generate', ['--all' => true]);
         Artisan::call('optimize:clear');
-        return "<h1>✅ SUKSES!</h1><p>Cache web server telah dibersihkan dan Permission berhasil di-generate ulang.</p><p>Silakan kembali ke <a href='/admin'>Dashboard Admin</a>, masuk ke menu <b>Roles</b>, edit role Anda (Super Admin), lalu pastikan mencentang hak akses untuk API Configuration & API Data Record, lalu Save.</p>";
+        
+        // Paksa assign semua permission ke role super_admin
+        $role = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
+        $permissions = \Spatie\Permission\Models\Permission::all();
+        $role->syncPermissions($permissions);
+        
+        // Paksa assign role super_admin ke user yang sedang login
+        $user = auth()->user();
+        $msg = "";
+        if ($user) {
+            $user->assignRole('super_admin');
+            $msg = "<p>Role super_admin telah dipaksa ditambahkan ke akun Anda (" . $user->email . ").</p>";
+        } else {
+            $msg = "<p>⚠️ Anda belum login! Silakan login dulu ke /admin, lalu buka kembali halaman /super-fix ini.</p>";
+        }
+        
+        return "<h1>✅ SUKSES (SUPER FIX V2)!</h1><p>Cache dibersihkan, Permission di-generate, dan Hak Akses telah diberikan secara paksa.</p>" . $msg . "<p>Silakan kembali ke <a href='/admin'>Dashboard Admin</a>.</p>";
     } catch (\Exception $e) {
         return "<h1>❌ ERROR!</h1><p>" . $e->getMessage() . "</p>";
     }
