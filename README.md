@@ -96,6 +96,14 @@ Untuk meng-generate ulang seluruh *permission* sistem secara otomatis (menggunak
 php artisan shield:generate --all
 ```
 
+**⚠️ PENTING UNTUK SERVER PRODUCTION:**
+Jika Anda melakukan ini di server *production*, menu mungkin masih belum muncul karena *Permission Cache*. Jalankan perintah tambahan berikut untuk mereset cache:
+```bash
+php artisan permission:cache-reset
+php artisan cache:clear
+php artisan optimize:clear
+```
+
 Setelah perintah sukses dijalankan:
 1. Login ke Dashboard Admin.
 2. Buka menu **Roles** (di bawah kategori Filament Shield).
