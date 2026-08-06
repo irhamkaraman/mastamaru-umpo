@@ -39,6 +39,18 @@ Route::get('/storage-link', function () {
     }
 })->name('storage-link');
 
+// Route khusus untuk mengatasi masalah Permission/Menu hilang di server Production (cPanel/Shared Hosting)
+Route::get('/super-fix', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('permission:cache-reset');
+        \Illuminate\Support\Facades\Artisan::call('shield:generate', ['--all' => true]);
+        \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+        return "<h1>✅ SUKSES!</h1><p>Cache web server telah dibersihkan dan Permission berhasil di-generate ulang.</p><p>Silakan kembali ke <a href='/admin'>Dashboard Admin</a>, masuk ke menu <b>Roles</b>, edit role Anda (Super Admin), lalu pastikan mencentang hak akses untuk API Configuration & API Data Record, lalu Save.</p>";
+    } catch (\Exception $e) {
+        return "<h1>❌ ERROR!</h1><p>" . $e->getMessage() . "</p>";
+    }
+});
+
 // Route untuk menampilkan daftar semua perintah cache
 Route::get('/cache-commands', function () {
     $commands = [
