@@ -3,9 +3,9 @@
 @section('title', 'Informasi Peserta - ' . $student->name)
 
 @section('content')
-    <div class="container mx-auto px-4 py-4 sm:py-8 max-w-md lg:max-w-4xl">
+    <div class="container mx-auto px-4 py-8 sm:py-12 max-w-md lg:max-w-4xl relative z-10">
         <!-- Header dengan informasi peserta -->
-        <div class="bg-gradient-to-br from-green-600 to-blue-700 rounded-2xl shadow-xl p-6 sm:p-8 mb-6 text-white">
+        <div class="bg-gradient-to-br from-emerald-400 via-cyan-400 to-purple-600 rounded-[2rem] shadow-xl p-6 sm:p-10 mb-6 text-white">
             <div class="text-center">
                 {{-- <div class="w-20 h-20 sm:w-24 sm:h-24 bg-white bg-opacity-30 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                     <svg class="w-10 h-10 sm:w-12 sm:h-12 text-blue-700" fill="currentColor" viewBox="0 0 24 24">
@@ -25,7 +25,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <!-- QR Code Section -->
-            <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+            <div class="ui-panel rounded-[2rem] p-6 sm:p-8">
                 <div class="text-center">
                     <h2 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 flex items-center justify-center">
                         <svg class="w-6 h-6 mr-2 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
@@ -44,7 +44,7 @@
 
                     <!-- Tombol Unduh QR Code -->
                     <button id="download-qr"
-                            class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 inline-flex items-center mb-2"
+                            class="bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-700 hover:to-indigo-600 text-white font-medium py-2 px-4 rounded-xl transition duration-200 inline-flex items-center mb-2 shadow-lg shadow-purple-200"
                             onclick="downloadQRCode()">
                         <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
@@ -57,7 +57,7 @@
             <!-- Informasi Detail -->
             <div class="space-y-6">
                 <!-- Kode Unik -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+                <div class="ui-panel rounded-[2rem] p-6 sm:p-8">
                     <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center">
                         <svg class="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
@@ -74,7 +74,7 @@
                 </div>
 
                 <!-- Informasi Peserta -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+                <div class="ui-panel rounded-[2rem] p-6 sm:p-8">
                     <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center">
                         <svg class="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"></path>
@@ -104,7 +104,7 @@
         </div>
 
         <!-- Tombol Aksi -->
-        <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+        <div class="ui-panel rounded-[2rem] p-6 sm:p-8">
             <div class="text-center">
                 <a href="{{ route('home.index') }}"
                    class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-lg transition duration-200 inline-flex items-center">
@@ -118,7 +118,7 @@
         </div>
 
         <!-- Tips -->
-        <div class="bg-yellow-50 rounded-xl p-4 sm:p-6 mt-6">
+        <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 rounded-2xl p-4 sm:p-6 mt-6">
             <h3 class="text-lg font-semibold text-yellow-800 mb-3 flex items-center">
                 <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
@@ -151,8 +151,22 @@
 
         // Function untuk unduh QR Code
         function downloadQRCode() {
+            const downloadButton = document.getElementById('download-qr');
+            if (downloadButton) {
+                downloadButton.disabled = true;
+                downloadButton.classList.add('is-loading');
+                downloadButton.setAttribute('aria-busy', 'true');
+                downloadButton.innerHTML = '<span class="ui-spinner" aria-hidden="true"></span><span>Menyiapkan...</span>';
+            }
+
             if (!qrCanvas) {
                 alert('QR Code belum siap. Silakan tunggu sebentar.');
+                if (downloadButton) {
+                    downloadButton.disabled = false;
+                    downloadButton.classList.remove('is-loading');
+                    downloadButton.removeAttribute('aria-busy');
+                    downloadButton.innerHTML = '<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>Unduh QR Code';
+                }
                 return;
             }
 
@@ -165,6 +179,13 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+
+            if (downloadButton) {
+                downloadButton.disabled = false;
+                downloadButton.classList.remove('is-loading');
+                downloadButton.removeAttribute('aria-busy');
+                downloadButton.innerHTML = '<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>Unduh QR Code';
+            }
         }
 
         // Generate QR code saat halaman dimuat

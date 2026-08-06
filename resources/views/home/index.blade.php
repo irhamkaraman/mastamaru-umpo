@@ -3,22 +3,25 @@
 @section('title', 'Sistem Presensi')
 
 @section('content')
-    <div class="container mx-auto px-4 py-4 sm:py-8 max-w-md lg:max-w-4xl">
+    <div class="home-layout container mx-auto px-4 py-8 sm:py-12 max-w-md lg:max-w-6xl relative z-10">
+        <div class="home-hero-column">
         <!-- Header Card -->
-        <div class="bg-gradient-to-br from-blue-600 to-purple-700 rounded-2xl shadow-xl p-6 sm:p-8 mb-6 text-white">
+        <div class="home-hero relative overflow-hidden rounded-[2rem] shadow-xl p-6 sm:p-10 mb-6 text-slate-800">
             <div class="text-center">
                 {{-- <div class="w-20 h-20 sm:w-24 sm:h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM13 13h2v2h-2v-2zM15 15h2v2h-2v-2zM13 17h2v2h-2v-2zM15 19h2v2h-2v-2zM17 13h2v2h-2v-2zM19 15h2v2h-2v-2zM17 17h2v2h-2v-2zM19 19h2v2h-2v-2z"/>
                     </svg>
                 </div> --}}
-                <h1 class="text-2xl sm:text-3xl font-bold mb-2">Selamat Datang Peserta</h1>
-                <p class="text-blue-100 text-sm sm:text-base">Sistem Presensi {{ config('app.name') }}</p>
+                <p class="uppercase tracking-[.24em] text-xs font-bold text-slate-500 mb-3">Presensi digital MASTAMARU</p>
+                <h1 class="text-2xl sm:text-4xl font-bold mb-2">Selamat Datang Peserta</h1>
+                <p class="text-slate-600 text-sm sm:text-base">Sistem Presensi {{ config('app.name') }}</p>
             </div>
         </div>
 
         <!-- Form Input NIM -->
-        <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8 mb-6">
+        <div class="home-action-column">
+        <div class="ui-panel rounded-[2rem] p-6 sm:p-10 mb-6">
             <div class="text-center mb-6">
                 <h2 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-2">Dapatkan QR Code Presensi</h2>
                 <p class="text-gray-600 text-sm sm:text-base">Masukkan NIM Anda untuk mendapatkan QR Code dan kode unik presensi</p>
@@ -47,17 +50,17 @@
                 </div>
 
                 <button type="submit"
-                        class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 sm:py-4 px-6 rounded-lg transition duration-300 transform hover:scale-105 shadow-lg">
+                         class="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-semibold py-3 sm:py-4 px-6 rounded-xl transition duration-300 transform hover:-translate-y-1 shadow-lg shadow-red-200">
                     <svg class="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
                     </svg>
-                    Periksa & Dapatkan QR Code
-                </button>
+                     Cek NIM
+                 </button>
             </form>
         </div>
 
         <!-- Informasi Tambahan -->
-        <div class="bg-blue-50 rounded-xl p-4 sm:p-6">
+        <div class="home-info-panel border border-blue-100 rounded-2xl p-4 sm:p-6">
             <h3 class="text-lg font-semibold text-blue-800 mb-3 flex items-center">
                 <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
@@ -83,7 +86,58 @@
                 </li>
             </ul>
         </div>
+        </div>
     </div>
+
+    <style>
+        .home-hero {
+            background: linear-gradient(135deg, #eaf4ff 0%, #f3efff 55%, #e9faf5 100%);
+            border: 1px solid rgba(155, 173, 204, .22);
+            isolation: isolate;
+            min-height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .home-hero-column { min-height: 520px; }
+        .home-action-column { min-width: 0; }
+        .home-action-column .ui-panel { box-shadow: 0 22px 60px rgba(75, 58, 146, .12); }
+
+        @media (min-width: 1024px) {
+            .home-layout {
+                display: grid;
+                grid-template-columns: minmax(280px, .8fr) minmax(0, 1.2fr);
+                gap: 28px;
+                align-items: stretch;
+            }
+            .home-hero-column { display: flex; }
+            .home-hero-column .home-hero { width: 100%; margin-bottom: 0; }
+        }
+
+        .home-hero::before {
+            content: '';
+            position: absolute;
+            width: 175px;
+            height: 175px;
+            right: -52px;
+            top: -58px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .48);
+            border: 18px solid rgba(255, 255, 255, .42);
+            z-index: -1;
+        }
+
+        .home-info-panel {
+            background: linear-gradient(135deg, #eff7ff 0%, #f8fbff 100%);
+            box-shadow: 0 12px 30px rgba(15, 76, 154, .08);
+        }
+
+        @media (max-width: 640px) {
+            .home-hero { border-radius: 1.65rem; }
+            .home-hero-column { min-height: 0; }
+        }
+    </style>
 
     <!-- Message Display menggunakan SweetAlert2 -->
     @if (session('success'))

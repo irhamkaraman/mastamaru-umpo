@@ -107,26 +107,33 @@
     @endif
 
     <!-- Header Section -->
-    <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-8 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-4xl mx-auto">
+    <div class="home-hero relative overflow-hidden rounded-[2rem] shadow-xl max-w-5xl mx-4 sm:mx-6 lg:mx-auto mt-8 sm:mt-12 px-6 py-8 sm:px-10 sm:py-10 text-white">
+        <div class="max-w-4xl mx-auto relative z-10">
             <div class="text-center">
-                <h1 class="text-3xl sm:text-4xl font-bold mb-2">Input Manual Peserta</h1>
-                <p class="text-blue-100 text-lg">Khusus untuk peserta yang belum memiliki NIM resmi</p>
-                <p class="text-blue-200 text-sm mt-2">Anda dapat menggunakan angka sesuai keinginan sebagai pengganti NIM</p>
+                <p class="uppercase tracking-[.24em] text-xs font-bold text-white/80 mb-3">Presensi digital MASTAMARU</p>
+                <h1 class="text-2xl sm:text-4xl font-bold mb-2">Input Manual Peserta</h1>
+                <p class="text-white/90 text-sm sm:text-base">Khusus untuk peserta yang belum memiliki NIM resmi</p>
+                <p class="text-white/75 text-sm mt-2">Gunakan jalur bantuan ini untuk melengkapi data peserta dengan aman</p>
             </div>
         </div>
     </div>
 
     <!-- Form Section -->
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="remake-page max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 relative z-10">
         @if($formIsOpen)
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-xl font-semibold text-gray-800">Formulir Data Peserta</h2>
-                    <p class="text-gray-600 mt-1">Lengkapi semua field yang diperlukan</p>
+            <div class="remake-form-card ui-panel rounded-[2rem] border-0 overflow-hidden">
+                <div class="remake-form-heading px-6 py-6 sm:px-8 sm:py-7 border-b">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <p class="text-xs uppercase tracking-[.18em] text-sky-600 font-bold mb-2">Data peserta</p>
+                            <h2 class="text-xl sm:text-2xl font-semibold text-slate-800">Formulir Data Peserta</h2>
+                            <p class="text-slate-500 mt-1">Lengkapi semua field yang diperlukan</p>
+                        </div>
+                        <div class="remake-step-badge"><span>01</span><small>Lengkapi<br>data</small></div>
+                    </div>
                 </div>
 
-                <form action="{{ route('home.store-participant') }}" method="POST" class="p-6">
+                <form action="{{ route('home.store-participant') }}" method="POST" class="remake-form-body p-6 sm:p-8">
                 @csrf
 
                 <!-- General Error Message -->
@@ -232,7 +239,7 @@
                 <!-- Submit Button -->
                 <div class="mt-8">
                     <button type="submit"
-                            class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 transform hover:scale-105">
+                            class="w-full bg-gradient-to-r from-sky-600 to-blue-500 text-white py-3 px-6 rounded-xl font-medium hover:from-sky-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 transition duration-200 transform hover:-translate-y-1 shadow-lg shadow-sky-200">
                         <i class="fas fa-paper-plane mr-2"></i>
                         Kirim Data
                     </button>
@@ -241,7 +248,7 @@
             </div>
         @else
             <!-- Pesan Pendaftaran Ditutup -->
-            <div class="bg-white rounded-xl shadow-lg border border-red-200 overflow-hidden">
+            <div class="bg-white/90 rounded-[2rem] shadow-lg border border-red-200 overflow-hidden">
                 <div class="bg-red-50 px-6 py-4 border-b border-red-200">
                     <h2 class="text-xl font-semibold text-red-800">Pendaftaran Telah Ditutup</h2>
                     <p class="text-red-600 mt-1">Maaf, pendaftaran MASTAMARU 2025 sudah tidak tersedia</p>
@@ -288,7 +295,7 @@
 
         <!-- History Peserta Terdaftar -->
         <div id="participant-history" class="mt-8" style="display: none;">
-            <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+            <div class="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-green-800">
                         <i class="fas fa-history mr-2"></i>
@@ -305,7 +312,7 @@
         </div>
 
         <!-- Info Card -->
-        <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <div class="mt-8 bg-blue-50/90 border border-blue-200 rounded-2xl p-6 shadow-sm">
             <div class="flex items-start">
                 <div class="flex-shrink-0">
                     <i class="fas fa-info-circle text-blue-500 text-xl"></i>
@@ -331,6 +338,85 @@
 
     <!-- Custom Styles -->
     <style>
+        .home-hero {
+            background: linear-gradient(135deg, #0f4c9a 0%, #1769c2 68%, #245db0 100%);
+            isolation: isolate;
+        }
+
+        .home-hero::before {
+            content: '';
+            position: absolute;
+            width: 175px;
+            height: 175px;
+            right: -52px;
+            top: -58px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .12);
+            border: 18px solid rgba(255, 255, 255, .08);
+            z-index: -1;
+        }
+
+        .remake-page::before,
+        .remake-page::after {
+            content: '';
+            position: absolute;
+            border-radius: 999px;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .remake-page::before {
+            width: 260px;
+            height: 260px;
+            top: 10px;
+            right: -150px;
+            background: rgba(186, 230, 253, .42);
+        }
+
+        .remake-page::after {
+            width: 220px;
+            height: 220px;
+            bottom: 160px;
+            left: -140px;
+            background: rgba(254, 205, 211, .3);
+        }
+
+        .remake-form-card { box-shadow: 0 24px 70px rgba(77, 104, 141, .13); }
+
+        .remake-form-heading {
+            background: linear-gradient(135deg, #f0f9ff 0%, #f8f7ff 58%, #fff5f6 100%);
+            border-color: rgba(125, 160, 198, .16);
+        }
+
+        .remake-form-body { background: rgba(255, 255, 255, .68); }
+
+        .remake-step-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            width: fit-content;
+            padding: 8px 13px 8px 9px;
+            border: 1px solid rgba(125, 160, 198, .2);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .78);
+            color: #3b82a9;
+            box-shadow: 0 8px 22px rgba(77, 104, 141, .08);
+        }
+
+        .remake-step-badge span {
+            display: grid;
+            place-items: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            background: #dff3ff;
+            color: #1682b2;
+            font-weight: 800;
+            font-size: 12px;
+        }
+
+        .remake-step-badge small { font-size: 11px; line-height: 1.2; font-weight: 700; }
+
         /* Custom focus styles */
         .focus\:ring-2:focus {
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
@@ -343,7 +429,20 @@
 
         /* Hover effects */
         input:hover, select:hover {
-            border-color: #93c5fd;
+            border-color: #a5d8ef;
+        }
+
+        .remake-form-body input,
+        .remake-form-body select {
+            border-color: rgba(125, 160, 198, .35);
+            background: rgba(255, 255, 255, .82);
+            border-radius: 14px;
+        }
+
+        .remake-form-body input:focus,
+        .remake-form-body select:focus {
+            border-color: #60b8dc;
+            box-shadow: 0 0 0 4px rgba(96, 184, 220, .16);
         }
 
         /* Mobile responsiveness */
@@ -356,6 +455,8 @@
                 padding-left: 1rem;
                 padding-right: 1rem;
             }
+
+            .remake-step-badge { align-self: flex-start; }
         }
     </style>
 

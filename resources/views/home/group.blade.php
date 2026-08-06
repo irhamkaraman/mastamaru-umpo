@@ -38,15 +38,16 @@
             ];
         });
     @endphp
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 my-8 sm:my-20">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 my-8 sm:my-14 relative z-10">
         <!-- Header Section -->
-        <div class="mb-6 sm:mb-8">
+        <div class="groups-intro mb-6 sm:mb-8">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div class="mb-4 sm:mb-0">
-                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Daftar Kelompok Peserta Mastamaru 2026</h1>
+                    <p class="text-xs uppercase tracking-[.22em] text-sky-600 font-bold mb-2">Direktori peserta</p>
+                    <h1 class="text-2xl sm:text-4xl font-bold text-slate-900">Daftar Kelompok Peserta Mastamaru 2026</h1>
                     <p class="text-gray-600 mt-1 text-sm sm:text-base">Informasi lengkap Kelompok, Pemandu dan Peserta</p>
                 </div>
-                <div class="flex flex-col xs:flex-row sm:flex-row gap-2">
+                <div class="groups-stats flex flex-col xs:flex-row sm:flex-row gap-2">
                     <span
                         class="inline-flex items-center px-3 py-2 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800 justify-center">
                         Total: {{ $cachedData['total_groups'] }} Kelompok
@@ -59,61 +60,36 @@
             </div>
         </div>
 
-        <!-- Group Filter Buttons -->
-        <div class="mb-4 sm:mb-6">
-            <div class="flex flex-wrap gap-1.5 sm:gap-2 mb-4">
-                <button onclick="showAllGroups()"
-                    class="group-filter-btn active px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm sm:text-base flex-shrink-0">
-                    Semua Kelompok
-                </button>
-                @foreach ($cachedData['groups_data'] as $index => $groupData)
-                    <button onclick="showGroup({{ $index }})"
-                        class="group-filter-btn px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-200 text-sm sm:text-base flex-shrink-0">
-                        {{ $groupData['name'] }}
-                    </button>
-                @endforeach
-            </div>
+        <!-- Directory Controls -->
+        <div class="directory-controls ui-panel rounded-[2rem] p-4 sm:p-5 mb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-[minmax(220px,.7fr)_minmax(300px,1.3fr)] gap-4 items-start">
+                <div>
+                    <label for="group-filter-select" class="control-label">Pilih kelompok</label>
+                    <select id="group-filter-select" class="group-filter-select" data-placeholder="Cari nama kelompok...">
+                        <option value="all">Semua Kelompok</option>
+                        @foreach ($cachedData['groups_data'] as $index => $groupData)
+                            <option value="{{ $index }}">{{ $groupData['name'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-            <!-- Global Search Input (shown only when all groups are displayed) -->
-            <div id="global-search-container" class="mb-4 sm:mb-6">
-                <div class="relative max-w-lg mx-auto px-2 sm:px-0">
-                    <div class="relative group">
-                        <div
-                            class="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl blur opacity-25 group-hover:opacity-40 transition duration-300">
-                        </div>
-                        <div
-                            class="relative bg-white rounded-xl border-2 border-gray-200 hover:border-blue-300 transition-all duration-300 shadow-lg hover:shadow-xl">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 pl-3 sm:pl-4">
-                                    <i class="fas fa-search text-blue-500 text-base sm:text-lg"></i>
-                                </div>
-                                <input type="text" id="global-search-input"
-                                    class="w-full px-3 sm:px-4 py-3 sm:py-4 bg-transparent border-0 focus:ring-0 focus:outline-none text-gray-700 placeholder-gray-400 text-base sm:text-lg"
-                                    placeholder="🔍 Cari peserta dari semua kelompok...">
-                                <div class="flex-shrink-0 pr-3 sm:pr-4">
-                                    <div class="hidden" id="search-loading">
-                                        <i class="fas fa-spinner fa-spin text-blue-500"></i>
-                                    </div>
-                                    <div class="hidden" id="search-clear">
-                                        <button onclick="clearGlobalSearch()"
-                                            class="text-gray-400 hover:text-red-500 transition-colors duration-200">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                <div id="global-search-container">
+                    <label for="global-search-input" class="control-label">Cari seluruh peserta</label>
+                    <div class="global-search-box">
+                        <i class="fas fa-search text-sky-500" aria-hidden="true"></i>
+                        <input type="text" id="global-search-input" placeholder="Cari nama atau NIM dari semua kelompok...">
+                        <div class="hidden" id="search-loading"><i class="fas fa-spinner fa-spin text-sky-500"></i></div>
+                        <div class="hidden" id="search-clear">
+                            <button type="button" onclick="clearGlobalSearch()" aria-label="Hapus pencarian" class="search-clear-button">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
                     </div>
-                    <div class="mt-2 text-center px-2">
-                        <span class="text-xs sm:text-sm text-gray-500 font-medium">Ketik untuk mencari nama atau NIM
-                            peserta</span>
-                    </div>
-                    <div id="search-results-count" class="hidden mt-2 text-center px-2">
-                        <span
-                            class="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-green-100 text-green-800">
-                            <i class="fas fa-check-circle mr-1"></i>
-                            <span id="results-text"></span>
-                        </span>
+                    <div class="mt-2 flex items-center justify-between gap-2">
+                        <span class="text-xs text-slate-500">Pencarian berlaku untuk seluruh kelompok.</span>
+                        <div id="search-results-count" class="hidden">
+                            <span class="search-result-badge"><i class="fas fa-check-circle mr-1"></i><span id="results-text"></span></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -124,15 +100,15 @@
             <div class="grid gap-4 sm:gap-6">
                 @forelse($cachedData['groups_data'] as $groupData)
                     <div
-                        class="bg-white border-0 shadow-2xl rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                        <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 sm:py-6">
+                        class="group-card bg-white border-0 shadow-2xl bg-white/90 border-white rounded-[2rem] overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 backdrop-blur-sm">
+                        <div class="group-banner py-4 sm:py-6">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6">
-                                <div class="mb-3 sm:mb-0">
+                                <div class="group-card-heading mb-3 sm:mb-0">
                                     <h4 class="text-xl sm:text-2xl font-bold mb-1">{{ $groupData['name'] }}</h4>
-                                    <p class="text-blue-100 mb-0 text-sm sm:text-base">{{ $groupData['description'] }}</p>
+                                     <p class="text-slate-600 mb-0 text-sm sm:text-base">{{ $groupData['description'] }}</p>
                                 </div>
                                 <div class="text-left sm:text-right">
-                                    <div class="bg-white text-blue-600 px-3 sm:px-4 py-2 rounded-full inline-flex items-center text-sm sm:text-base">
+                                     <div class="bg-white/80 text-slate-700 border border-white px-3 sm:px-4 py-2 rounded-full inline-flex items-center text-sm sm:text-base shadow-sm">
                                         <i class="fas fa-users mr-2"></i>
                                         {{ $groupData['attendances_count'] }} Peserta
                                     </div>
@@ -143,7 +119,7 @@
                         <div class="p-0">
                             <div class="flex flex-col lg:flex-row">
                                 <!-- Pendamping Section -->
-                                <div class="lg:w-1/3 border-b lg:border-b-0 lg:border-r border-gray-200">
+                                <div class="mentor-panel lg:w-1/3 border-b lg:border-b-0 lg:border-r border-gray-200">
                                     <div class="p-4 sm:p-6">
                                         <h6
                                             class="text-blue-600 text-base sm:text-lg font-bold mb-3 sm:mb-4 flex items-center">
@@ -181,7 +157,7 @@
                                 </div>
 
                                 <!-- Peserta Section -->
-                                <div class="lg:w-2/3">
+                                <div class="participants-panel lg:w-2/3">
                                     <div class="p-4 sm:p-6">
                                         <div
                                             class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4">
@@ -200,8 +176,8 @@
                                         </div>
                                         @if (count($groupData['attendances']) > 0)
                                             <div class="overflow-x-auto -mx-4 sm:mx-0">
-                                                <div class="inline-block min-w-full align-middle">
-                                                    <table class="min-w-full divide-y divide-gray-200 participant-table">
+                                                 <div class="inline-block min-w-full align-middle">
+                                                     <table class="min-w-full divide-y divide-gray-200 participant-table responsive-participant-table">
                                                         <thead class="bg-gray-50">
                                                             <tr>
                                                                 <th
@@ -277,6 +253,44 @@
 
     <!-- Custom Styles -->
     <style>
+        .groups-intro { position: relative; }
+        .groups-stats span { background: rgba(255,255,255,.72); border: 1px solid rgba(148,163,184,.16); color: #516079; box-shadow: 0 8px 18px rgba(81,96,121,.06); }
+        .directory-controls { background: rgba(255,255,255,.76); border-color: rgba(255,255,255,.92); box-shadow: 0 18px 44px rgba(75,58,146,.08); }
+        .control-label { display:block; margin-bottom:8px; color:#53627b; font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+        .directory-controls > div > div { min-width:0; }
+        .directory-controls #global-search-container { min-width:0; }
+        .directory-controls .select2-container { display:block; }
+        .global-search-box { display:flex; align-items:center; gap:12px; min-height:50px; padding:0 15px; background:rgba(255,255,255,.86); border:1px solid rgba(148,163,184,.28); border-radius:15px; transition:box-shadow .2s,border-color .2s; }
+        .global-search-box:focus-within { border-color:#7dd3fc; box-shadow:0 0 0 4px rgba(125,211,252,.16); }
+        .global-search-box input { width:100%; border:0; outline:0; background:transparent; color:#334155; font-size:14px; }
+        .search-clear-button { border:0; background:transparent; color:#94a3b8; cursor:pointer; }
+        .search-clear-button:hover { color:#64748b; }
+        .search-result-badge { display:inline-flex; align-items:center; padding:4px 9px; border-radius:999px; background:#ecfdf5; color:#15803d; font-size:11px; font-weight:700; white-space:nowrap; }
+        .select2-container { width:100%!important; }
+        .select2-container--default .select2-selection--single { height:50px; border:1px solid rgba(148,163,184,.28); border-radius:15px; background:rgba(255,255,255,.86); }
+        .select2-container--default .select2-selection--single .select2-selection__rendered { padding:14px 42px 14px 15px; color:#334155; font-size:14px; line-height:21px; }
+        .select2-container--default .select2-selection--single .select2-selection__arrow { top:13px; right:12px; }
+        .select2-container--default.select2-container--focus .select2-selection--single { border-color:#7dd3fc; box-shadow:0 0 0 4px rgba(125,211,252,.16); }
+        .select2-dropdown { border:1px solid rgba(148,163,184,.22); border-radius:14px; overflow:hidden; box-shadow:0 18px 38px rgba(51,65,85,.14); max-width:calc(100vw - 24px); }
+        .group-select-dropdown { z-index:1000; }
+        .select2-search--dropdown { padding:10px; background:#f8fafc; }
+        .select2-search--dropdown .select2-search__field { border:1px solid #cbd5e1; border-radius:10px; padding:8px 10px; outline:0; }
+        .select2-results__option { padding:10px 12px; font-size:13px; }
+        .select2-container--default .select2-results__option--highlighted[aria-selected] { background:#e0f2fe; color:#0369a1; }
+        .responsive-participant-table th { white-space:nowrap; }
+        .responsive-participant-table td { max-width:320px; }
+        .participant-table tbody tr { transition:background-color .18s ease; }
+        .participant-table tbody tr:hover { background:#f8fbff; }
+        .group-card-heading { min-width:0; }
+        .group-card-heading h4 { overflow-wrap:anywhere; }
+        .mentor-panel { background:rgba(248,250,252,.56); }
+        .participants-panel { background:rgba(255,255,255,.68); }
+        .group-card .participant-search { background:#fff; border-color:rgba(148,163,184,.28); }
+
+        .group-banner {
+            background: linear-gradient(135deg, #eef6ff 0%, #f5f0ff 55%, #effbf5 100%);
+        }
+
         .bg-gradient-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
@@ -349,6 +363,81 @@
             .col-md-8 {
                 border-bottom: none !important;
             }
+
+            .responsive-participant-table { min-width: 0; width:100%; table-layout:fixed; }
+        }
+
+        @media (max-width: 520px) {
+            .groups-intro h1 { font-size:1.55rem; line-height:1.2; }
+            .groups-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; }
+            .groups-stats span { min-width:0; padding:9px 8px; text-align:center; line-height:1.25; }
+            .directory-controls { border-radius:1.5rem; padding:14px; }
+            .global-search-box { min-height:48px; padding:0 12px; }
+            .global-search-box input { min-width:0; font-size:13px; }
+            .select2-container--default .select2-selection--single { height:48px; }
+            .select2-container--default .select2-selection--single .select2-selection__rendered { padding-top:13px; padding-bottom:13px; }
+            .select2-dropdown { width:calc(100vw - 24px)!important; max-width:calc(100vw - 24px)!important; }
+            .responsive-participant-table { min-width:0; width:100%; border-collapse:separate; border-spacing:0 8px; }
+            .responsive-participant-table thead { display:none; }
+            .responsive-participant-table tbody { display:block; }
+            .responsive-participant-table tbody tr {
+                display:grid;
+                grid-template-columns:38px minmax(0, 1fr);
+                align-items:center;
+                width:100%;
+                padding:10px 12px;
+                background:#fff;
+                border:1px solid #edf1f7;
+                border-radius:14px;
+                box-shadow:0 5px 14px rgba(51,65,85,.05);
+            }
+            .responsive-participant-table tbody td {
+                display:block;
+                max-width:none;
+                padding:0;
+                border:0;
+                min-width:0;
+            }
+            .responsive-participant-table tbody td:first-child {
+                grid-row:span 2;
+                width:28px;
+                color:#94a3b8;
+                font-size:12px;
+                font-weight:800;
+            }
+            .responsive-participant-table tbody td:nth-child(2) { min-width:0; }
+            .responsive-participant-table tbody td:nth-child(2) > div { min-width:0; }
+            .responsive-participant-table tbody td:nth-child(2) span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+            .responsive-participant-table tbody td:nth-child(3) { display:block; color:#94a3b8; font-size:11px; line-height:1.25; margin-top:2px; }
+            .responsive-participant-table tbody td:nth-child(3)::before { content:'NIM '; color:#cbd5e1; font-weight:700; }
+            .responsive-participant-table tbody td:nth-child(2) .w-6,
+            .responsive-participant-table tbody td:nth-child(2) .sm\:w-8 { flex-shrink:0; }
+            .group-banner { padding-top:18px; padding-bottom:18px; }
+            .group-banner .flex { gap:12px; }
+            .group-banner .text-left { width:100%; }
+            .group-banner .text-left > div { width:fit-content; }
+            .group-banner .text-left.sm\:text-right { text-align:left; }
+            .group-banner .bg-white\/80 { font-size:12px; }
+            .lg\:w-1\/3, .lg\:w-2\/3 { width:100%; }
+            .participant-search { min-width:0; width:100%; }
+            .mentor-panel { background:rgba(248,250,252,.5); }
+            .participants-panel { border-top:1px solid rgba(226,232,240,.75); }
+        }
+    </style>
+
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <style>
+        .directory-controls .select2-container { width:100% !important; }
+        .directory-controls .select2-container--default .select2-selection--single { height:50px !important; border:1px solid rgba(148,163,184,.28) !important; border-radius:15px !important; background:rgba(255,255,255,.86) !important; box-sizing:border-box; }
+        .directory-controls .select2-container--default .select2-selection--single .select2-selection__rendered { padding:14px 42px 14px 15px !important; color:#334155 !important; line-height:21px !important; }
+        .directory-controls .select2-container--default .select2-selection--single .select2-selection__arrow { top:13px !important; right:12px !important; }
+        .group-select-dropdown.select2-dropdown { width:min(100%, 420px) !important; max-width:calc(100vw - 24px) !important; }
+        @media (max-width:520px) {
+            .directory-controls .select2-container--default .select2-selection--single { height:48px !important; }
+            .directory-controls .select2-container--default .select2-selection--single .select2-selection__rendered { padding-top:13px !important; padding-bottom:13px !important; }
+            .group-select-dropdown.select2-dropdown { width:calc(100vw - 24px) !important; }
         }
     </style>
 
@@ -392,23 +481,7 @@
                 group.style.display = 'block';
             });
 
-            // Show global search and hide individual search inputs
-            document.getElementById('global-search-container').style.display = 'block';
-            document.querySelectorAll('.participant-search').forEach(input => {
-                input.closest('.relative').style.display = 'block';
-            });
-
-            // Clear global search
-            document.getElementById('global-search-input').value = '';
             resetAllParticipantRows();
-
-            // Update active button
-            document.querySelectorAll('.group-filter-btn').forEach(btn => {
-                btn.classList.remove('active', 'bg-blue-600', 'text-white');
-                btn.classList.add('bg-gray-200', 'text-gray-700');
-            });
-            document.querySelector('.group-filter-btn').classList.add('active', 'bg-blue-600', 'text-white');
-            document.querySelector('.group-filter-btn').classList.remove('bg-gray-200', 'text-gray-700');
         }
 
         function showGroup(index) {
@@ -417,20 +490,7 @@
                 group.style.display = i === index ? 'block' : 'none';
             });
 
-            // Hide global search when showing specific group
-            document.getElementById('global-search-container').style.display = 'none';
-
-            // Clear global search and reset all rows
-            document.getElementById('global-search-input').value = '';
             resetAllParticipantRows();
-
-            // Update active button
-            document.querySelectorAll('.group-filter-btn').forEach(btn => {
-                btn.classList.remove('active', 'bg-blue-600', 'text-white');
-                btn.classList.add('bg-gray-200', 'text-gray-700');
-            });
-            document.querySelectorAll('.group-filter-btn')[index + 1].classList.add('active', 'bg-blue-600', 'text-white');
-            document.querySelectorAll('.group-filter-btn')[index + 1].classList.remove('bg-gray-200', 'text-gray-700');
         }
 
         // Reset all participant rows to visible
@@ -518,6 +578,30 @@
 
         // Participant search functionality
         document.addEventListener('DOMContentLoaded', function() {
+            const groupFilter = $('#group-filter-select');
+
+            groupFilter.select2({
+                width: '100%',
+                minimumResultsForSearch: 0,
+                dropdownAutoWidth: false,
+                dropdownParent: $(document.body),
+                dropdownCssClass: 'group-select-dropdown',
+                placeholder: 'Cari nama kelompok...',
+                allowClear: false
+            });
+
+            groupFilter.on('change', function() {
+                const selectedGroup = this.value;
+                document.getElementById('global-search-input').value = '';
+                hideSearchElements();
+
+                if (selectedGroup === 'all') {
+                    showAllGroups();
+                } else {
+                    showGroup(Number(selectedGroup));
+                }
+            });
+
             // Individual group search inputs
             const searchInputs = document.querySelectorAll('.participant-search');
 
@@ -561,21 +645,18 @@
                     }
                 });
 
-                // Add focus and blur effects
-                globalSearchInput.addEventListener('focus', function() {
-                    const absoluteElement = this.closest('.relative').querySelector('.absolute');
-                    if (absoluteElement) {
-                        absoluteElement.classList.add('opacity-40');
+                globalSearchInput.addEventListener('keydown', function(event) {
+                    if (event.key === 'Escape') {
+                        clearGlobalSearch();
                     }
                 });
 
-                globalSearchInput.addEventListener('blur', function() {
-                    const absoluteElement = this.closest('.relative').querySelector('.absolute');
-                    if (absoluteElement) {
-                        absoluteElement.classList.remove('opacity-40');
-                    }
-                });
+                // The new search shell uses :focus-within for its visual state.
             }
+
+            // Keep the directory on the all-groups view on first load.
+            groupFilter.val('all').trigger('change.select2');
+            showAllGroups();
         });
     </script>
 
