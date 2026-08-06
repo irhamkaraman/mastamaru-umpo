@@ -42,6 +42,11 @@ Route::get('/storage-link', function () {
 // Route khusus untuk mengatasi masalah Permission/Menu hilang di server Production (cPanel/Shared Hosting)
 Route::get('/super-fix', function () {
     try {
+        // Fix untuk error "Undefined constant STDIN" saat menjalankan Artisan dari Web
+        if (!defined('STDIN')) {
+            define('STDIN', fopen('php://stdin', 'r'));
+        }
+
         Artisan::call('permission:cache-reset');
         Artisan::call('shield:generate', ['--all' => true]);
         Artisan::call('optimize:clear');
