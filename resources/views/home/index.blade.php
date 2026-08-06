@@ -18,6 +18,7 @@
                 <p class="text-slate-600 text-sm sm:text-base">Sistem Presensi {{ config('app.name') }}</p>
             </div>
         </div>
+        </div>
 
         <!-- Form Input NIM -->
         <div class="home-action-column">
@@ -100,19 +101,33 @@
             justify-content: center;
         }
 
-        .home-hero-column { min-height: 520px; }
+        .home-layout {
+            width: calc(100% - 32px);
+            max-width: 1180px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .home-hero-column { min-height: 520px; min-width: 0; }
         .home-action-column { min-width: 0; }
         .home-action-column .ui-panel { box-shadow: 0 22px 60px rgba(75, 58, 146, .12); }
 
         @media (min-width: 1024px) {
             .home-layout {
                 display: grid;
-                grid-template-columns: minmax(280px, .8fr) minmax(0, 1.2fr);
+                grid-template-columns: minmax(360px, .85fr) minmax(0, 1.15fr);
                 gap: 28px;
                 align-items: stretch;
             }
             .home-hero-column { display: flex; }
             .home-hero-column .home-hero { width: 100%; margin-bottom: 0; }
+        }
+
+        @media (min-width: 641px) and (max-width: 1023px) {
+            .home-layout { max-width: 720px; }
+            .home-hero-column { min-height: 0; }
+            .home-hero { min-height: 280px; }
+            .home-action-column { width: 100%; }
         }
 
         .home-hero::before {
@@ -134,6 +149,7 @@
         }
 
         @media (max-width: 640px) {
+            .home-layout { width: calc(100% - 24px); }
             .home-hero { border-radius: 1.65rem; }
             .home-hero-column { min-height: 0; }
         }

@@ -47,7 +47,7 @@
     </header>
     @yield('content')
     <!-- Footer -->
-    <div class="container mx-auto px-4 py-4 sm:py-8 max-w-md lg:max-w-4xl relative z-10">
+    <div class="site-footer container mx-auto px-4 py-4 sm:py-8 max-w-md lg:max-w-4xl relative z-10">
         <div class="ui-panel rounded-xl p-4 sm:p-6 text-center">
             <p class="text-gray-600 text-sm sm:text-base">&copy; {{ config('app.name') }}. All rights
                 reserved.</p>
