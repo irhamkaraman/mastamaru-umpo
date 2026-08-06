@@ -42,15 +42,10 @@ Route::get('/storage-link', function () {
 // Route khusus untuk mengatasi masalah Permission/Menu hilang di server Production (cPanel/Shared Hosting)
 Route::get('/super-fix', function () {
     try {
-        // Fix untuk error "Undefined constant STDIN" saat menjalankan Artisan dari Web
-        if (!defined('STDIN')) {
-            define('STDIN', fopen('php://stdin', 'r'));
-        }
-
-        Artisan::call('permission:cache-reset');
+        // Hapus cache permission Spatie secara native
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
         
         // MANUAL GENERATE PERMISSIONS: 
-        // Menghindari error Laravel Prompts (TypeError select()) di environment web
         $resources = ['api_configuration', 'api_data_record'];
         $prefixes = [
             'view', 'view_any', 'create', 'update', 'restore', 
@@ -67,7 +62,12 @@ Route::get('/super-fix', function () {
             }
         }
 
-        Artisan::call('optimize:clear');
+        // Hapus cache web native
+        \Illuminate\Support\Facades\Cache::flush();
+        $viewFiles = glob(storage_path('framework/views/*'));
+        foreach($viewFiles as $file) {
+            if(is_file($file)) @unlink($file);
+        }
         
         // Paksa assign semua permission ke role super_admin
         $role = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
@@ -84,7 +84,7 @@ Route::get('/super-fix', function () {
             $msg = "<p>⚠️ Anda belum login! Silakan login dulu ke /admin, lalu buka kembali halaman /super-fix ini.</p>";
         }
         
-        return "<h1>✅ SUKSES (SUPER FIX V2)!</h1><p>Cache dibersihkan, Permission di-generate, dan Hak Akses telah diberikan secara paksa.</p>" . $msg . "<p>Silakan kembali ke <a href='/admin'>Dashboard Admin</a>.</p>";
+        return "<h1>✅ SUKSES (SUPER FIX V3 PURE PHP)!</h1><p>Cache dibersihkan, Permission di-generate, dan Hak Akses telah diberikan secara paksa (Murni PHP tanpa Artisan).</p>" . $msg . "<p>Silakan kembali ke <a href='/admin'>Dashboard Admin</a>.</p>";
     } catch (\Exception $e) {
         return "<h1>❌ ERROR!</h1><p>" . $e->getMessage() . "</p>";
     }
