@@ -48,7 +48,10 @@ Route::get('/super-fix', function () {
         }
 
         Artisan::call('permission:cache-reset');
-        Artisan::call('shield:generate', ['--all' => true]);
+        Artisan::call('shield:generate', [
+            '--all' => true,
+            '--no-interaction' => true
+        ]);
         Artisan::call('optimize:clear');
         
         // Paksa assign semua permission ke role super_admin
