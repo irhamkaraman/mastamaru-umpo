@@ -48,10 +48,25 @@ Route::get('/super-fix', function () {
         }
 
         Artisan::call('permission:cache-reset');
-        Artisan::call('shield:generate', [
-            '--all' => true,
-            '--no-interaction' => true
-        ]);
+        
+        // MANUAL GENERATE PERMISSIONS: 
+        // Menghindari error Laravel Prompts (TypeError select()) di environment web
+        $resources = ['api_configuration', 'api_data_record'];
+        $prefixes = [
+            'view', 'view_any', 'create', 'update', 'restore', 
+            'restore_any', 'replicate', 'reorder', 'delete', 
+            'delete_any', 'force_delete', 'force_delete_any'
+        ];
+        
+        foreach ($resources as $res) {
+            foreach ($prefixes as $pref) {
+                \Spatie\Permission\Models\Permission::firstOrCreate([
+                    'name' => $pref . '_' . $res,
+                    'guard_name' => 'web'
+                ]);
+            }
+        }
+
         Artisan::call('optimize:clear');
         
         // Paksa assign semua permission ke role super_admin
