@@ -14,10 +14,10 @@
                     <div class="absolute top-1/2 right-1/4 w-24 h-24 bg-white rounded-full"></div>
                 </div>
 
-                <div class="relative z-10 flex flex-col md:flex-row md:justify-between md:items-center space-y-6 md:space-y-0">
-                    <div class="text-center md:text-left">
-                        <div class="flex items-center justify-center md:justify-start mb-3">
-                            <div class="bg-white bg-opacity-20 p-3 rounded-full mr-4">
+                <div class="mentor-hero-grid relative z-10">
+                    <div class="mentor-hero-main">
+                        <div class="flex items-center mb-5">
+                            <div class="bg-white bg-opacity-20 p-3 rounded-2xl mr-4">
                                 <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                 </svg>
@@ -27,17 +27,17 @@
                                 <p class="text-blue-100 text-lg">Pemandu Mastamaru 2026</p>
                             </div>
                         </div>
-                        <div class="bg-white bg-opacity-20 rounded-2xl p-4 backdrop-blur-sm">
+                        <div class="mentor-welcome-card bg-white bg-opacity-20 rounded-2xl p-4 backdrop-blur-sm">
                             <p class="text-white text-lg font-medium">Selamat datang kembali,</p>
                             <p class="text-2xl font-bold text-white">{{ $mentor->name }}! 👋</p>
                         </div>
                     </div>
-                    <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4 lg:space-x-6">
-                        <div class="bg-white bg-opacity-20 rounded-2xl p-4 text-center backdrop-blur-sm">
+                    <div class="mentor-hero-side">
+                        <div class="mentor-id-chip bg-white bg-opacity-20 rounded-2xl p-4 text-center backdrop-blur-sm">
                             <p class="text-blue-100 text-sm font-medium">NIM Anda</p>
                             <p class="text-white text-xl font-bold">{{ $mentor->student_id }}</p>
                         </div>
-                        <form action="{{ route('mentor.logout') }}" method="POST" class="inline" id="logout-form">
+                        <form action="{{ route('mentor.logout') }}" method="POST" class="inline mentor-logout-form" id="logout-form">
                             @csrf
                             <button type="button" onclick="confirmLogout()"
                                 class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-6 py-3 rounded-2xl transition-all duration-300 font-medium backdrop-blur-sm border border-white border-opacity-30 hover:scale-105 transform">
@@ -94,7 +94,7 @@
                             <p class="text-gray-600">Kelola kehadiran peserta kelompok Anda</p>
                         </div>
                     </div>
-                    <div class="flex items-center bg-green-50 px-4 py-2 rounded-full border border-green-200">
+                     <div class="mentor-live-pill flex items-center bg-green-50 px-4 py-2 rounded-full border border-green-200">
                         <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse mr-2"></div>
                         <span class="text-sm font-medium text-green-700">Live Session</span>
                     </div>
@@ -397,6 +397,36 @@
     </div>
 
     <style>
+        .mentor-dashboard-page { color:#29344d; }
+        .mentor-dashboard-container { position:relative; }
+        .mentor-dashboard-hero { min-height:250px; display:flex; align-items:center; }
+        .mentor-hero-grid { display:grid; grid-template-columns:minmax(0,1fr) 230px; gap:32px; align-items:center; width:100%; }
+        .mentor-hero-main { min-width:0; }
+        .mentor-hero-side { display:grid; gap:12px; align-content:center; }
+        .mentor-logout-form,.mentor-logout-form button { width:100%; }
+        .mentor-logout-form button { display:flex; align-items:center; justify-content:center; }
+        .mentor-welcome-card { max-width:520px; }
+        .mentor-dashboard-hero::after { content:''; position:absolute; right:8%; bottom:-85px; width:220px; height:220px; border-radius:999px; background:rgba(255,255,255,.34); border:22px solid rgba(255,255,255,.24); pointer-events:none; }
+        .mentor-dashboard-hero h1 { letter-spacing:-.06em; }
+        .mentor-dashboard-hero .bg-white.bg-opacity-20 { border:1px solid rgba(255,255,255,.72); box-shadow:0 12px 28px rgba(75,58,146,.08); }
+        .mentor-id-chip { min-width:128px; }
+        .mentor-live-pill { box-shadow:0 7px 16px rgba(34,197,94,.08); }
+        .mentor-sessions-panel { box-shadow:0 20px 60px rgba(75,58,146,.09); }
+        .mentor-sessions-panel > .flex { padding-bottom:20px; border-bottom:1px solid #eef1f6; }
+        .mentor-sessions-panel > .flex h3 { letter-spacing:-.04em; }
+        .mentor-session-card { background:rgba(255,255,255,.84); box-shadow:0 11px 28px rgba(75,58,146,.06); }
+        .mentor-session-card:hover { border-color:#cbd9ef; box-shadow:0 18px 38px rgba(75,58,146,.12); }
+        .mentor-session-card .bg-gradient-to-br.from-blue-50.to-indigo-50 { background:#eff7ff; border-color:#dbeeff; }
+        .mentor-session-card .bg-gradient-to-br.from-green-50.to-emerald-50 { background:#effbf6; border-color:#d8f2e7; }
+        .mentor-session-card .bg-gradient-to-r.from-purple-50.to-pink-50 { background:#f5f2ff; border-color:#e8e2ff; }
+        .mentor-session-card .session-status-badge span { font-weight:700; }
+        .mentor-session-card a { letter-spacing:.01em; }
+        .mentor-info-card { border:1px solid rgba(255,255,255,.92); box-shadow:0 14px 32px rgba(75,58,146,.07); transition:transform .2s,box-shadow .2s; }
+        .mentor-info-card:hover { transform:translateY(-3px); box-shadow:0 19px 38px rgba(75,58,146,.11); }
+        .mentor-today-card { box-shadow:0 14px 32px rgba(105,98,170,.16); }
+        .mentor-dashboard-container .text-green-600 { color:#159a67; }
+        .mentor-dashboard-container .text-purple-600 { color:#7565b1; }
+        .mentor-dashboard-container > .bg-gradient-to-r { border:1px solid rgba(255,255,255,.9); }
         .mentor-dashboard-page { position:relative; isolation:isolate; }
         .mentor-dashboard-page::before,.mentor-dashboard-page::after { content:''; position:fixed; border-radius:999px; pointer-events:none; z-index:-1; }
         .mentor-dashboard-page::before { width:360px; height:360px; top:120px; right:-210px; background:rgba(186,230,253,.28); }
@@ -416,7 +446,8 @@
         .mentor-today-card { background:linear-gradient(135deg,#769fb5,#8681b9); }
         .mentor-dashboard-container .bg-gradient-to-r.from-green-400.to-blue-500 { background:linear-gradient(135deg,#9bd6c4,#81b7d0); }
         .mentor-dashboard-container .bg-gradient-to-r.from-blue-500.to-purple-500 { background:linear-gradient(135deg,#81b7d0,#938bc8); }
-        @media(max-width:640px) { .mentor-dashboard-container{width:calc(100% - 24px)}.mentor-dashboard-hero{border-radius:1.65rem;padding:20px!important}.mentor-dashboard-hero h1{font-size:2rem}.mentor-dashboard-hero .text-2xl{font-size:1.35rem}.mentor-sessions-panel{padding:18px!important;border-radius:1.65rem}.mentor-session-card{padding:16px!important}.mentor-info-card,.mentor-today-card{border-radius:1.2rem}.mentor-dashboard-container .grid-cols-2{gap:10px}.mentor-dashboard-container .grid-cols-2>div{padding:12px} }
+        @media(max-width:900px) { .mentor-hero-grid{grid-template-columns:minmax(0,1fr) 190px;gap:20px}.mentor-dashboard-hero h1{font-size:2.5rem}.mentor-dashboard-hero .text-2xl{font-size:1.45rem} }
+        @media(max-width:640px) { .mentor-dashboard-container{width:calc(100% - 24px)}.mentor-dashboard-hero{border-radius:1.65rem;padding:20px!important;min-height:0}.mentor-hero-grid{display:block}.mentor-hero-main{margin-bottom:18px}.mentor-dashboard-hero h1{font-size:2rem}.mentor-dashboard-hero .text-2xl{font-size:1.35rem}.mentor-dashboard-hero::after{width:130px;height:130px;right:-65px;bottom:-55px;border-width:13px}.mentor-sessions-panel{padding:18px!important;border-radius:1.65rem}.mentor-session-card{padding:16px!important}.mentor-info-card,.mentor-today-card{border-radius:1.2rem}.mentor-dashboard-container .grid-cols-2{gap:10px}.mentor-dashboard-container .grid-cols-2>div{padding:12px}.mentor-dashboard-hero .mentor-id-chip{min-width:0;width:100%}.mentor-dashboard-hero form{width:100%}.mentor-dashboard-hero form button{width:100%}.mentor-sessions-panel > .flex{padding-bottom:16px} }
         @media(min-width:641px) and (max-width:1023px) { .mentor-dashboard-container{max-width:760px}.mentor-session-card{padding:18px}.mentor-dashboard-hero{padding:24px!important} }
     </style>
 

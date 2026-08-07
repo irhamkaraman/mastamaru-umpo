@@ -3,10 +3,10 @@
 @section('title', 'Detail Presensi - ' . $session->session_name)
 
 @section('content')
-    <div class="container mx-auto px-4 py-4 sm:py-8 max-w-md lg:max-w-6xl">
+    <div class="presence-page container mx-auto px-4 py-6 sm:py-10 max-w-md lg:max-w-6xl">
         <!-- Header Card -->
         <div
-            class="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 rounded-3xl shadow-2xl p-8 mb-8 overflow-hidden">
+            class="presence-hero relative rounded-3xl shadow-2xl p-6 sm:p-8 mb-8 overflow-hidden">
             <!-- Background Pattern -->
             <div class="absolute inset-0 bg-black bg-opacity-10"></div>
             <div class="absolute top-0 right-0 w-64 h-64 bg-white bg-opacity-10 rounded-full -translate-y-32 translate-x-32">
@@ -60,10 +60,10 @@
         </div>
 
         <!-- Statistics Cards -->
-        <div class="grid grid-cols-3 gap-4 lg:gap-6 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 mb-8 presence-stats-grid">
             <!-- Present Card -->
             <div
-                class="group relative bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 overflow-hidden">
+                class="presence-stat-card presence-stat-present group relative rounded-2xl p-5 sm:p-6 text-center shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 overflow-hidden">
                 <div
                     class="absolute inset-0 bg-white bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 </div>
@@ -87,7 +87,7 @@
 
             <!-- Absent Card -->
             <div
-                class="group relative bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 overflow-hidden">
+                class="presence-stat-card presence-stat-absent group relative rounded-2xl p-5 sm:p-6 text-center shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 overflow-hidden">
                 <div
                     class="absolute inset-0 bg-white bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 </div>
@@ -111,7 +111,7 @@
 
             <!-- Total Card -->
             <div
-                class="group relative bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 overflow-hidden md:col-span-1">
+                class="presence-stat-card presence-stat-total group relative rounded-2xl p-5 sm:p-6 text-center shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 overflow-hidden md:col-span-1">
                 <div
                     class="absolute inset-0 bg-white bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 </div>
@@ -136,10 +136,10 @@
         </div>
 
         <!-- QR Scanner and Manual Input Section -->
-        <div class="grid grid-cols-1 gap-6 lg:gap-8 mb-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8 presence-tools-grid">
             <!-- QR Scanner Section -->
             <div
-                class="relative bg-white bg-opacity-80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white border-opacity-20 overflow-hidden">
+                class="presence-tool-card presence-scanner-card relative bg-white bg-opacity-80 backdrop-blur-xl rounded-3xl shadow-2xl p-6 sm:p-8 border border-white border-opacity-20 overflow-hidden">
                 <!-- Background Pattern -->
                 <div class="absolute inset-0 bg-gradient-to-br from-purple-50 to-indigo-50 opacity-50"></div>
                 <div
@@ -261,7 +261,7 @@
 
             <!-- Manual Input Section -->
             <div
-                class="relative bg-white bg-opacity-80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white border-opacity-20 overflow-hidden">
+                class="presence-tool-card presence-manual-card relative bg-white bg-opacity-80 backdrop-blur-xl rounded-3xl shadow-2xl p-6 sm:p-8 border border-white border-opacity-20 overflow-hidden">
                 <!-- Background Pattern -->
                 <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-cyan-50 opacity-50"></div>
                 <div
@@ -440,7 +440,7 @@
 
             <!-- Attendance Lists -->
             <div
-                class="relative bg-white bg-opacity-80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 lg:p-10 border border-white border-opacity-20 overflow-hidden">
+                class="presence-list-card relative bg-white bg-opacity-80 backdrop-blur-xl rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-10 border border-white border-opacity-20 overflow-hidden">
                 <!-- Background Pattern -->
                 <div class="absolute inset-0 bg-gradient-to-br from-purple-50 to-pink-50 opacity-50"></div>
                 <div
@@ -1644,6 +1644,46 @@
                 });
             </script>
             <style>
+                .presence-page { width:calc(100% - 32px); max-width:1180px; color:#29344d; }
+                .presence-hero { background:linear-gradient(135deg,#eaf6ff 0%,#f1edff 58%,#effbf5 100%); border:1px solid rgba(155,173,204,.2); color:#25204b; }
+                .presence-hero .text-white { color:#25204b!important; }
+                .presence-hero .text-indigo-100 { color:#68708a!important; }
+                .presence-hero .text-yellow-200 { color:#6f70a2!important; }
+                .presence-hero .bg-white.bg-opacity-20,.presence-hero .bg-white.bg-opacity-15,.presence-hero .bg-white.bg-opacity-10 { background:rgba(255,255,255,.65); border-color:rgba(255,255,255,.85); }
+                .presence-hero a { background:rgba(255,255,255,.66); border-color:rgba(255,255,255,.9); color:#536a9b; }
+                .presence-hero a:hover { background:rgba(255,255,255,.9); }
+                .presence-stat-card { min-height:210px; }
+                .presence-stat-present { background:linear-gradient(135deg,#83cdb6,#55b795); }
+                .presence-stat-absent { background:linear-gradient(135deg,#f1a2a8,#df747f); }
+                .presence-stat-total { background:linear-gradient(135deg,#8eb8d4,#7d87c7); }
+                .presence-tool-card,.presence-list-card { border-color:rgba(255,255,255,.9); box-shadow:0 20px 55px rgba(75,58,146,.09); }
+                .presence-scanner-card { background:rgba(250,248,255,.84); }
+                .presence-manual-card { background:rgba(248,252,255,.84); }
+                .presence-list-card { background:rgba(255,255,255,.82); }
+                .presence-scanner-card #qr-placeholder { background:linear-gradient(135deg,#f3f0ff,#eef7ff); border-color:#d8d2ff; }
+                .presence-scanner-card #qr-placeholder p { color:#6f70a2; }
+                .presence-manual-card input { background:rgba(255,255,255,.88); border-color:#dbe5f0; }
+                .presence-manual-card button[type="submit"] { background:linear-gradient(135deg,#769fb5,#6873b5); }
+                .presence-list-card > .relative > .flex { border-bottom:1px solid #eef1f6; padding-bottom:18px; }
+                @media(max-width:640px) {
+                    .presence-page { width:calc(100% - 24px); padding-top:18px; }
+                    .presence-hero { border-radius:1.65rem; padding:20px!important; }
+                    .presence-hero h1 { font-size:1.7rem; }
+                    .presence-hero .lg\:flex { display:block; }
+                    .presence-hero .text-center { text-align:left; }
+                    .presence-hero .text-center > div { text-align:left; }
+                    .presence-hero .text-center a { width:100%; justify-content:center; }
+                    .presence-stats-grid { gap:10px; }
+                    .presence-stat-card { min-height:0; padding:18px!important; display:grid; grid-template-columns:54px minmax(0,1fr); align-items:center; text-align:left; gap:12px; }
+                    .presence-stat-card .relative { display:contents; }
+                    .presence-stat-card .relative > div:first-child { grid-row:span 2; margin:0; width:54px; height:54px; }
+                    .presence-stat-card .relative > div:nth-child(2) { margin:0; }
+                    .presence-stat-card .relative > div:nth-child(3) { margin:0; }
+                    .presence-tool-card,.presence-list-card { border-radius:1.65rem; padding:18px!important; }
+                    .presence-tools-grid { gap:12px; }
+                    .presence-scanner-card #qr-placeholder,.presence-scanner-card #qr-video,.presence-scanner-card #qr-canvas { height:260px!important; }
+                }
+                @media(min-width:641px) and (max-width:1023px) { .presence-page{max-width:760px}.presence-hero{padding:24px!important}.presence-stat-card{min-height:180px;padding:18px}.presence-tool-card,.presence-list-card{padding:22px} }
                 /* Custom Responsive Styles */
                 @media (max-width: 640px) {
                     .container {
