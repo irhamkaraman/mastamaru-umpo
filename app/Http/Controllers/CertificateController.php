@@ -31,7 +31,7 @@ class CertificateController extends Controller
 
         // Generate
         $manager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
-        $image = $manager->read($templatePath);
+        $image = $manager->decodePath($templatePath);
 
         // Helper untuk menulis teks
         $writeText = function ($img, $text, $x, $y, $size) use ($fontPath, $config) {

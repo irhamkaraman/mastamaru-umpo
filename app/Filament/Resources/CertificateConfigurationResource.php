@@ -136,7 +136,7 @@ class CertificateConfigurationResource extends Resource
 
                         try {
                             $manager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
-                            $image = $manager->read($templatePath);
+                            $image = $manager->decodePath($templatePath);
 
                             $writeText = function ($img, $text, $x, $y, $size) use ($fontPath, $record) {
                                 if (!$text || $x === null || $y === null) return;
@@ -159,7 +159,7 @@ class CertificateConfigurationResource extends Resource
                                 $writeText($image, "FAKULTAS DUMMY", $record->faculty_x, $record->faculty_y, $record->font_size_nim);
                             }
 
-                            $dataUri = $image->toPng()->toDataUri();
+                            $dataUri = $image->encode()->toDataUri();
                             
                             return new \Illuminate\Support\HtmlString('<div style="text-align: center;"><img src="' . $dataUri . '" style="max-width: 100%; border-radius: 0.5rem; border: 1px solid #ccc; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"></div><p style="margin-top: 1rem; text-align: center; color: #666; font-size: 0.875rem;">Sesuaikan koordinat X dan Y dengan cara mengedit konfigurasi ini.</p>');
                         } catch (\Exception $e) {
