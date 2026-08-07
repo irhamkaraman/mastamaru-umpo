@@ -46,8 +46,7 @@ class EditCertificateConfiguration extends EditRecord
                                 $font->file($fontPath);
                                 $font->size($size);
                                 $font->color($record->text_color ?? '#000000');
-                                $font->align('left');
-                                $font->valign('top');
+                                $font->align('left', 'top');
                             });
                         };
 
