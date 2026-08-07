@@ -61,10 +61,21 @@ class HomeController extends Controller
             'mentor' => $student->mentor ? $student->mentor->name : 'Belum ditentukan'
         ], JSON_UNESCAPED_UNICODE);
 
+        // Cek Sertifikat
+        $certDir = storage_path('app/public/certificates');
+        $certificateFile = null;
+        if (is_dir($certDir)) {
+            $files = glob($certDir . '/' . $student->student_id . '_*.png');
+            if (!empty($files)) {
+                $certificateFile = asset('storage/certificates/' . basename($files[0]));
+            }
+        }
+
         return view('home.student-info', [
             'student' => $student,
             'uniqueCode' => $uniqueCode,
-            'rawBarcode' => $rawBarcode
+            'rawBarcode' => $rawBarcode,
+            'certificateUrl' => $certificateFile
         ]);
     }
 

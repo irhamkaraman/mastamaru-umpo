@@ -100,6 +100,27 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Sertifikat Section (Jika Ada) -->
+                @if(isset($certificateUrl) && $certificateUrl)
+                <div class="ui-panel rounded-[2rem] p-6 sm:p-8 border-2 border-green-200">
+                    <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM6.293 9.293a1 1 0 011.414 0L10 11.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                        Sertifikat Anda
+                    </h3>
+                    <div class="bg-green-50 rounded-lg p-4 text-center">
+                        <p class="text-sm text-green-700 mb-4">Selamat! Sertifikat kegiatan Anda telah diterbitkan.</p>
+                        <a href="{{ $certificateUrl }}" download class="bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-medium py-2 px-6 rounded-xl transition duration-200 inline-flex items-center shadow-lg shadow-green-200">
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                            Download Sertifikat
+                        </a>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
 

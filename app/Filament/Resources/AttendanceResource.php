@@ -419,11 +419,55 @@ class AttendanceResource extends Resource
                     ->modalWidth('md')
             ])
             ->actions([
+                Tables\Actions\Action::make('generate_certificate')
+                    ->label('Sertifikat')
+                    ->icon('heroicon-o-document-text')
+                    ->color('info')
+                    ->action(function (Attendance $record) {
+                        try {
+                            app(\App\Http\Controllers\CertificateController::class)->generateForAttendance($record);
+                            Notification::make()
+                                ->title('Sertifikat Berhasil Dibuat')
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Gagal Membuat Sertifikat')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('generate_certificates')
+                        ->label('Generate Sertifikat')
+                        ->icon('heroicon-o-document-duplicate')
+                        ->color('info')
+                        ->requiresConfirmation()
+                        ->modalHeading('Generate Sertifikat Masal')
+                        ->modalDescription('Apakah Anda yakin ingin membuat sertifikat untuk peserta yang dipilih? Proses ini mungkin memakan waktu beberapa saat.')
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            $success = 0;
+                            $controller = app(\App\Http\Controllers\CertificateController::class);
+                            foreach ($records as $record) {
+                                try {
+                                    $controller->generateForAttendance($record);
+                                    $success++;
+                                } catch (\Exception $e) {
+                                    // Skip on error
+                                }
+                            }
+                            
+                            Notification::make()
+                                ->title('Selesai')
+                                ->body("Berhasil membuat $success sertifikat.")
+                                ->success()
+                                ->send();
+                        }),
                     DeleteBulkAction::make(),
                 ]),
             ]);
