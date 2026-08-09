@@ -18,6 +18,12 @@ class CertificateConfigurationResource extends Resource
     protected static ?string $model = CertificateConfiguration::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    
+    protected static ?string $navigationLabel = 'Konfigurasi Sertifikat';
+    
+    protected static ?string $modelLabel = 'Konfigurasi Sertifikat';
+    
+    protected static ?string $pluralModelLabel = 'Konfigurasi Sertifikat';
 
     public static function form(Form $form): Form
     {
