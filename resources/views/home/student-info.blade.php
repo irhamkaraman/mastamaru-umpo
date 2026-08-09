@@ -99,11 +99,9 @@
                             <span class="text-sm font-semibold text-gray-800">{{ $student->mentor->name }}</span>
                         </div>
                     </div>
-                    </div>
                 </div>
             </div>
         </div>
-
         <!-- Sertifikat Section (Full Width Grid) -->
         <div class="grid grid-cols-1 gap-6 mb-6">
             @if($student->status === 'lulus' && isset($certificateUrl) && $certificateUrl)
