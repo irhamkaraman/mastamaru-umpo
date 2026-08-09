@@ -46,8 +46,18 @@ class CertificateConfigurationResource extends Resource
                             ->required(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Koordinat Posisi Teks (X, Y)')
-                    ->description('Tentukan posisi X (Kiri-Kanan) dan Y (Atas-Bawah) dalam satuan pixel dari pojok kiri atas gambar template.')
+                Forms\Components\Section::make('Visual Editor')
+                    ->description('Silakan geser-geser (drag & drop) kotak di bawah ini untuk mengatur koordinatnya secara visual. Pastikan Anda sudah menyimpan (Save) gambar Background terlebih dahulu.')
+                    ->schema([
+                        Forms\Components\ViewField::make('visual_editor')
+                            ->label('')
+                            ->view('filament.forms.components.certificate-coordinate-picker')
+                            ->columnSpanFull()
+                            ->dehydrated(false),
+                    ]),
+
+                Forms\Components\Section::make('Koordinat Posisi Teks (X, Y) - Fine Tuning')
+                    ->description('Tentukan posisi X (Kiri-Kanan) dan Y (Atas-Bawah) secara spesifik jika diperlukan (otomatis terisi saat menggunakan Visual Editor).')
                     ->schema([
                         Forms\Components\Fieldset::make('Nama Peserta')
                             ->schema([
@@ -75,7 +85,7 @@ class CertificateConfigurationResource extends Resource
                                 Forms\Components\TextInput::make('faculty_x')->numeric(),
                                 Forms\Components\TextInput::make('faculty_y')->numeric(),
                             ])->columns(2),
-                    ]),
+                    ])->collapsed(),
                     
                 Forms\Components\Section::make('Pengaturan Teks Global')
                     ->schema([
