@@ -113,9 +113,23 @@
                     startTop: 0,
 
                     get imageUrl() {
-                        if (typeof this.bg_image === 'string' && this.bg_image !== '') {
-                            return '/storage/' + this.bg_image;
+                        let path = this.bg_image;
+                        
+                        // Dalam Filament v3, bg_image kadang berupa array atau object
+                        if (typeof path === 'object' && path !== null) {
+                            // Coba ambil value pertama jika berupa dictionary/array
+                            const values = Object.values(path);
+                            if (values.length > 0) {
+                                path = values[0];
+                            }
                         }
+
+                        if (typeof path === 'string' && path !== '') {
+                            // Pastikan url tidak double slash
+                            if (path.startsWith('http')) return path;
+                            return '/storage/' + path;
+                        }
+                        
                         return null;
                     },
 
