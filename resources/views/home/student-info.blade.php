@@ -99,34 +99,62 @@
                             <span class="text-sm font-semibold text-gray-800">{{ $student->mentor->name }}</span>
                         </div>
                     </div>
-                </div>
-
-                <!-- Sertifikat Section (Jika Ada) -->
-                @if(isset($certificateUrl) && $certificateUrl)
-                <div class="ui-panel rounded-[2rem] p-6 sm:p-8 border-2 border-green-200">
-                    <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM6.293 9.293a1 1 0 011.414 0L10 11.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                        </svg>
-                        Sertifikat Anda
-                    </h3>
-                    <div class="bg-green-50 rounded-lg p-4 text-center">
-                        <p class="text-sm text-green-700 mb-4">Selamat! Sertifikat kegiatan Anda telah diterbitkan.</p>
-                        
-                        <div class="mb-4 flex justify-center">
-                            <img src="{{ $certificateUrl }}" alt="Sertifikat Anda" class="max-w-full h-auto rounded shadow-sm border border-green-200" style="max-height: 400px;">
-                        </div>
-
-                        <a href="{{ $certificateUrl }}" download class="bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-medium py-2 px-6 rounded-xl transition duration-200 inline-flex items-center shadow-lg shadow-green-200">
-                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                            </svg>
-                            Download Sertifikat
-                        </a>
                     </div>
                 </div>
-                @endif
             </div>
+        </div>
+
+        <!-- Sertifikat Section (Full Width Grid) -->
+        <div class="grid grid-cols-1 gap-6 mb-6">
+            @if($student->status === 'lulus' && isset($certificateUrl) && $certificateUrl)
+            <div class="ui-panel rounded-[2rem] p-6 sm:p-8 border-2 border-green-200">
+                <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM6.293 9.293a1 1 0 011.414 0L10 11.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                    Sertifikat Kelulusan
+                </h3>
+                <div class="bg-green-50 rounded-lg p-4 text-center">
+                    <p class="text-sm text-green-700 mb-4">Selamat! Anda dinyatakan <strong class="uppercase">LULUS</strong> MASTAMARU 2026. Sertifikat kegiatan Anda telah diterbitkan.</p>
+                    
+                    <div class="mb-4 flex justify-center">
+                        <img src="{{ $certificateUrl }}" alt="Sertifikat Anda" class="max-w-full h-auto rounded shadow-sm border border-green-200" style="max-height: 400px;">
+                    </div>
+
+                    <a href="{{ $certificateUrl }}" download class="bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-medium py-2 px-6 rounded-xl transition duration-200 inline-flex items-center shadow-lg shadow-green-200">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                        Download Sertifikat
+                    </a>
+                </div>
+            </div>
+            @elseif($student->status === 'gagal')
+            <div class="ui-panel rounded-[2rem] p-6 sm:p-8 border-2 border-red-200 bg-red-50">
+                <h3 class="text-lg sm:text-xl font-semibold text-red-800 mb-4 flex items-center justify-center">
+                    <svg class="w-6 h-6 mr-2 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    Informasi Kelulusan
+                </h3>
+                <div class="text-center">
+                    <p class="text-base text-red-700 font-medium mb-2">Mohon maaf, Anda dinyatakan <strong>TIDAK LULUS</strong> MASTAMARU 2026.</p>
+                    <p class="text-sm text-red-600">Anda diwajibkan untuk mengikuti kembali kegiatan MASTAMARU pada tahun 2027 mendatang.</p>
+                </div>
+            </div>
+            @else
+            <div class="ui-panel rounded-[2rem] p-6 sm:p-8 border-2 border-amber-200 bg-amber-50">
+                <h3 class="text-lg sm:text-xl font-semibold text-amber-800 mb-2 flex items-center justify-center">
+                    <svg class="w-6 h-6 mr-2 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Sertifikat Sedang Diproses
+                </h3>
+                <div class="text-center">
+                    <p class="text-sm text-amber-700">Rangkaian acara belum selesai atau data kelulusan Anda sedang dalam proses rekapitulasi oleh panitia. Sertifikat akan muncul di sini setelah Anda dinyatakan lulus.</p>
+                </div>
+            </div>
+            @endif
         </div>
 
         <!-- Tombol Aksi -->

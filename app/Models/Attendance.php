@@ -37,6 +37,7 @@ class Attendance extends Model
         'study_program',
         'raw_barcode',
         'unique_code',
+        'status',
     ];
 
     /**

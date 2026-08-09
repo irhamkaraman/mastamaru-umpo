@@ -169,6 +169,21 @@ class AttendanceResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->label('Nama Pendamping'),
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'lulus' => 'success',
+                        'gagal' => 'danger',
+                        default => 'warning',
+                    })
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'lulus' => 'LULUS',
+                        'gagal' => 'GAGAL',
+                        default => 'PROSES',
+                    })
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('unique_code')
                     ->searchable()
                     ->sortable()
@@ -419,15 +434,18 @@ class AttendanceResource extends Resource
                     ->modalWidth('md')
             ])
             ->actions([
-                Tables\Actions\Action::make('generate_certificate')
-                    ->label('Sertifikat')
-                    ->icon('heroicon-o-document-text')
-                    ->color('info')
+                Tables\Actions\Action::make('mark_lulus')
+                    ->label('Lulus')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Tandai Lulus & Generate Sertifikat')
                     ->action(function (Attendance $record) {
                         try {
+                            $record->update(['status' => 'lulus']);
                             app(\App\Http\Controllers\CertificateController::class)->generateForAttendance($record);
                             Notification::make()
-                                ->title('Sertifikat Berhasil Dibuat')
+                                ->title('Berhasil Ditandai Lulus & Sertifikat Dibuat')
                                 ->success()
                                 ->send();
                         } catch (\Exception $e) {
@@ -438,33 +456,80 @@ class AttendanceResource extends Resource
                                 ->send();
                         }
                     }),
+                Tables\Actions\Action::make('mark_gagal')
+                    ->label('Gagal')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Tandai Tidak Lulus')
+                    ->action(function (Attendance $record) {
+                        $record->update(['status' => 'gagal']);
+                        // Hapus sertifikat jika sebelumnya pernah digenerate
+                        $certDir = storage_path('app/public/certificates');
+                        $oldFiles = glob($certDir . '/' . $record->student_id . '_*.png');
+                        if($oldFiles) {
+                            foreach ($oldFiles as $file) {
+                                @unlink($file);
+                            }
+                        }
+                        Notification::make()
+                            ->title('Peserta Ditandai Tidak Lulus')
+                            ->success()
+                            ->send();
+                    }),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('generate_certificates')
-                        ->label('Generate Sertifikat')
-                        ->icon('heroicon-o-document-duplicate')
-                        ->color('info')
+                    Tables\Actions\BulkAction::make('mark_lulus_bulk')
+                        ->label('Tandai Lulus & Generate')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
                         ->requiresConfirmation()
-                        ->modalHeading('Generate Sertifikat Masal')
-                        ->modalDescription('Apakah Anda yakin ingin membuat sertifikat untuk peserta yang dipilih? Proses ini mungkin memakan waktu beberapa saat.')
+                        ->modalHeading('Tandai Lulus Masal')
+                        ->modalDescription('Apakah Anda yakin ingin menandai lulus dan membuat sertifikat untuk peserta yang dipilih?')
                         ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
                             $success = 0;
                             $controller = app(\App\Http\Controllers\CertificateController::class);
                             foreach ($records as $record) {
                                 try {
+                                    $record->update(['status' => 'lulus']);
                                     $controller->generateForAttendance($record);
                                     $success++;
                                 } catch (\Exception $e) {
                                     // Skip on error
                                 }
                             }
-                            
                             Notification::make()
                                 ->title('Selesai')
-                                ->body("Berhasil membuat $success sertifikat.")
+                                ->body("Berhasil menandai lulus dan membuat $success sertifikat.")
+                                ->success()
+                                ->send();
+                        }),
+                    Tables\Actions\BulkAction::make('mark_gagal_bulk')
+                        ->label('Tandai Gagal')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Tandai Gagal Masal')
+                        ->modalDescription('Apakah Anda yakin ingin menandai tidak lulus peserta yang dipilih? (Sertifikat mereka juga akan dihapus jika ada)')
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            $success = 0;
+                            $certDir = storage_path('app/public/certificates');
+                            foreach ($records as $record) {
+                                $record->update(['status' => 'gagal']);
+                                $oldFiles = glob($certDir . '/' . $record->student_id . '_*.png');
+                                if($oldFiles) {
+                                    foreach ($oldFiles as $file) {
+                                        @unlink($file);
+                                    }
+                                }
+                                $success++;
+                            }
+                            Notification::make()
+                                ->title('Selesai')
+                                ->body("Berhasil menandai tidak lulus $success peserta.")
                                 ->success()
                                 ->send();
                         }),
