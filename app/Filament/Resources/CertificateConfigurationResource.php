@@ -70,27 +70,47 @@ class CertificateConfigurationResource extends Resource
                                 Forms\Components\TextInput::make('name_x')->required()->numeric()->default(100),
                                 Forms\Components\TextInput::make('name_y')->required()->numeric()->default(200),
                                 Forms\Components\TextInput::make('font_size_name')->required()->numeric()->default(32),
-                            ])->columns(3),
+                                Forms\Components\FileUpload::make('font_file_name')
+                                    ->label('File Font (.ttf)')
+                                    ->acceptedFileTypes(['font/ttf', 'application/x-font-ttf', '.ttf'])
+                                    ->directory('fonts')
+                                    ->helperText('Biarkan kosong untuk font default.'),
+                            ])->columns(4),
                         
                         Forms\Components\Fieldset::make('NIM Peserta')
                             ->schema([
                                 Forms\Components\TextInput::make('nim_x')->required()->numeric()->default(100),
                                 Forms\Components\TextInput::make('nim_y')->required()->numeric()->default(250),
                                 Forms\Components\TextInput::make('font_size_nim')->required()->numeric()->default(24),
-                            ])->columns(3),
+                                Forms\Components\FileUpload::make('font_file_nim')
+                                    ->label('File Font (.ttf)')
+                                    ->acceptedFileTypes(['font/ttf', 'application/x-font-ttf', '.ttf'])
+                                    ->directory('fonts')
+                                    ->helperText('Biarkan kosong untuk font default.'),
+                            ])->columns(4),
                             
                         Forms\Components\Fieldset::make('Nomor Sertifikat')
                             ->schema([
                                 Forms\Components\TextInput::make('number_x')->required()->numeric()->default(100),
                                 Forms\Components\TextInput::make('number_y')->required()->numeric()->default(300),
                                 Forms\Components\TextInput::make('font_size_number')->required()->numeric()->default(24),
-                            ])->columns(3),
+                                Forms\Components\FileUpload::make('font_file_number')
+                                    ->label('File Font (.ttf)')
+                                    ->acceptedFileTypes(['font/ttf', 'application/x-font-ttf', '.ttf'])
+                                    ->directory('fonts')
+                                    ->helperText('Biarkan kosong untuk font default.'),
+                            ])->columns(4),
                             
                         Forms\Components\Fieldset::make('Fakultas (Opsional)')
                             ->schema([
                                 Forms\Components\TextInput::make('faculty_x')->numeric(),
                                 Forms\Components\TextInput::make('faculty_y')->numeric(),
-                            ])->columns(2),
+                                Forms\Components\FileUpload::make('font_file_faculty')
+                                    ->label('File Font (.ttf)')
+                                    ->acceptedFileTypes(['font/ttf', 'application/x-font-ttf', '.ttf'])
+                                    ->directory('fonts')
+                                    ->helperText('Biarkan kosong untuk font default.'),
+                            ])->columns(3),
                     ])->collapsed(),
                     
                 Forms\Components\Section::make('Pengaturan Teks Global')
@@ -154,24 +174,31 @@ class CertificateConfigurationResource extends Resource
                             $manager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
                             $image = $manager->decodePath($templatePath);
 
-                            $writeText = function ($img, $text, $x, $y, $size) use ($fontPath, $record) {
+                            $writeText = function ($img, $text, $x, $y, $size, $customFontFile = null) use ($fontPath, $record) {
                                 if (!$text || $x === null || $y === null) return;
-                                $img->text($text, $x, $y, function ($font) use ($fontPath, $record, $size) {
-                                    $font->file($fontPath);
+                                $actualFontPath = $fontPath;
+                                if ($customFontFile) {
+                                    $customPath = storage_path('app/public/' . $customFontFile);
+                                    if (file_exists($customPath)) {
+                                        $actualFontPath = $customPath;
+                                    }
+                                }
+                                $img->text($text, $x, $y, function ($font) use ($actualFontPath, $record, $size) {
+                                    $font->file($actualFontPath);
                                     $font->size($size);
                                     $font->color($record->text_color ?? '#000000');
                                     $font->align('left', 'top');
                                 });
                             };
 
-                            $writeText($image, "NAMA PESERTA DUMMY", $record->name_x, $record->name_y, $record->font_size_name);
-                            $writeText($image, "21000000", $record->nim_x, $record->nim_y, $record->font_size_nim);
+                            $writeText($image, "NAMA PESERTA DUMMY", $record->name_x, $record->name_y, $record->font_size_name, $record->font_file_name);
+                            $writeText($image, "21000000", $record->nim_x, $record->nim_y, $record->font_size_nim, $record->font_file_nim);
                             
                             $certificateNumber = str_replace('{seq}', '001', $record->number_format);
-                            $writeText($image, $certificateNumber, $record->number_x, $record->number_y, $record->font_size_number);
+                            $writeText($image, $certificateNumber, $record->number_x, $record->number_y, $record->font_size_number, $record->font_file_number);
                             
                             if ($record->faculty_x !== null) {
-                                $writeText($image, "FAKULTAS DUMMY", $record->faculty_x, $record->faculty_y, $record->font_size_nim);
+                                $writeText($image, "FAKULTAS DUMMY", $record->faculty_x, $record->faculty_y, $record->font_size_nim, $record->font_file_faculty);
                             }
 
                             $dataUri = $image->encode()->toDataUri();

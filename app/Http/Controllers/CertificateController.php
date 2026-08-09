@@ -34,22 +34,29 @@ class CertificateController extends Controller
         $image = $manager->decodePath($templatePath);
 
         // Helper untuk menulis teks
-        $writeText = function ($img, $text, $x, $y, $size) use ($fontPath, $config) {
+        $writeText = function ($img, $text, $x, $y, $size, $customFontFile = null) use ($fontPath, $config) {
             if (!$text || $x === null || $y === null) return;
-            $img->text($text, $x, $y, function ($font) use ($fontPath, $config, $size) {
-                $font->file($fontPath);
+            $actualFontPath = $fontPath;
+            if ($customFontFile) {
+                $customPath = storage_path('app/public/' . $customFontFile);
+                if (file_exists($customPath)) {
+                    $actualFontPath = $customPath;
+                }
+            }
+            $img->text($text, $x, $y, function ($font) use ($actualFontPath, $config, $size) {
+                $font->file($actualFontPath);
                 $font->size($size);
                 $font->color($config->text_color ?? '#000000');
                 $font->align('left', 'top');
             });
         };
 
-        $writeText($image, $attendance->name, $config->name_x, $config->name_y, $config->font_size_name);
-        $writeText($image, $attendance->student_id, $config->nim_x, $config->nim_y, $config->font_size_nim);
-        $writeText($image, $certificateNumber, $config->number_x, $config->number_y, $config->font_size_number);
+        $writeText($image, $attendance->name, $config->name_x, $config->name_y, $config->font_size_name, $config->font_file_name);
+        $writeText($image, $attendance->student_id, $config->nim_x, $config->nim_y, $config->font_size_nim, $config->font_file_nim);
+        $writeText($image, $certificateNumber, $config->number_x, $config->number_y, $config->font_size_number, $config->font_file_number);
         
         if ($attendance->faculty) {
-            $writeText($image, $attendance->faculty, $config->faculty_x, $config->faculty_y, $config->font_size_nim);
+            $writeText($image, $attendance->faculty, $config->faculty_x, $config->faculty_y, $config->font_size_nim, $config->font_file_faculty);
         }
 
         // Ensure directory exists

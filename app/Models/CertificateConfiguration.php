@@ -24,6 +24,11 @@ class CertificateConfiguration extends Model
         'font_size_name',
         'font_size_nim',
         'font_size_number',
+        'font_size_faculty',
+        'font_file_name',
+        'font_file_nim',
+        'font_file_number',
+        'font_file_faculty',
         'text_color',
         'is_active',
     ];
