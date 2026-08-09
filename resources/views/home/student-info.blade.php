@@ -117,8 +117,8 @@
                 <div class="bg-green-50 rounded-lg p-4 text-center">
                     <p class="text-sm text-green-700 mb-4">Selamat! Anda dinyatakan <strong class="uppercase">LULUS</strong> MASTAMARU 2026. Sertifikat kegiatan Anda telah diterbitkan.</p>
                     
-                    <div class="mb-4 flex justify-center">
-                        <img src="{{ $certificateUrl }}" alt="Sertifikat Anda" class="max-w-full h-auto rounded shadow-sm border border-green-200" style="max-height: 400px;">
+                    <div class="mb-6 flex justify-center">
+                        <img src="{{ $certificateUrl }}" alt="Sertifikat Anda" class="w-full max-w-2xl h-auto rounded-xl shadow-md border-4 border-white">
                     </div>
 
                     <a href="{{ $certificateUrl }}" download class="bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-medium py-2 px-6 rounded-xl transition duration-200 inline-flex items-center shadow-lg shadow-green-200">
