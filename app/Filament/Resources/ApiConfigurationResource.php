@@ -50,6 +50,7 @@ class ApiConfigurationResource extends Resource
                             ->label('URL Endpoint')
                             ->placeholder('https://api.umpo.ac.id/students')
                             ->helperText('Alamat URL lengkap ke API tujuan.')
+                            ->live(onBlur: true)
                             ->required(),
                         Select::make('method')
                             ->label('Metode HTTP')

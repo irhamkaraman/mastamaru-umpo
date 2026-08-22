@@ -56,6 +56,22 @@ class ApiDataRecordResource extends Resource
                             ->helperText('Opsional. Simpan ID unik (Primary Key) dari sistem asal (pihak ketiga) untuk menghindari duplikasi data.'),
                     ])->columns(2),
                     
+                Forms\Components\Placeholder::make('tutorial_sync')
+                    ->label('')
+                    ->content(new \Illuminate\Support\HtmlString('
+                        <div class="p-4 rounded-lg bg-warning-50 border border-warning-200 dark:bg-warning-900/30 dark:border-warning-800 text-warning-800 dark:text-warning-300 text-sm mb-2 shadow-sm">
+                            <strong class="block mb-2 text-base flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Langkah Memasukkan Data ke Tabel Peserta (Insert)</strong>
+                            <ol class="list-decimal ml-5 space-y-1">
+                                <li>Klik tombol hijau <strong>Tarik Data Sekarang (Fetch)</strong> untuk memuat data mentah ke tabel sementara di bawah.</li>
+                                <li>Pilih dan sesuaikan pasangan antar atribut (Mapping) di tabel <strong>Pemetaan Kolom</strong> (contoh: NIM disilang dengan nim).</li>
+                                <li>Klik tombol <strong class="text-primary-600 dark:text-primary-400">Save Changes</strong> (di pojok kanan atas/bawah) untuk menyimpan aturan pemetaan (Wajib!).</li>
+                                <li>Terakhir, klik tombol kuning <strong>Sinkronisasi ke Data Peserta</strong> untuk memasukkan data-data tersebut secara nyata ke Database.</li>
+                            </ol>
+                        </div>
+                    '))
+                    ->columnSpanFull()
+                    ->hidden(fn (?ApiDataRecord $record) => $record && $record->is_imported),
+                    
                 Actions::make([
                     Action::make('fetch_data')
                         ->label('Tarik Data Sekarang (Fetch)')
@@ -77,14 +93,62 @@ class ApiDataRecordResource extends Resource
 
                             try {
                                 $request = Http::timeout(30);
-                                if (!empty($config->headers)) {
-                                    $request->withHeaders($config->headers);
+                                $headers = $config->headers ?? [];
+                                $endpoint = $config->endpoint;
+                                
+                                // Auto-fetch and inject dynamic token for UMPO APIs
+                                if (str_contains($endpoint, '76.76.76.185') || str_contains($endpoint, 'api.umpo.ac.id') || str_contains($endpoint, 'apikey.umpo.ac.id')) {
+                                    $accesscode = 'd6e2ec2be6d9527a21f034e1bee325b5ce4d2154cb0475943f1880c3fcbcee11';
+                                    
+                                    try {
+                                        $tokenUrl = 'https://apikey.umpo.ac.id/generate-token?' . http_build_query([
+                                            'apiLink' => 'http://76.76.76.185:8088/api-key/mahasiswas/find-all',
+                                            'accesscodeTalker' => $accesscode
+                                        ]);
+                                        
+                                        $tokenResponse = Http::timeout(10)
+                                            ->withoutVerifying()
+                                            ->withHeaders(['Accept' => 'application/json'])
+                                            ->post($tokenUrl);
+                                            
+                                        if ($tokenResponse->successful()) {
+                                            $tokenData = $tokenResponse->json();
+                                            $finalToken = $tokenData['token'] ?? null;
+                                            
+                                            if ($finalToken) {
+                                                // Check for existing Authorization header ignoring case
+                                                $authReplaced = false;
+                                                foreach ($headers as $k => $v) {
+                                                    if (strtolower($k) === 'authorization') {
+                                                        $headers[$k] = $finalToken;
+                                                        $authReplaced = true;
+                                                    }
+                                                }
+                                                if (!$authReplaced) {
+                                                    $headers['Authorization'] = $finalToken;
+                                                }
+                                            }
+                                        } else {
+                                            \Log::error('UMPO Token API Failed', ['status' => $tokenResponse->status(), 'body' => $tokenResponse->body()]);
+                                        }
+                                    } catch (\Exception $e) {
+                                        \Log::error('UMPO Token API Exception', ['error' => $e->getMessage()]);
+                                    }
+                                }
+
+                                if (!empty($headers)) {
+                                    $request = $request->withHeaders($headers);
                                 }
                                 
                                 $endpoint = $config->endpoint;
                                 $method = strtolower($config->method ?? 'get');
                                 
                                 $payload = $config->body_payload ? json_decode($config->body_payload, true) : [];
+                                
+                                // Disable SSL verification for UMPO APIs just in case
+                                if (str_contains($endpoint, 'umpo.ac.id') || str_contains($endpoint, '76.76.76.185')) {
+                                    $request = $request->withoutVerifying();
+                                }
                                 
                                 if ($method === 'get') {
                                     $response = $request->get($endpoint, $config->query_params ?? []);
@@ -106,20 +170,29 @@ class ApiDataRecordResource extends Resource
                                         $firstItem = $dataArray[0];
                                         if (is_array($firstItem)) {
                                             $keys = array_keys($firstItem);
+                                            
+                                            $dbColumns = [
+                                                'student_id', 'name', 'faculty', 'study_program', 'phone_number', 'gender'
+                                            ];
+                                            
                                             $mapping = [];
-                                            foreach ($keys as $key) {
+                                            foreach ($dbColumns as $dbCol) {
                                                 $guess = null;
-                                                $keyLower = strtolower($key);
-                                                if (str_contains($keyLower, 'nim') || str_contains($keyLower, 'student_id')) $guess = 'student_id';
-                                                elseif (str_contains($keyLower, 'nama') || str_contains($keyLower, 'name')) $guess = 'name';
-                                                elseif (str_contains($keyLower, 'fakultas') || str_contains($keyLower, 'faculty')) $guess = 'faculty';
-                                                elseif (str_contains($keyLower, 'jurusan') || str_contains($keyLower, 'prodi') || str_contains($keyLower, 'program')) $guess = 'study_program';
-                                                elseif (str_contains($keyLower, 'telepon') || str_contains($keyLower, 'hp') || str_contains($keyLower, 'phone')) $guess = 'phone_number';
-                                                elseif (str_contains($keyLower, 'sex') || str_contains($keyLower, 'gender') || str_contains($keyLower, 'kelamin')) $guess = 'gender';
+                                                foreach ($keys as $key) {
+                                                    $keyLower = strtolower($key);
+                                                    if ($dbCol === 'student_id' && (str_contains($keyLower, 'nim') || str_contains($keyLower, 'student_id'))) $guess = $key;
+                                                    elseif ($dbCol === 'name' && (str_contains($keyLower, 'nama') || str_contains($keyLower, 'name'))) $guess = $key;
+                                                    elseif ($dbCol === 'faculty' && (str_contains($keyLower, 'fakultas') || str_contains($keyLower, 'faculty'))) $guess = $key;
+                                                    elseif ($dbCol === 'study_program' && (str_contains($keyLower, 'jurusan') || str_contains($keyLower, 'prodi') || str_contains($keyLower, 'program'))) $guess = $key;
+                                                    elseif ($dbCol === 'phone_number' && (str_contains($keyLower, 'telepon') || str_contains($keyLower, 'hp') || str_contains($keyLower, 'phone'))) $guess = $key;
+                                                    elseif ($dbCol === 'gender' && (str_contains($keyLower, 'sex') || str_contains($keyLower, 'gender') || str_contains($keyLower, 'kelamin'))) $guess = $key;
+                                                    
+                                                    if ($guess) break;
+                                                }
                                                 
                                                 $mapping[] = [
-                                                    'api_key' => $key,
-                                                    'db_column' => $guess,
+                                                    'db_column' => $dbCol,
+                                                    'api_key' => $guess,
                                                 ];
                                             }
                                             $set('response_mapping', $mapping);
@@ -134,7 +207,7 @@ class ApiDataRecordResource extends Resource
                                 Notification::make()->title('Error Koneksi API')->body($e->getMessage())->danger()->send();
                             }
                         })
-                        ->hidden(fn (?ApiDataRecord $record) => $record && $record->is_imported),
+                        ->visible(true),
                         
                     Action::make('sync_data')
                         ->label('Sinkronisasi ke Data Peserta')
@@ -144,7 +217,7 @@ class ApiDataRecordResource extends Resource
                         ->modalHeading('Sinkronisasi Data?')
                         ->modalDescription('Apakah Anda yakin ingin memasukkan data API ini ke tabel Peserta (Attendance)? Tindakan ini akan mengunci data agar tidak bisa ditarik ulang.')
                         ->modalSubmitActionLabel('Ya, Sinkronisasi')
-                        ->hidden(fn (?ApiDataRecord $record) => ! $record || $record->is_imported)
+                        ->visible(true)
                         ->action(function (?ApiDataRecord $record, Get $get) {
                             if (!$record) {
                                 Notification::make()->title('Simpan Dulu!')->body('Harap klik Save Changes terlebih dahulu.')->warning()->send();
@@ -210,18 +283,13 @@ class ApiDataRecordResource extends Resource
                 ])->columnSpanFull(),
                     
                 Forms\Components\Section::make('Pemetaan Kolom & Data Mentah')
-                    ->disabled(fn (?ApiDataRecord $record) => $record && $record->is_imported)
                     ->schema([
                         Forms\Components\Repeater::make('response_mapping')
                             ->label('Tabel Pemetaan Kolom (Mapping)')
-                            ->helperText('Cocokkan kolom dari API (Kiri) ke kolom Peserta di sistem (Kanan). Biarkan kosong jika tidak dipakai.')
+                            ->helperText('Pilih atribut API mana yang sesuai dengan kolom Peserta di sistem kita. Biarkan kosong jika tidak dipakai.')
                             ->schema([
-                                TextInput::make('api_key')
-                                    ->label('Atribut dari API')
-                                    ->required()
-                                    ->readOnly(),
                                 Select::make('db_column')
-                                    ->label('Pasangkan ke Kolom Peserta')
+                                    ->label('Kolom Peserta (Target)')
                                     ->options([
                                         'student_id' => 'NIM (student_id) - Wajib',
                                         'name' => 'Nama Peserta (name) - Wajib',
@@ -229,7 +297,24 @@ class ApiDataRecordResource extends Resource
                                         'study_program' => 'Program Studi (study_program)',
                                         'phone_number' => 'No Telepon (phone_number)',
                                         'gender' => 'Jenis Kelamin (gender)',
-                                    ]),
+                                    ])
+                                    ->required()
+                                    ->disabled()
+                                    ->dehydrated(),
+                                Select::make('api_key')
+                                    ->label('Pilih Atribut dari API')
+                                    ->options(function (Get $get) {
+                                        $payload = $get('../../payload_data');
+                                        if (!$payload) return [];
+                                        $data = json_decode($payload, true);
+                                        $dataArray = $data['data'] ?? $data;
+                                        if (is_array($dataArray) && count($dataArray) > 0) {
+                                            $keys = array_keys(is_array($dataArray[0]) ? $dataArray[0] : []);
+                                            return array_combine($keys, $keys);
+                                        }
+                                        return [];
+                                    })
+                                    ->searchable(),
                             ])
                             ->columns(2)
                             ->columnSpanFull()
@@ -237,11 +322,9 @@ class ApiDataRecordResource extends Resource
                             ->deletable(false)
                             ->addable(false),
                             
-                        Textarea::make('payload_data')
-                            ->label('Data Lengkap (Format JSON)')
-                            ->helperText('Seluruh nilai JSON yang dikembalikan oleh API (nama, fakultas, dll) tersimpan utuh di dalam kolom ini.')
-                            ->required()
-                            ->rows(10)
+                        \Filament\Forms\Components\ViewField::make('payload_data')
+                            ->label('Data Lengkap')
+                            ->view('filament.components.api-data-comparison')
                             ->columnSpanFull(),
                     ])
             ]);

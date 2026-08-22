@@ -127,7 +127,7 @@ class GroupResource extends Resource
                     ->label('Download Template')
                     ->icon('heroicon-o-document-arrow-down')
                     ->color('success')
-                    ->visible(fn () => auth()->user()?->can('downloadTemplate', \App\Models\Group::class) ?? false) /** @phpstan-ignore-line */
+                    ->visible(fn () => auth()->user()?->can('downloadTemplate', Group::class) ?? false) /** @phpstan-ignore-line */
                     ->action(function () {
                         return Excel::download(new GroupTemplateExport, 'template-kelompok.xlsx');
                     }),
@@ -135,7 +135,7 @@ class GroupResource extends Resource
                     ->label('Import Excel')
                     ->icon('heroicon-o-document-arrow-up')
                     ->color('primary')
-                    ->visible(fn () => auth()->user()?->can('import', \App\Models\Group::class) ?? false) /** @phpstan-ignore-line */
+                    ->visible(fn () => auth()->user()?->can('import', Group::class) ?? false) /** @phpstan-ignore-line */
                     ->form([
                         Forms\Components\FileUpload::make('file')
                             ->label('File Excel')

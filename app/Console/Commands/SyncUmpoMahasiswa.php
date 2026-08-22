@@ -43,17 +43,38 @@ class SyncUmpoMahasiswa extends Command
             return Command::FAILURE;
         }
 
-        $jurusanDict = [];
+        $this->info('Fetching Data Fakultas dari API UMPO...');
+        $fakultasUrl = 'https://apikey.umpo.ac.id/api/fakultas/find-all';
+        try {
+            $fakultasResponse = \Illuminate\Support\Facades\Http::timeout(30)->get($fakultasUrl);
+            
+            if (!$fakultasResponse->successful()) {
+                $this->error('Gagal mengambil data Fakultas: HTTP ' . $fakultasResponse->status());
+                return Command::FAILURE;
+            }
+
+            $fakultasDataApi = $fakultasResponse->json('data') ?? [];
+        } catch (\Exception $e) {
+            $this->error('Error koneksi API Fakultas: ' . $e->getMessage());
+            return Command::FAILURE;
+        }
+
         $fakultasDict = [];
+        foreach ($fakultasDataApi as $f) {
+            if (isset($f['kodeFakultas']) && isset($f['namaFakultas'])) {
+                $fakultasDict[$f['kodeFakultas']] = $f['namaFakultas'];
+            }
+        }
+
+        $jurusanDict = [];
         foreach ($jurusanData as $j) {
             $kodeFak = $j['kodeFakultas'] ?? '';
             $kodeJur = $j['kodeJurusan'] ?? '';
             $key = $kodeFak . '-' . $kodeJur;
             $jurusanDict[$key] = $j['programStudi'] ?? $j['namaJurusan'] ?? '';
-            $fakultasDict[$key] = $j['kelas'] ?? $kodeFak;
         }
         
-        $this->info('Berhasil membuat kamus untuk ' . count($jurusanDict) . ' jurusan.');
+        $this->info('Berhasil membuat kamus untuk ' . count($jurusanDict) . ' jurusan dan ' . count($fakultasDict) . ' fakultas.');
         $this->info('Fetching Data Mahasiswa Aktif dari API UMPO...');
         
         $mhsUrl = 'https://apikey.umpo.ac.id/api/mahasiswa/find-all-mhs-aktifs';
@@ -91,7 +112,7 @@ class SyncUmpoMahasiswa extends Command
             $dictKey = $kodeFak . '-' . $kodeJur;
             
             $programStudi = $jurusanDict[$dictKey] ?? $kodeJur;
-            $namaFakultas = $fakultasDict[$dictKey] ?? $kodeFak;
+            $namaFakultas = $fakultasDict[$kodeFak] ?? $kodeFak;
             
             Attendance::where('student_id', $nim)->update([
                 'name' => $mhs['namaMhs'],
