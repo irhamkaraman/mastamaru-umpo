@@ -105,4 +105,20 @@ class PresenceSessionPolicy
     {
         return $user->can('reorder_presence::session');
     }
+
+    /**
+     * Determine whether the user can export.
+     */
+    public function export(User $user): bool
+    {
+        return $user->can('export_presence::session');
+    }
+
+    /**
+     * Determine whether the user can import.
+     */
+    public function import(User $user): bool
+    {
+        return $user->can('import_presence::session');
+    }
 }
