@@ -453,6 +453,12 @@
 
             .px-6 {
                 padding-left: 1rem;
+            .grid {
+                gap: 1rem;
+            }
+
+            .px-6 {
+                padding-left: 1rem;
                 padding-right: 1rem;
             }
 
@@ -460,101 +466,17 @@
         }
     </style>
 
-    <!-- JavaScript untuk History Management dan Keamanan -->
+    <!-- JavaScript untuk History Management -->
     <script>
-        // Fungsi untuk generate device fingerprint sederhana
-        function generateDeviceFingerprint() {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            ctx.textBaseline = 'top';
-            ctx.font = '14px Arial';
-            ctx.fillText('Device fingerprint', 2, 2);
-
-            const fingerprint = [
-                navigator.userAgent,
-                navigator.language,
-                screen.width + 'x' + screen.height,
-                new Date().getTimezoneOffset(),
-                canvas.toDataURL()
-            ].join('|');
-
-            // Hash sederhana untuk fingerprint
-            let hash = 0;
-            for (let i = 0; i < fingerprint.length; i++) {
-                const char = fingerprint.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash; // Convert to 32bit integer
-            }
-            return Math.abs(hash).toString(36);
-        }
-
-        // Fungsi untuk cek apakah device sudah berhasil menyimpan data ke database
-        function checkDeviceSubmission() {
-            const deviceId = generateDeviceFingerprint();
-            const submittedDevices = JSON.parse(localStorage.getItem('database_submitted_devices') || '[]');
-            return submittedDevices.includes(deviceId);
-        }
-
-        // Fungsi untuk menandai device sudah berhasil menyimpan ke database
-        function markDeviceAsSubmitted() {
-            const deviceId = generateDeviceFingerprint();
-            let submittedDevices = JSON.parse(localStorage.getItem('database_submitted_devices') || '[]');
-            if (!submittedDevices.includes(deviceId)) {
-                submittedDevices.push(deviceId);
-                localStorage.setItem('database_submitted_devices', JSON.stringify(submittedDevices));
-            }
-        }
-
-        // Fungsi untuk disable form jika sudah berhasil menyimpan ke database
-        function disableFormIfSubmitted() {
-            if (checkDeviceSubmission()) {
-                const form = document.querySelector('form');
-                const inputs = form.querySelectorAll('input, select, button');
-                const submitBtn = form.querySelector('button[type="submit"]');
-
-                inputs.forEach(input => {
-                    input.disabled = true;
-                });
-
-                submitBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Data Sudah Tersimpan di Sistem';
-                submitBtn.classList.remove('hover:from-blue-700', 'hover:to-purple-700', 'hover:scale-105');
-                submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-
-                // Tampilkan pesan peringatan
-                const warningDiv = document.createElement('div');
-                warningDiv.className = 'mt-4 bg-green-50 border border-green-200 rounded-lg p-4';
-                warningDiv.innerHTML = `
-                    <div class="flex items-center">
-                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
-                        <div>
-                            <h4 class="text-green-800 font-medium">Data Sudah Tersimpan di Sistem</h4>
-                            <p class="text-green-700 text-sm mt-1">Perangkat ini sudah berhasil menyimpan data ke sistem. Untuk mencegah duplikasi, formulir telah dinonaktifkan.</p>
-                        </div>
-                    </div>
-                `;
-                form.parentNode.insertBefore(warningDiv, form.nextSibling);
-            }
-        }
-
         // Fungsi untuk menampilkan history peserta
         function displayParticipantHistory() {
             const participantHistory = JSON.parse(localStorage.getItem('participant_history') || '[]');
-            const permanentHistory = JSON.parse(localStorage.getItem('permanent_participant_history') || '[]');
             const historyContainer = document.getElementById('participant-history');
             const historyList = document.getElementById('history-list');
 
-            // Gabungkan history biasa dan permanen, hilangkan duplikat
-            const allHistory = [...participantHistory];
-            permanentHistory.forEach(permanent => {
-                if (!allHistory.find(item => item.unique_code === permanent.unique_code)) {
-                    allHistory.push(permanent);
-                }
-            });
+            if (!historyContainer || !historyList) return;
 
-            // Urutkan berdasarkan timestamp terbaru
-            allHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-            if (allHistory.length === 0) {
+            if (participantHistory.length === 0) {
                 historyContainer.style.display = 'none';
                 return;
             }
@@ -562,13 +484,10 @@
             historyContainer.style.display = 'block';
             historyList.innerHTML = '';
 
-            allHistory.forEach((participant, index) => {
+            participantHistory.forEach((participant) => {
                 const timestamp = new Date(participant.timestamp).toLocaleString('id-ID');
-                const isPermanent = participant.permanent || participant.database_saved;
                 const historyItem = document.createElement('div');
-                historyItem.className = `bg-white border rounded-lg p-4 ${
-                    isPermanent ? 'border-green-300 bg-green-50' : 'border-green-200'
-                }`;
+                historyItem.className = 'bg-white border border-green-200 rounded-xl p-4 shadow-sm';
                 historyItem.innerHTML = `
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                         <div>
@@ -582,7 +501,7 @@
                             <p><strong>Mentor:</strong> ${participant.mentor_name}</p>
                             <p><strong>Kode Unik:</strong> <span class="font-mono bg-gray-100 px-2 py-1 rounded text-xs">${participant.unique_code}</span></p>
                             <p class="text-gray-500 text-xs mt-2"><strong>Didaftarkan:</strong> ${timestamp}</p>
-                            ${isPermanent ? '<p class="text-green-600 text-xs mt-1"><i class="fas fa-database"></i> Bila terjadi kekeliruan data, silakan hubungi panitia.</p>' : ''}
+                            <p class="text-green-600 text-xs mt-1"><i class="fas fa-check-circle"></i> Berhasil tersimpan di sistem</p>
                         </div>
                     </div>
                 `;
@@ -590,58 +509,23 @@
             });
         }
 
-        // Fungsi untuk menghapus history (hanya yang tidak permanen)
+        // Fungsi untuk menghapus history lokal browser
         function clearParticipantHistory() {
-            const permanentHistory = JSON.parse(localStorage.getItem('permanent_participant_history') || '[]');
-            const hasPermanentData = permanentHistory.length > 0;
-
-            let confirmMessage = 'Apakah Anda yakin ingin menghapus history peserta?';
-            if (hasPermanentData) {
-                confirmMessage += '\n\nCatatan: Data yang sudah tersimpan di database tidak akan dihapus.';
-            }
-
-            if (confirm(confirmMessage)) {
-                // Hanya hapus history biasa, biarkan permanent history
+            if (confirm('Hapus daftar riwayat pendaftaran di perangkat ini? (Data di server tetap tersimpan)')) {
                 localStorage.removeItem('participant_history');
-
-                // Refresh tampilan
                 displayParticipantHistory();
-
-                // Jika tidak ada data permanen, sembunyikan container
-                if (!hasPermanentData) {
-                    document.getElementById('participant-history').style.display = 'none';
-                }
+                const historyContainer = document.getElementById('participant-history');
+                if (historyContainer) historyContainer.style.display = 'none';
             }
-        }
-
-        // Fungsi untuk validasi form submission (hanya cek jika sudah tersimpan ke database)
-        function validateFormSubmission(event) {
-            if (checkDeviceSubmission()) {
-                event.preventDefault();
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Data Sudah Tersimpan di Database',
-                    text: 'Perangkat ini sudah berhasil menyimpan data ke database. Formulir telah dinonaktifkan untuk mencegah duplikasi.',
-                    confirmButtonText: 'OK'
-                });
-                return false;
-            }
-            return true;
         }
 
         // Event listener saat halaman dimuat
         document.addEventListener('DOMContentLoaded', function() {
-            // Cek dan disable form jika sudah berhasil menyimpan ke database
-            disableFormIfSubmitted();
+            // Bersihkan flag block lama jika pernah tersimpan di browser
+            localStorage.removeItem('database_submitted_devices');
 
-            // Tampilkan history peserta
+            // Tampilkan history peserta yang baru diinput
             displayParticipantHistory();
-
-            // Tambahkan event listener untuk form submission
-            const form = document.querySelector('form');
-            if (form) {
-                form.addEventListener('submit', validateFormSubmission);
-            }
         });
     </script>
 

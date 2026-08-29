@@ -37,6 +37,16 @@
                             <p class="text-blue-100 text-sm font-medium">NIM Anda</p>
                             <p class="text-white text-xl font-bold">{{ $mentor->student_id }}</p>
                         </div>
+                        <div class="mentor-phone-chip bg-white bg-opacity-20 rounded-2xl p-3 text-center backdrop-blur-sm">
+                            <p class="text-blue-100 text-xs font-medium">No. WhatsApp / Telp</p>
+                            <p class="text-white text-sm font-semibold truncate">{{ $mentor->phone_number ?? '-' }}</p>
+                            <button type="button" onclick="openEditPhoneModal()" class="mt-1.5 inline-flex items-center text-xs text-blue-700 bg-white/80 hover:bg-white px-2.5 py-1 rounded-lg font-medium shadow-sm transition">
+                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                </svg>
+                                Ubah Nomor
+                            </button>
+                        </div>
                         <form action="{{ route('mentor.logout') }}" method="POST" class="inline mentor-logout-form" id="logout-form">
                             @csrf
                             <button type="button" onclick="confirmLogout()"
@@ -396,6 +406,41 @@
         </div>
     </div>
 
+    <!-- Modal Edit Nomor Telepon -->
+    <div id="edit-phone-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900">Ubah Nomor WhatsApp</h3>
+                </div>
+                <button type="button" onclick="closeEditPhoneModal()" class="text-gray-400 hover:text-gray-600 text-2xl font-semibold">&times;</button>
+            </div>
+            <form action="{{ route('mentor.update-profile') }}" method="POST">
+                @csrf
+                <div class="mb-4">
+                    <label for="phone_number" class="block text-sm font-medium text-gray-700 mb-1">Nomor WhatsApp / Telepon</label>
+                    <input type="text" name="phone_number" id="phone_number" value="{{ $mentor->phone_number }}"
+                        placeholder="Contoh: 081234567890"
+                        class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                    <p class="text-xs text-gray-500 mt-1.5">Nomor ini akan dapat dilihat oleh peserta kelompok Anda di halaman informasi peserta & daftar kelompok.</p>
+                </div>
+                <div class="flex items-center justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeEditPhoneModal()" class="px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg shadow-blue-200 transition">
+                        Simpan Nomor
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <style>
         .mentor-dashboard-page { color:#29344d; }
         .mentor-dashboard-container { position:relative; }
@@ -452,6 +497,14 @@
     </style>
 
     <script>
+        function openEditPhoneModal() {
+            document.getElementById('edit-phone-modal').classList.remove('hidden');
+        }
+
+        function closeEditPhoneModal() {
+            document.getElementById('edit-phone-modal').classList.add('hidden');
+        }
+
         function confirmLogout() {
             Swal.fire({
                 title: 'Konfirmasi Logout',

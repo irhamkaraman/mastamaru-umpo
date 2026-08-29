@@ -12,6 +12,8 @@ class PresenceSession extends Model
     protected $fillable = [
         'session_name',
         'slug',
+        'session_type',
+        'day_number',
         'description',
         'start_time',
         'end_time',
@@ -20,6 +22,7 @@ class PresenceSession extends Model
     ];
 
     protected $casts = [
+        'day_number' => 'integer',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
         'is_active' => 'boolean',

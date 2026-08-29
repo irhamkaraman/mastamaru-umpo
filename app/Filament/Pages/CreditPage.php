@@ -18,11 +18,11 @@ class CreditPage extends Page
     
     public function getTitle(): string
     {
-        return 'Tentang Sistem Presensi MASTAUMPO 2025';
+        return 'Tentang Sistem Presensi MASTAMARU 2026';
     }
     
     public function getHeading(): string
     {
-        return 'Tentang Sistem Presensi MASTAUMPO 2025';
+        return 'Tentang Sistem Presensi MASTAMARU 2026';
     }
 }

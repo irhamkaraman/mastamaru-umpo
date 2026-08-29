@@ -7,6 +7,7 @@ use App\Filament\Resources\GroupResource\RelationManagers;
 use App\Models\Group;
 use App\Imports\GroupImport;
 use App\Exports\GroupTemplateExport;
+use App\Exports\GroupDataExport;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -16,6 +17,7 @@ use Filament\Notifications\Notification;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Str;
 
 class GroupResource extends Resource
 {
@@ -43,16 +45,10 @@ class GroupResource extends Resource
                     ->maxLength(255)
                     ->live(onBlur: true)
                     ->afterStateUpdated(function (string $operation, $state, Forms\Set $set) {
-                        if ($operation !== 'create') {
-                            return;
-                        }
-
-                        $slug = \Illuminate\Support\Str::slug($state);
-                        // Hapus angka dan karakter spesial, hanya biarkan huruf dan tanda (-)
-                        $slug = preg_replace('/[^a-zA-Z\-]/', '', $slug);
-                        // Hapus tanda (-) berlebihan
+                        // Otomatis generate slug baik saat create maupun edit jika diubah
+                        $slug = Str::slug($state);
+                        $slug = preg_replace('/[^a-zA-Z0-9\-]/', '', $slug);
                         $slug = preg_replace('/-+/', '-', $slug);
-                        // Hapus tanda (-) di awal dan akhir
                         $slug = trim($slug, '-');
 
                         $set('slug', $slug);
@@ -62,7 +58,7 @@ class GroupResource extends Resource
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->maxLength(255)
-                    ->disabled()
+                    ->helperText('Slug otomatis mengikuti Nama Kelompok, atau dapat diubah manual.')
                     ->dehydrated(),
                 Forms\Components\TextInput::make('order')
                     ->label('Urutan')
@@ -75,6 +71,10 @@ class GroupResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('order')
+                    ->label('Urutan')
+                    ->numeric()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Kelompok')
                     ->searchable()
@@ -82,10 +82,6 @@ class GroupResource extends Resource
                 Tables\Columns\TextColumn::make('slug')
                     ->label('Slug')
                     ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('order')
-                    ->label('Urutan')
-                    ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('mentors.name')
                     ->label('Nama Pendamping')
@@ -111,7 +107,34 @@ class GroupResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('has_mentors')
+                    ->label('Status Pendamping')
+                    ->options([
+                        'with' => 'Sudah Ada Pendamping',
+                        'without' => 'Belum Ada Pendamping',
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        if ($data['value'] === 'with') {
+                            return $query->has('mentors');
+                        } elseif ($data['value'] === 'without') {
+                            return $query->doesntHave('mentors');
+                        }
+                        return $query;
+                    }),
+                Tables\Filters\SelectFilter::make('has_students')
+                    ->label('Status Peserta')
+                    ->options([
+                        'with' => 'Sudah Ada Peserta',
+                        'without' => 'Belum Ada Peserta',
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        if ($data['value'] === 'with') {
+                            return $query->has('attendances');
+                        } elseif ($data['value'] === 'without') {
+                            return $query->doesntHave('attendances');
+                        }
+                        return $query;
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -123,9 +146,34 @@ class GroupResource extends Resource
                 ]),
             ])
             ->headerActions([
+                Tables\Actions\Action::make('exportExcel')
+                    ->label('Export Excel')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->visible(fn () => auth()->user()?->can('export', Group::class) ?? false) /** @phpstan-ignore-line */
+                    ->action(function ($livewire) {
+                        try {
+                            ini_set('memory_limit', '2048M');
+                            ini_set('max_execution_time', 600);
+
+                            $filters = $livewire->tableFilters ?? [];
+                            $filename = 'data-kelompok-' . date('Y-m-d-H-i-s') . '.xlsx';
+
+                            return Excel::download(new GroupDataExport($filters), $filename);
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Export Gagal')
+                                ->body('Terjadi kesalahan: ' . $e->getMessage())
+                                ->danger()
+                                ->send();
+
+                            return null;
+                        }
+                    })
+                    ->tooltip('Export data kelompok ke format Excel (.xlsx)'),
                 Tables\Actions\Action::make('downloadTemplate')
                     ->label('Download Template')
-                    ->icon('heroicon-o-document-arrow-down')
+                    ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
                     ->visible(fn () => auth()->user()?->can('downloadTemplate', Group::class) ?? false) /** @phpstan-ignore-line */
                     ->action(function () {
@@ -133,7 +181,7 @@ class GroupResource extends Resource
                     }),
                 Tables\Actions\Action::make('importExcel')
                     ->label('Import Excel')
-                    ->icon('heroicon-o-document-arrow-up')
+                    ->icon('heroicon-o-arrow-up-tray')
                     ->color('primary')
                     ->visible(fn () => auth()->user()?->can('import', Group::class) ?? false) /** @phpstan-ignore-line */
                     ->form([
@@ -143,13 +191,13 @@ class GroupResource extends Resource
                             ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'])
                             ->maxSize(5120) // 5MB
                             ->helperText('Format file: .xlsx atau .xls (maksimal 5MB)')
-                            ->disk('local')
+                            ->disk('public')
                             ->directory('imports'),
                     ])
                     ->action(function (array $data) {
                         try {
                             $import = new GroupImport();
-                            Excel::import($import, $data['file']);
+                            Excel::import($import, storage_path('app/public/' . $data['file']));
                             
                             $failures = $import->failures();
                             $errors = $import->errors();

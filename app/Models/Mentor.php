@@ -20,6 +20,7 @@ class Mentor extends Model
         'group_id',
         'name',
         'student_id',
+        'phone_number',
         'password',
         'raw_password',
     ];

@@ -44,6 +44,27 @@ class PresenceSessionResource extends Resource
                     ->afterStateUpdated(function (string $operation, $state, Set $set) {
                         $set('slug', \Illuminate\Support\Str::slug($state));
                     }),
+                Forms\Components\Select::make('session_type')
+                    ->label('Tipe Sesi (Bobot Poin)')
+                    ->options([
+                        'datang' => 'Sesi Datang / Kehadiran (Hadir: 10, Terlambat: 8, Sakit: 6, Izin: 5)',
+                        'pulang' => 'Sesi Pulang (Hadir: 10, Sakit: 7, Izin: 5)',
+                    ])
+                    ->default('datang')
+                    ->required(),
+                Forms\Components\Select::make('day_number')
+                    ->label('Hari Kegiatan Ke-')
+                    ->options([
+                        1 => 'Hari Ke-1',
+                        2 => 'Hari Ke-2',
+                        3 => 'Hari Ke-3',
+                        4 => 'Hari Ke-4',
+                        5 => 'Hari Ke-5',
+                        6 => 'Hari Ke-6',
+                        7 => 'Hari Ke-7',
+                    ])
+                    ->default(1)
+                    ->required(),
                 Forms\Components\TextInput::make('slug')
                     ->label('Slug')
                     ->maxLength(255)
@@ -78,6 +99,22 @@ class PresenceSessionResource extends Resource
         return $table
             ->modifyQueryUsing(fn(Builder $query) => $query->withCount('attendanceSubmissions'))
             ->columns([
+                Tables\Columns\TextColumn::make('day_number')
+                    ->label('Hari')
+                    ->formatStateUsing(fn ($state) => 'Hari ' . $state)
+                    ->badge()
+                    ->color('info')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('session_type')
+                    ->label('Tipe Sesi')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'datang' => 'success',
+                        'pulang' => 'warning',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state))
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('session_name')
                     ->label('Nama Sesi')
                     ->searchable()

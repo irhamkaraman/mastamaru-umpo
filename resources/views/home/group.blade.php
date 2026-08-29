@@ -22,6 +22,7 @@
                             return [
                                 'name' => $mentor->name,
                                 'student_id' => $mentor->student_id,
+                                'phone_number' => $mentor->phone_number,
                                 'initial' => strtoupper(substr($mentor->name, 0, 1))
                             ];
                         }),
@@ -141,6 +142,20 @@
                                                                 <p class="text-gray-500 text-xs sm:text-sm truncate">NIM:
                                                                     {{ $mentor['student_id'] }}
                                                                 </p>
+                                                                @if(!empty($mentor['phone_number']))
+                                                                    @php
+                                                                        $cleanPhone = preg_replace('/[^0-9]/', '', $mentor['phone_number']);
+                                                                        if (str_starts_with($cleanPhone, '0')) {
+                                                                            $cleanPhone = '62' . substr($cleanPhone, 1);
+                                                                        }
+                                                                    @endphp
+                                                                    <div class="mt-1 flex items-center gap-1.5">
+                                                                        <a href="https://wa.me/{{ $cleanPhone }}" target="_blank" class="inline-flex items-center text-xs font-semibold text-green-700 bg-green-100 hover:bg-green-200 px-2 py-0.5 rounded-md transition shadow-xs">
+                                                                            <i class="fab fa-whatsapp text-green-600 mr-1"></i>
+                                                                            {{ $mentor['phone_number'] }}
+                                                                        </a>
+                                                                    </div>
+                                                                @endif
                                                             </div>
                                                         </div>
                                                     </div>

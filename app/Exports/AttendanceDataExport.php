@@ -8,22 +8,58 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Maatwebsite\Excel\Concerns\Exportable;
 
-class AttendanceDataExport implements FromQuery, WithHeadings, ShouldAutoSize, WithMapping, WithChunkReading, ShouldQueue
+class AttendanceDataExport implements FromQuery, WithHeadings, ShouldAutoSize, WithMapping, WithChunkReading, WithStyles
 {
     use Exportable;
 
+    protected $filters;
+
+    public function __construct(array $filters = [])
+    {
+        $this->filters = $filters;
+    }
+
     /**
-     * Query untuk export data
-     * Menggunakan FromQuery untuk menghindari memory exhausted
+     * Query untuk export data dengan filter aktif dari Filament Table
      */
     public function query()
     {
-        return Attendance::query()
-            ->with(['group', 'mentor'])
-            ->select(['id', 'name', 'student_id', 'faculty', 'study_program', 'group_id', 'mentor_id']);
+        $query = Attendance::query()
+            ->with(['group', 'mentor', 'assessment'])
+            ->select([
+                'id',
+                'name',
+                'student_id',
+                'faculty',
+                'study_program',
+                'phone_number',
+                'status',
+                'group_id',
+                'mentor_id'
+            ]);
+
+        // Terapkan filter jika ada
+        if (!empty($this->filters['group_id']['value'])) {
+            $query->where('group_id', $this->filters['group_id']['value']);
+        }
+
+        if (!empty($this->filters['mentor_id']['value'])) {
+            $query->where('mentor_id', $this->filters['mentor_id']['value']);
+        }
+
+        if (!empty($this->filters['faculty']['value'])) {
+            $query->where('faculty', $this->filters['faculty']['value']);
+        }
+
+        if (!empty($this->filters['study_program']['value'])) {
+            $query->where('study_program', $this->filters['study_program']['value']);
+        }
+
+        return $query->orderBy('name', 'asc');
     }
 
     /**
@@ -31,37 +67,67 @@ class AttendanceDataExport implements FromQuery, WithHeadings, ShouldAutoSize, W
      */
     public function map($attendance): array
     {
+        $totalPoints = $attendance->assessment ? $attendance->assessment->total_presence_points : 0;
+        $attendanceScore = $attendance->assessment ? $attendance->assessment->attendance_score : 0;
+        $grade = $attendance->assessment ? $attendance->assessment->grade : 'D';
+        $statusKelulusan = strtoupper($attendance->status ?? ($attendance->assessment ? $attendance->assessment->status : 'GAGAL'));
+
         return [
             $attendance->name,
             $attendance->student_id,
-            $attendance->faculty ?? 'Tidak tersedia',
-            $attendance->study_program ?? 'Tidak tersedia',
-            $attendance->mentor ? $attendance->mentor->name : 'Tidak tersedia',
-            $attendance->group ? $attendance->group->name : 'Tidak tersedia',
+            $attendance->phone_number ?? '-',
+            $attendance->faculty ?? '-',
+            $attendance->study_program ?? '-',
+            $attendance->group ? $attendance->group->name : 'Belum Ada Kelompok',
+            $attendance->mentor ? $attendance->mentor->name : 'Belum Ada Pendamping',
+            $totalPoints,
+            $attendanceScore . '%',
+            $grade,
+            $statusKelulusan,
         ];
     }
 
     /**
-     * Header kolom untuk file Excel
+     * Header kolom untuk file Excel/CSV
      */
     public function headings(): array
     {
         return [
             'Nama Peserta',
             'NIM',
+            'No. WhatsApp / Telp',
             'Fakultas',
             'Program Studi',
-            'Nama Pendamping',
-            'Nama Kelompok'
+            'Kelompok',
+            'Pendamping (Mentor)',
+            'Total Poin Presensi (Maks 100)',
+            'Nilai Kehadiran (%)',
+            'Predikat (Grade)',
+            'Status Kelulusan'
+        ];
+    }
+
+    public function styles(Worksheet $sheet)
+    {
+        return [
+            1 => [
+                'font' => [
+                    'bold' => true,
+                    'color' => ['argb' => 'FFFFFF'],
+                ],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['argb' => '16A34A'],
+                ],
+            ],
         ];
     }
 
     /**
      * Chunk size untuk membaca data
-     * Mengurangi penggunaan memory dengan membaca data dalam chunk
      */
     public function chunkSize(): int
     {
-        return 1000;
+        return 500;
     }
 }

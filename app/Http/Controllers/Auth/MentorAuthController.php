@@ -164,6 +164,37 @@ class MentorAuthController extends Controller
     }
 
     /**
+     * Update profil / nomor telepon mentor dari dashboard
+     */
+    public function updateProfile(Request $request)
+    {
+        $mentorId = session('mentor_id');
+        if (!$mentorId) {
+            return redirect('/mentor/login')->with('error', 'Sesi tidak valid. Silakan login kembali.');
+        }
+
+        $request->validate([
+            'phone_number' => 'nullable|string|max:20',
+        ], [
+            'phone_number.max' => 'Nomor WhatsApp / telepon maksimal 20 karakter.',
+        ]);
+
+        $mentor = Mentor::find($mentorId);
+        if (!$mentor) {
+            return redirect('/mentor/login')->with('error', 'Data mentor tidak ditemukan.');
+        }
+
+        $mentor->update([
+            'phone_number' => $request->input('phone_number'),
+        ]);
+
+        // Bersihkan cache dashboard mentor dan view cache
+        Cache::forget('mentor_dashboard_' . $mentorId);
+
+        return redirect()->route('mentor.dashboard')->with('success', 'Nomor telepon / WhatsApp berhasil diperbarui!');
+    }
+
+    /**
      * Method untuk menghapus cache dashboard
      */
     public static function clearDashboardCache()

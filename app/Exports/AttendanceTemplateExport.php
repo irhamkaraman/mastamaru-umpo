@@ -2,8 +2,6 @@
 
 namespace App\Exports;
 
-use App\Models\Group;
-use App\Models\Mentor;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -14,64 +12,51 @@ class AttendanceTemplateExport implements FromArray, WithHeadings, WithStyles, W
 {
     public function array(): array
     {
-        // Daftar fakultas untuk contoh
-        $faculties = [
-            'Fakultas Teknik',
-            'Fakultas Ekonomi dan Bisnis',
-            'Fakultas Ilmu Sosial dan Politik',
-            'Fakultas Hukum',
-            'Fakultas Pertanian',
-            'Fakultas Kedokteran',
-            'Fakultas Keguruan dan Ilmu Pendidikan',
-            'Fakultas Matematika dan Ilmu Pengetahuan Alam',
-            'Fakultas Peternakan',
-            'Fakultas Kehutanan',
-            'Fakultas Ilmu Kelautan dan Perikanan',
-            'Fakultas Kesehatan Masyarakat',
-            'Fakultas Farmasi',
-            'Fakultas Ilmu Budaya'
+        // Data contoh untuk template import peserta
+        return [
+            ['Khansa Salma Nabilah', '26442187', '089666087221', 'Ekonomi', 'Akuntansi'],
+            ['Nafisah Khoirunnisa', '26340699', '085746676786', 'Keguruan dan Ilmu Pendidikan', 'Pendidikan Guru Pendidikan Anak Usia Dini'],
+            ['Muhammad Roni Nur Hakim', '26241353', '085232145678', 'Ilmu Sosial dan Ilmu Politik', 'Ilmu Komunikasi'],
+            ['Arya Bagas Febriansyah', '26632977', '082332285921', 'Ilmu Kesehatan', 'Keperawatan'],
+            ['Ahmad Budi Santoso', '26110001', '081234567890', 'Teknik', 'Teknik Informatika'],
         ];
-
-        // Daftar program studi untuk contoh
-        $studyPrograms = [
-            'Teknik Informatika',
-            'Sistem Informasi',
-            'Teknik Elektro',
-            'Manajemen',
-            'Akuntansi',
-            'Ilmu Komunikasi',
-            'Hukum',
-            'Agroteknologi',
-            'Kedokteran',
-            'Pendidikan Bahasa Indonesia'
-        ];
-
-        // Data contoh untuk template
-        $data = [
-            ['Ahmad Budi Santoso', '2024010001', $faculties[array_rand($faculties)], $studyPrograms[array_rand($studyPrograms)]],
-            ['Siti Nurhaliza', '2024010002', $faculties[array_rand($faculties)], $studyPrograms[array_rand($studyPrograms)]],
-            ['Budi Setiawan', '2024010003', $faculties[array_rand($faculties)], $studyPrograms[array_rand($studyPrograms)]],
-            ['Citra Dewi', '2024010004', $faculties[array_rand($faculties)], $studyPrograms[array_rand($studyPrograms)]],
-            ['Dani Pratama', '2024010005', $faculties[array_rand($faculties)], $studyPrograms[array_rand($studyPrograms)]],
-        ];
-
-        return $data;
     }
 
     public function headings(): array
     {
-        return ['nama_peserta', 'nim_peserta', 'fakultas', 'program_studi'];
+        return [
+            'nama_peserta',
+            'nim_peserta',
+            'no_telp_wa',
+            'fakultas',
+            'program_studi'
+        ];
     }
 
     public function styles(Worksheet $sheet)
     {
         return [
-            1 => ['font' => ['bold' => true]],
+            1 => [
+                'font' => [
+                    'bold' => true,
+                    'color' => ['argb' => 'FFFFFF']
+                ],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['argb' => '2563EB']
+                ]
+            ],
         ];
     }
 
     public function columnWidths(): array
     {
-        return ['A' => 30, 'B' => 15, 'C' => 40, 'D' => 30];
+        return [
+            'A' => 30, // Nama
+            'B' => 18, // NIM
+            'C' => 20, // No. WA / Telp
+            'D' => 35, // Fakultas
+            'E' => 35, // Program Studi
+        ];
     }
 }

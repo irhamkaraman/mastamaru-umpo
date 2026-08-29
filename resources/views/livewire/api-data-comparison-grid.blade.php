@@ -47,8 +47,12 @@
                                     @endif
                                 </div>
                                 <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                    {{ $item['fakultas'] }}<br>
-                                    {{ $item['jurusan'] }}
+                                    {{ $item['fakultas'] }} &bull; {{ $item['jurusan'] }}
+                                    @if(!empty($item['telepon']) && $item['telepon'] !== '-')
+                                        <div class="text-xs text-primary-600 dark:text-primary-400 font-medium mt-0.5">
+                                            📞 {{ $item['telepon'] }}
+                                        </div>
+                                    @endif
                                 </div>
                             </td>
                             
@@ -56,8 +60,12 @@
                                 @if($dbData)
                                     <div class="font-medium text-gray-900 dark:text-white">{{ $dbData['student_id'] }} - {{ $dbData['name'] }}</div>
                                     <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                        {{ $dbData['faculty'] ?? '-' }}<br>
-                                        {{ $dbData['study_program'] ?? '-' }}
+                                        {{ $dbData['faculty'] ?? '-' }} &bull; {{ $dbData['study_program'] ?? '-' }}
+                                        @if(!empty($dbData['phone_number']))
+                                            <div class="text-xs text-success-600 dark:text-success-400 font-medium mt-0.5">
+                                                📞 {{ $dbData['phone_number'] }}
+                                            </div>
+                                        @endif
                                     </div>
                                     <span class="inline-flex items-center rounded-md bg-warning-50 px-2 py-1 text-xs font-medium text-warning-800 ring-1 ring-inset ring-warning-600/20 mt-2">
                                         Duplikat (Sudah ada di DB)

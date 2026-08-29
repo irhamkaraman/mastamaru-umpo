@@ -1,7 +1,7 @@
 <div align="center">
   <img src="public/img/logo_Universitas-Muhammadiyah-Ponorogo-1.png" alt="Logo UMPO" width="150"/>
   <h1>🎓 Presensi MASTAMARU UMPO 2026</h1>
-  <p>Sistem Presensi Modern untuk kegiatan Masa Ta'aruf Mahasiswa Baru Universitas Muhammadiyah Ponorogo</p>
+  <p>Sistem Presensi Modern & Sistem Penilaian Kehadiran untuk kegiatan Masa Ta'aruf Mahasiswa Baru Universitas Muhammadiyah Ponorogo</p>
   
   ![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
   ![Filament](https://img.shields.io/badge/Filament-FFA611?style=for-the-badge&logo=filament&logoColor=white)
@@ -13,13 +13,44 @@
 ## 🌟 Fitur Unggulan
 
 - 🛡️ **Admin Panel Dinamis**: Antarmuka responsif yang dibangun dengan Filament v3, dilengkapi dengan sistem *Role & Permission* (Filament Shield).
-- 🔗 **Integrasi API Pintar (Smart Sync)**: 
-  - Mendukung pemetaan dinamis (*dynamic mapping*) dari API pihak ketiga.
-  - **Tarik Mahasiswa Aktif UMPO**: Fitur eksklusif satu-klik untuk menyedot ribuan data mahasiswa aktif dan otomatis menerjemahkan kode Fakultas/Jurusan menjadi teks aslinya!
-- 🎲 **Distribusi Kelompok Otomatis**: Fitur "Bagi Kelompok Acak" yang mendistribusikan ratusan peserta secara rata dan adil ke semua pendamping.
-- 📱 **QR Code / Barcode Presensi**: Mendukung pembuatan kode unik (*generate barcode*) untuk mempermudah alur absensi.
-- 📊 **Manajemen Master Data**: Pengelolaan Peserta, Pendamping (mendukung *multi-mentor*), dan Kelompok.
-- 📥 **Import & Export Excel**: Manajemen data raksasa menjadi mudah dengan *template spreadsheet*.
+- 🔗 **Integrasi & Sinkronisasi API Cepat (Smart Sync)**: 
+  - Mendukung pemetaan dinamis (*dynamic mapping*) dari API UMPO.
+  - **Tarik Mahasiswa Aktif UMPO**: Menarik data mahasiswa tahun 2026 super cepat dengan *batch chunking* (~4 detik untuk ribuan data), dilengkapi nomor WhatsApp, penerjemahan nama Fakultas & Prodi resmi, dan realtime progress bar.
+- 🏆 **Sistem Penilaian Poin Presensi (Sesuai SOP Sertifikat)**:
+  - Perhitungan poin otomatis per sesi (Sesi Datang: Hadir=10, Terlambat=8, Sakit=6, Izin=5; Sesi Pulang: Hadir=10, Sakit=7, Izin=5).
+  - Matriks kehadiran 5 hari kegiatan (Total Poin / 100, Persentase Nilai, Grade A/B/C/D, dan Status Kelulusan).
+  - Halaman terpisah khusus **Riwayat Poin & Nilai Peserta** yang elegan dengan dukungan Dark Mode penuh.
+- 🎲 **Distribusi Kelompok Otomatis**: Fitur "Bagi Kelompok Acak" yang mendistribusikan peserta yang belum punya kelompok secara rata dan adil ke semua pendamping.
+- 📱 **QR Code / Barcode Presensi**: Pembuatan kode unik otomatis untuk mempercepat proses absensi via scan kamera pendamping.
+- 📊 **Manajemen Master Data Lengkap**: Pengelolaan Peserta, Pendamping (termasuk nomor WhatsApp & akses mandiri), dan Kelompok.
+- 📥 **Import & Export Excel Canggih**:
+  - Export Excel/CSV Peserta lengkap dengan Nomor WA, Total Poin, Grade, dan otomatis menyesuaikan Filter aktif (Fakultas, Prodi, Kelompok, Pendamping).
+  - Export & Import Pendamping lengkap dengan Nomor WhatsApp.
+  - Form Pendaftaran Manual `/remake` yang fleksibel tanpa batasan perangkat (*no device lock*).
+
+---
+
+## ⌨️ Perintah Konsol Artisan (CLI Commands)
+
+Tersedia beberapa perintah CLI khusus untuk mempercepat sinkronisasi dan pencocokan data:
+
+### 1. Sinkronisasi Data Mahasiswa Baru 2026 dari API UMPO
+Menghubungkan ke API UMPO, mengambil token otentikasi dinamis, dan melakukan *upsert batch chunking* data mahasiswa tahun 2026 lengkap dengan nomor telepon:
+```bash
+php artisan umpo:sync-mahasiswa
+```
+
+### 2. Pencocokan & Sinkronisasi Data Mentah API (`ApiDataRecord`)
+Menarik data mentah dari endpoint API konfigurasi ke tabel penampungan perbandingan:
+```bash
+php artisan api:sync-records
+```
+
+### 3. Generate Ulang Hak Akses Shield
+Memperbarui seluruh permission Filament Shield saat ada resource atau permission baru:
+```bash
+php artisan shield:generate --all
+```
 
 ---
 
@@ -80,7 +111,7 @@ php artisan serve
 ### Akses Aplikasi
 Buka browser Anda dan kunjungi:
 - **URL**: `http://localhost:8000/admin`
-- **Email**: `admin@admin.com` *(Atau kredensial lain sesuai seeder Anda)*
+- **Email**: `admin@admin.com`
 - **Password**: `password`
 
 ---
@@ -88,27 +119,12 @@ Buka browser Anda dan kunjungi:
 ## 🛠️ Catatan Penting & Troubleshooting
 
 ### 1. Hak Akses (Role & Permission) Tidak Muncul?
-Jika Anda baru saja menarik (*pull*) kode terbaru dari GitHub atau jika ada penambahan menu/Resource baru (seperti modul Integrasi API), menu tersebut mungkin **disembunyikan** karena akun Anda belum diberi hak akses (*permission*) untuk menu baru tersebut.
-
-Untuk meng-generate ulang seluruh *permission* sistem secara otomatis (menggunakan *Filament Shield*), jalankan perintah berikut di terminal:
-
+Jika menu baru disembunyikan karena permission belum diperbarui, jalankan:
 ```bash
 php artisan shield:generate --all
-```
-
-**⚠️ PENTING UNTUK SERVER PRODUCTION:**
-Jika Anda melakukan ini di server *production*, menu mungkin masih belum muncul karena *Permission Cache*. Jalankan perintah tambahan berikut untuk mereset cache:
-```bash
 php artisan permission:cache-reset
-php artisan cache:clear
 php artisan optimize:clear
 ```
-
-Setelah perintah sukses dijalankan:
-1. Login ke Dashboard Admin.
-2. Buka menu **Roles** (di bawah kategori Filament Shield).
-3. Edit role `super_admin` atau role lainnya, lalu pastikan hak akses untuk resource yang baru telah dicentang (Select All).
-4. Simpan, dan menu baru akan langsung muncul!
 
 ---
 

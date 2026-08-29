@@ -35,6 +35,7 @@ class Attendance extends Model
         'student_id',
         'faculty',
         'study_program',
+        'phone_number',
         'raw_barcode',
         'unique_code',
         'status',
@@ -54,6 +55,22 @@ class Attendance extends Model
     public function mentor(): BelongsTo
     {
         return $this->belongsTo(Mentor::class);
+    }
+
+    /**
+     * Get the assessment for the attendance.
+     */
+    public function assessment(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(StudentAssessment::class, 'student_id', 'id');
+    }
+
+    /**
+     * Get total points earned.
+     */
+    public function getTotalPointsAttribute(): int
+    {
+        return (int) $this->attendanceSubmissions()->sum('score_points');
     }
 
     /**

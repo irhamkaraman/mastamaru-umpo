@@ -14,12 +14,14 @@ class AttendanceSubmission extends Model
         'student_id',
         'submitted_at',
         'status',
+        'score_points',
         'notes',
         'submission_method',
     ];
 
     protected $casts = [
         'submitted_at' => 'datetime',
+        'score_points' => 'integer',
     ];
 
     // Relasi dengan PresenceSession

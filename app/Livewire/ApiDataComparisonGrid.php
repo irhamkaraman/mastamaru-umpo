@@ -108,11 +108,13 @@ class ApiDataComparisonGrid extends Component
                 $nameKey = null;
                 $jurusanKey = null;
                 $fakultasKey = null;
+                $phoneKey = null;
                 
                 foreach ($this->mappingRules as $rule) {
                     if ($rule['db_column'] === 'name') $nameKey = $rule['api_key'];
                     if ($rule['db_column'] === 'study_program') $jurusanKey = $rule['api_key'];
                     if ($rule['db_column'] === 'faculty') $fakultasKey = $rule['api_key'];
+                    if ($rule['db_column'] === 'phone_number') $phoneKey = $rule['api_key'];
                 }
                 
                 // Get all NIMs to pre-fetch existing students
@@ -139,9 +141,10 @@ class ApiDataComparisonGrid extends Component
                 foreach ($data as $item) {
                     $nim = $studentIdKey && isset($item[$studentIdKey]) ? $item[$studentIdKey] : '-';
                     $nama = $nameKey && isset($item[$nameKey]) ? $item[$nameKey] : '-';
+                    $telepon = $phoneKey && isset($item[$phoneKey]) ? $item[$phoneKey] : ($item['teleponMhs'] ?? $item['telepon'] ?? '-');
                     
                     if (!empty($this->search)) {
-                        if (stripos($nim, $this->search) === false && stripos($nama, $this->search) === false) {
+                        if (stripos($nim, $this->search) === false && stripos($nama, $this->search) === false && stripos($telepon, $this->search) === false) {
                             continue;
                         }
                     }
@@ -152,6 +155,7 @@ class ApiDataComparisonGrid extends Component
                     $row = [
                         'nim' => $nim,
                         'nama' => $nama,
+                        'telepon' => $telepon,
                         'jurusan' => $jurusanKey && isset($item[$jurusanKey]) ? $item[$jurusanKey] : '-',
                         'fakultas' => $fakultasKey && isset($item[$fakultasKey]) ? $item[$fakultasKey] : '-',
                         'is_db_duplicate' => $isDbDuplicate,

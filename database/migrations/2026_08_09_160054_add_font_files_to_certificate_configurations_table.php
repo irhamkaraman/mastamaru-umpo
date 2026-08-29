@@ -12,10 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('certificate_configurations', function (Blueprint $table) {
-            $table->string('font_file_name')->nullable()->after('font_size_name');
-            $table->string('font_file_nim')->nullable()->after('font_size_nim');
-            $table->string('font_file_number')->nullable()->after('font_size_number');
-            $table->string('font_file_faculty')->nullable()->after('font_size_faculty');
+            if (!Schema::hasColumn('certificate_configurations', 'font_file_name')) {
+                $table->string('font_file_name')->nullable()->after('font_size_name');
+            }
+            if (!Schema::hasColumn('certificate_configurations', 'font_file_nim')) {
+                $table->string('font_file_nim')->nullable()->after('font_size_nim');
+            }
+            if (!Schema::hasColumn('certificate_configurations', 'font_file_number')) {
+                $table->string('font_file_number')->nullable()->after('font_size_number');
+            }
+            if (!Schema::hasColumn('certificate_configurations', 'font_file_faculty')) {
+                $table->string('font_file_faculty')->nullable();
+            }
         });
     }
 

@@ -74,15 +74,47 @@ class SyncUmpoMahasiswa extends Command
             $jurusanDict[$key] = $j['programStudi'] ?? $j['namaJurusan'] ?? '';
         }
         
-        $this->info('Berhasil membuat kamus untuk ' . count($jurusanDict) . ' jurusan dan ' . count($fakultasDict) . ' fakultas.');
-        $this->info('Fetching Data Mahasiswa Aktif dari API UMPO...');
-        
-        $mhsUrl = 'https://apikey.umpo.ac.id/api/mahasiswa/find-all-mhs-aktifs';
+        $this->info('Mengambil token otentikasi API UMPO...');
+        $accesscode = 'd6e2ec2be6d9527a21f034e1bee325b5ce4d2154cb0475943f1880c3fcbcee11';
+        $tokenUrl = 'https://apikey.umpo.ac.id/generate-token?' . http_build_query([
+            'apiLink' => 'http://76.76.76.185:8088/api-key/mahasiswas/find-all',
+            'accesscodeTalker' => $accesscode
+        ]);
+
+        $authToken = null;
         try {
-            $mhsResponse = \Illuminate\Support\Facades\Http::timeout(60)->get($mhsUrl);
+            $tokenResponse = \Illuminate\Support\Facades\Http::timeout(15)
+                ->withoutVerifying()
+                ->withHeaders(['Accept' => 'application/json'])
+                ->post($tokenUrl);
+
+            if ($tokenResponse->successful()) {
+                $tokenData = $tokenResponse->json();
+                $authToken = $tokenData['token'] ?? null;
+            }
+        } catch (\Exception $e) {
+            $this->error('Error generate token API: ' . $e->getMessage());
+            return Command::FAILURE;
+        }
+
+        if (!$authToken) {
+            $this->error('Gagal mendapatkan token otentikasi API UMPO.');
+            return Command::FAILURE;
+        }
+
+        $this->info('Fetching Data Mahasiswa Tahun 2026 dari API UMPO...');
+        $mhsUrl = 'https://apikey.umpo.ac.id/api-key/mahasiswas/find-all?tahun=2026';
+        try {
+            $mhsResponse = \Illuminate\Support\Facades\Http::timeout(60)
+                ->withoutVerifying()
+                ->withHeaders([
+                    'Authorization' => $authToken,
+                    'Accept' => 'application/json',
+                ])
+                ->get($mhsUrl);
             
             if (!$mhsResponse->successful()) {
-                $this->error('Gagal mengambil data Mahasiswa: HTTP ' . $mhsResponse->status());
+                $this->error('Gagal mengambil data Mahasiswa: HTTP ' . $mhsResponse->status() . ' - ' . $mhsResponse->body());
                 return Command::FAILURE;
             }
             
@@ -91,42 +123,69 @@ class SyncUmpoMahasiswa extends Command
             $this->error('Error koneksi API Mahasiswa: ' . $e->getMessage());
             return Command::FAILURE;
         }
-        
+
         $existingStudents = Attendance::pluck('id', 'student_id')->toArray();
-        $this->info('Ditemukan ' . count($mhsData) . ' mahasiswa aktif dari API. Mencocokkan dengan ' . count($existingStudents) . ' peserta di database...');
+        $existingUniqueCodes = Attendance::pluck('unique_code')->filter()->flip()->toArray();
+        
+        $this->info('Ditemukan ' . count($mhsData) . ' mahasiswa dari API Tahun 2026.');
+        $this->info('Memproses sinkronisasi super cepat via batch chunking...');
         
         $bar = $this->output->createProgressBar(count($mhsData));
         $bar->start();
         
-        $countUpdated = 0;
-        foreach ($mhsData as $mhs) {
-            $nim = $mhs['nim'] ?? null;
-            
-            if (empty($nim) || !isset($existingStudents[$nim])) {
+        $chunks = array_chunk($mhsData, 250);
+        $countProcessed = 0;
+
+        foreach ($chunks as $chunk) {
+            $upsertData = [];
+            foreach ($chunk as $mhs) {
+                $nim = trim($mhs['nim'] ?? '');
+                if (empty($nim)) {
+                    $bar->advance();
+                    continue;
+                }
+                
+                $kodeFak = $mhs['kodeFakultas'] ?? '';
+                $kodeJur = $mhs['kodeJurusan'] ?? '';
+                $dictKey = $kodeFak . '-' . $kodeJur;
+                
+                $programStudi = $jurusanDict[$dictKey] ?? $kodeJur;
+                $namaFakultas = $fakultasDict[$kodeFak] ?? $kodeFak;
+                $phoneNumber = $mhs['teleponMhs'] ?? $mhs['telepon'] ?? $mhs['phone'] ?? null;
+                
+                $uniqueCode = \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(8));
+                while (isset($existingUniqueCodes[$uniqueCode])) {
+                    $uniqueCode = \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(8));
+                }
+                $existingUniqueCodes[$uniqueCode] = true;
+
+                $upsertData[] = [
+                    'student_id' => $nim,
+                    'name' => trim($mhs['namaMhs'] ?? 'Mahasiswa'),
+                    'study_program' => $programStudi,
+                    'faculty' => $namaFakultas,
+                    'phone_number' => $phoneNumber,
+                    'unique_code' => $uniqueCode,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+
+                $countProcessed++;
                 $bar->advance();
-                continue;
             }
-            
-            $kodeFak = $mhs['kodeFakultas'] ?? '';
-            $kodeJur = $mhs['kodeJurusan'] ?? '';
-            $dictKey = $kodeFak . '-' . $kodeJur;
-            
-            $programStudi = $jurusanDict[$dictKey] ?? $kodeJur;
-            $namaFakultas = $fakultasDict[$kodeFak] ?? $kodeFak;
-            
-            Attendance::where('student_id', $nim)->update([
-                'name' => $mhs['namaMhs'],
-                'study_program' => $programStudi,
-                'faculty' => $namaFakultas,
-            ]);
-            
-            $countUpdated++;
-            $bar->advance();
+
+            if (!empty($upsertData)) {
+                Attendance::upsert(
+                    $upsertData,
+                    ['student_id'],
+                    ['name', 'study_program', 'faculty', 'phone_number', 'updated_at']
+                );
+            }
         }
         
         $bar->finish();
         $this->newLine();
-        $this->info('Selesai! Berhasil mencocokkan dan memperbarui ' . $countUpdated . ' data peserta.');
+        $this->info('Selesai! Berhasil memproses dan menyinkronkan ' . $countProcessed . ' data peserta tahun 2026.');
         return Command::SUCCESS;
     }
 }

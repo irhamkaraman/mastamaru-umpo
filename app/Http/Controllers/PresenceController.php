@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Models\AttendanceSubmission;
 use App\Models\PresenceSession;
+use App\Models\StudentAssessment;
+use App\Services\ScoreCalculationService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class PresenceController extends Controller
 {
@@ -107,11 +109,13 @@ class PresenceController extends Controller
                         'id' => $submission->id,
                         'student_name' => $submission->student->name,
                         'student_id' => $submission->student->student_id,
+                        'db_id' => $submission->student_id,
                         'faculty' => $submission->student->faculty ?? 'Tidak tersedia',
                         'study_program' => $submission->student->study_program ?? 'Tidak tersedia',
                         'submitted_at' => $submission->submitted_at->format('H:i:s'),
                         'submission_method' => $submission->submission_method,
-                        'status' => $submission->status
+                        'status' => $submission->status,
+                        'score_points' => $submission->score_points ?? 0
                     ];
                 }),
                 'absentStudents' => $absentStudents->map(function ($student) {
@@ -127,6 +131,56 @@ class PresenceController extends Controller
                 'totalPresent' => $presentStudents->count(),
                 'totalAbsent' => $absentStudents->count(),
                 'totalStudents' => $allStudents->count()
+            ]
+        ]);
+    }
+
+    public function getStudentPointHistory($studentId)
+    {
+        $groupId = session('mentor_group_id');
+        $student = Attendance::where('id', $studentId)
+            ->where('group_id', $groupId)
+            ->with(['assessment'])
+            ->firstOrFail();
+
+        $matrix = ScoreCalculationService::getStudentPresenceMatrix($student->id);
+        $assessment = ScoreCalculationService::recalculateForStudent($student->id);
+
+        $submissions = AttendanceSubmission::where('student_id', $student->id)
+            ->with(['presenceSession', 'mentor'])
+            ->orderBy('submitted_at', 'desc')
+            ->get()
+            ->map(function($sub) {
+                return [
+                    'session_name' => $sub->presenceSession->session_name ?? 'Sesi Presensi',
+                    'session_type' => ucfirst($sub->presenceSession->session_type ?? 'datang'),
+                    'day_number' => $sub->presenceSession->day_number ?? 1,
+                    'status' => ucfirst($sub->status),
+                    'score_points' => $sub->score_points,
+                    'time' => $sub->submitted_at ? $sub->submitted_at->format('d/m/Y H:i:s') : '-',
+                    'mentor_name' => $sub->mentor->name ?? '-'
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'student' => [
+                    'name' => $student->name,
+                    'nim' => $student->student_id,
+                    'faculty' => $student->faculty,
+                    'study_program' => $student->study_program,
+                ],
+                'assessment' => [
+                    'total_points' => $matrix['total_points'],
+                    'attendance_score' => $assessment->attendance_score,
+                    'activity_score' => $assessment->activity_score,
+                    'final_score' => $assessment->final_score,
+                    'grade' => $assessment->grade,
+                    'status' => strtoupper($assessment->status),
+                ],
+                'matrix' => $matrix['days'],
+                'history' => $submissions
             ]
         ]);
     }
@@ -215,6 +269,7 @@ class PresenceController extends Controller
             }
 
             // Simpan data presensi langsung ke database
+            $points = ScoreCalculationService::calculatePoints($session->session_type ?? 'datang', 'hadir');
             AttendanceSubmission::create([
                 'presence_session_id' => $session->id,
                 'group_id' => $groupId,
@@ -222,16 +277,20 @@ class PresenceController extends Controller
                 'student_id' => $student->id,
                 'submitted_at' => $deviceTime,
                 'status' => 'hadir',
+                'score_points' => $points,
                 'submission_method' => 'qr_scan',
                 'notes' => 'Presensi melalui scan QR code'
             ]);
+
+            ScoreCalculationService::recalculateForStudent($student->id);
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Presensi untuk ' . $student->name . ' berhasil disimpan.',
-                'student_name' => $student->name
+                'message' => 'Presensi untuk ' . $student->name . ' berhasil disimpan (+' . $points . ' poin).',
+                'student_name' => $student->name,
+                'points' => $points
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -318,6 +377,7 @@ class PresenceController extends Controller
             }
 
             // Simpan data presensi langsung ke database
+            $points = ScoreCalculationService::calculatePoints($session->session_type ?? 'datang', 'hadir');
             AttendanceSubmission::create([
                 'presence_session_id' => $session->id,
                 'group_id' => $groupId,
@@ -325,16 +385,20 @@ class PresenceController extends Controller
                 'student_id' => $student->id,
                 'submitted_at' => $deviceTime,
                 'status' => 'hadir',
+                'score_points' => $points,
                 'submission_method' => 'manual',
                 'notes' => 'Presensi melalui input manual'
             ]);
+
+            ScoreCalculationService::recalculateForStudent($student->id);
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Presensi untuk ' . $student->name . ' berhasil disimpan.',
-                'student_name' => $student->name
+                'message' => 'Presensi untuk ' . $student->name . ' berhasil disimpan (+' . $points . ' poin).',
+                'student_name' => $student->name,
+                'points' => $points
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -350,7 +414,7 @@ class PresenceController extends Controller
         try {
             $request->validate([
                 'student_id' => 'required|integer|exists:attendances,id',
-                'status' => 'required|string|in:terlambat,izin,sakit',
+                'status' => 'required|string|in:hadir,terlambat,izin,sakit',
                 'device_timestamp' => 'required|string'
             ]);
 
@@ -406,7 +470,8 @@ class PresenceController extends Controller
                 ], 409);
             }
 
-            // Buat record presensi baru
+            // Buat record presensi baru dengan perhitungan poin otomatis
+            $points = ScoreCalculationService::calculatePoints($session->session_type ?? 'datang', $request->status);
             AttendanceSubmission::create([
                 'presence_session_id' => $session->id,
                 'group_id' => $groupId,
@@ -414,9 +479,12 @@ class PresenceController extends Controller
                 'student_id' => $student->id,
                 'submitted_at' => $deviceTime,
                 'status' => $request->status,
+                'score_points' => $points,
                 'submission_method' => 'manual_mentor',
                 'notes' => 'Presensi dibuat oleh mentor dengan status: ' . $request->status
             ]);
+
+            ScoreCalculationService::recalculateForStudent($student->id);
 
             DB::commit();
 
@@ -429,7 +497,8 @@ class PresenceController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Record presensi untuk ' . $student->name . ' berhasil dibuat dengan status ' . $statusText[$request->status] . '.'
+                'message' => 'Record presensi untuk ' . $student->name . ' berhasil dibuat (' . $statusText[$request->status] . ', +' . $points . ' poin).',
+                'points' => $points
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([

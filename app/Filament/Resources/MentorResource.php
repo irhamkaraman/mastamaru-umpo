@@ -8,6 +8,7 @@ use App\Models\Mentor;
 use App\Models\Group;
 use App\Imports\MentorImport;
 use App\Exports\MentorTemplateExport;
+use App\Exports\MentorDataExport;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -24,7 +25,7 @@ class MentorResource extends Resource
 {
     protected static ?string $model = Mentor::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
     protected static ?string $navigationLabel = 'Pendamping';
 
@@ -61,6 +62,12 @@ class MentorResource extends Resource
                     ->unique(ignoreRecord: true)
                     ->maxLength(255)
                     ->label('NIM'),
+                Forms\Components\TextInput::make('phone_number')
+                    ->tel()
+                    ->maxLength(20)
+                    ->label('Nomor WhatsApp / Telp')
+                    ->placeholder('Contoh: 081234567890')
+                    ->helperText('Nomor yang dapat dihubungi oleh peserta kelompok'),
                 Forms\Components\TextInput::make('password')
                     ->password()
                     ->required()
@@ -94,9 +101,34 @@ class MentorResource extends Resource
     {
         return $table
             ->headerActions([
+                Tables\Actions\Action::make('export_excel')
+                    ->label('Export Excel')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->visible(fn () => (auth()->user()?->can('export', \App\Models\Mentor::class) ?? false) && Group::exists()) /** @phpstan-ignore-line */
+                    ->action(function ($livewire) {
+                        try {
+                            ini_set('memory_limit', '2048M');
+                            ini_set('max_execution_time', 600);
+
+                            $filters = $livewire->tableFilters ?? [];
+                            $filename = 'data-pendamping-' . date('Y-m-d-H-i-s') . '.xlsx';
+
+                            return Excel::download(new MentorDataExport($filters), $filename);
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Export Gagal')
+                                ->body('Terjadi kesalahan saat export: ' . $e->getMessage())
+                                ->danger()
+                                ->send();
+
+                            return null;
+                        }
+                    })
+                    ->tooltip('Export data pendamping ke format Excel (.xlsx)'),
                 Tables\Actions\Action::make('downloadTemplate')
                     ->label('Download Template')
-                    ->icon('heroicon-o-document-arrow-down')
+                    ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
                     ->visible(fn () => (auth()->user()?->can('downloadTemplate', \App\Models\Mentor::class) ?? false) && Group::exists()) /** @phpstan-ignore-line */
                     ->action(function () {
@@ -104,7 +136,7 @@ class MentorResource extends Resource
                     }),
                 Tables\Actions\Action::make('importExcel')
                     ->label('Import Excel')
-                    ->icon('heroicon-o-document-arrow-up')
+                    ->icon('heroicon-o-arrow-up-tray')
                     ->color('primary')
                     ->visible(fn () => (auth()->user()?->can('import', \App\Models\Mentor::class) ?? false) && Group::exists()) /** @phpstan-ignore-line */
                     ->form([
@@ -114,7 +146,7 @@ class MentorResource extends Resource
                             ->required()
                             ->disk('public')
                             ->directory('imports')
-                            ->helperText('Upload file Excel dengan format: Nama Kelompok, Nama Pendamping, NIM, Kata Sandi')
+                            ->helperText('Upload file Excel dengan format: Nama Kelompok, Nama Pendamping, NIM, Nomor WhatsApp / Telp, Kata Sandi')
                     ])
                     ->action(function (array $data) {
                         try {
@@ -170,6 +202,10 @@ class MentorResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->label('NIM'),
+                Tables\Columns\TextColumn::make('phone_number')
+                    ->searchable()
+                    ->label('No. Telp / WA')
+                    ->placeholder('-'),
                 Tables\Columns\TextColumn::make('group.name')
                     ->sortable()
                     ->searchable()
@@ -196,6 +232,25 @@ class MentorResource extends Resource
                 // 
             ])
             ->actions([
+                Tables\Actions\Action::make('presence_log')
+                    ->label('Log Presensi & Poin')
+                    ->icon('heroicon-o-clipboard-document-list')
+                    ->color('info')
+                    ->modalHeading(fn (Mentor $record) => 'Log Presensi yang Dicatat oleh Mentor: ' . $record->name . ' (' . $record->student_id . ')')
+                    ->modalWidth('4xl')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalContent(function (Mentor $record) {
+                        $submissions = \App\Models\AttendanceSubmission::where('mentor_id', $record->id)
+                            ->with(['student', 'presenceSession'])
+                            ->orderBy('submitted_at', 'desc')
+                            ->get();
+
+                        return view('filament.modals.mentor-point-history', [
+                            'mentor' => $record,
+                            'submissions' => $submissions,
+                        ]);
+                    }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

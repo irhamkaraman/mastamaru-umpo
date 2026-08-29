@@ -5,10 +5,10 @@
             Informasi Tombol Tarik Mahasiswa Aktif
         </strong>
         <p class="mb-1">
-            Tombol hijau <strong>Tarik Mahasiswa Aktif UMPO</strong> di atas <u>BUKAN</u> berfungsi untuk memasukkan data baru ke tabel ini. Tombol tersebut berfungsi secara spesifik untuk <strong>menerjemahkan dan memperbarui (update)</strong> Kode Fakultas & Jurusan yang masih berupa angka (dari API) menjadi nama aslinya.
+            Tombol hijau <strong>Tarik Mahasiswa Aktif UMPO</strong> di atas berfungsi untuk <strong>menyinkronkan data mahasiswa aktif</strong> (baik memasukkan data baru maupun memperbarui yang sudah ada), otomatis menerjemahkan Kode Fakultas & Jurusan, serta memperbarui <strong>Nomor Telepon/WhatsApp</strong> peserta langsung dari API UMPO.
         </p>
         <p>
-            Jika tabel di bawah ini masih kosong dan Anda ingin menarik data baru dari API UMPO, silakan kunjungi halaman <a href="/admin/api-data-records" class="font-bold underline text-warning-900 dark:text-warning-100">Data Hasil API</a> lalu lakukan langkah <strong>Sinkronisasi</strong> di sana.
+            Anda juga dapat melihat perbandingan data mentah, cek duplikasi, atau memilih sinkronisasi sebagian melalui menu <a href="/admin/api-data-records" class="font-bold underline text-warning-900 dark:text-warning-100">Data Hasil API</a>.
         </p>
     </div>
 

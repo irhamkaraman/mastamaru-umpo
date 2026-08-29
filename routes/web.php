@@ -556,6 +556,13 @@ Route::get('/groups', [HomeController::class, 'groups'])->name('home.groups');
 Route::get('/remake', [HomeController::class, 'remake'])->name('home.remake');
 Route::post('/remake', [HomeController::class, 'storeParticipant'])->name('home.store-participant');
 
+// Route Sinkronisasi Mahasiswa Aktif dengan Realtime Progress
+Route::prefix('admin/umpo-sync')->middleware(['web', 'auth'])->group(function () {
+    Route::post('/start', [\App\Http\Controllers\UmpoSyncProgressController::class, 'startSync'])->name('umpo.sync.start');
+    Route::get('/progress', [\App\Http\Controllers\UmpoSyncProgressController::class, 'getProgress'])->name('umpo.sync.progress');
+    Route::post('/execute', [\App\Http\Controllers\UmpoSyncProgressController::class, 'executeBatch'])->name('umpo.sync.execute');
+});
+
 // Route untuk autentikasi mentor
 Route::prefix('mentor')->group(function () {
     Route::get('/', function () {
@@ -570,6 +577,7 @@ Route::prefix('mentor')->group(function () {
 
     // Route untuk dashboard (protected)
     Route::get('/dashboard', [MentorAuthController::class, 'dashboard'])->name('mentor.dashboard')->middleware('mentor.auth');
+    Route::post('/update-profile', [MentorAuthController::class, 'updateProfile'])->name('mentor.update-profile')->middleware('mentor.auth');
 
     // Rute untuk detail presensi mentor
     Route::get('/presence/{slug}', [PresenceController::class, 'show'])->name('mentor.presence.detail')->middleware('mentor.auth');
@@ -581,6 +589,9 @@ Route::prefix('mentor')->group(function () {
 
     // Route untuk mengambil data presensi via AJAX
     Route::get('/presence/{slug}/data', [PresenceController::class, 'getAttendanceData'])->name('mentor.presence.data')->middleware('mentor.auth');
+
+    // Route untuk mengambil riwayat poin peserta
+    Route::get('/student/{studentId}/point-history', [PresenceController::class, 'getStudentPointHistory'])->name('mentor.student.point-history')->middleware('mentor.auth');
 
     // Route untuk membuat record presensi baru (untuk peserta yang belum hadir)
     Route::post('/presence/{slug}/create-record', [PresenceController::class, 'createAttendanceRecord'])->name('mentor.presence.create-record')->middleware('mentor.auth');

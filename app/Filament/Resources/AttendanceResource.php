@@ -124,6 +124,11 @@ class AttendanceResource extends Resource
                     ->placeholder('Masukkan program studi')
                     ->maxLength(255)
                     ->required(),
+                Forms\Components\TextInput::make('phone_number')
+                    ->label('Nomor WhatsApp / Telepon')
+                    ->placeholder('Contoh: 081234567890')
+                    ->tel()
+                    ->maxLength(255),
                 Forms\Components\TextInput::make('unique_code')
                     ->maxLength(255)
                     ->label('Kode Unik')
@@ -161,6 +166,10 @@ class AttendanceResource extends Resource
                     ->sortable()
                     ->label('Program Studi')
                     ->placeholder('Tidak ada program studi'),
+                Tables\Columns\TextColumn::make('phone_number')
+                    ->searchable()
+                    ->label('No. WA / Telp')
+                    ->placeholder('-'),
                 Tables\Columns\TextColumn::make('group.name')
                     ->sortable()
                     ->searchable()
@@ -233,27 +242,10 @@ class AttendanceResource extends Resource
                     ->label('Tarik Mahasiswa Aktif UMPO')
                     ->icon('heroicon-o-cloud-arrow-down')
                     ->color('success')
-                    ->requiresConfirmation()
-                    ->modalHeading('Tarik Data Mahasiswa Aktif?')
-                    ->modalDescription('Tindakan ini akan menarik seluruh mahasiswa aktif dari API UMPO dan memasukkannya ke dalam tabel Peserta secara otomatis, sekaligus menerjemahkan kode jurusan ke nama aslinya. Lanjutkan?')
-                    ->action(function () {
-                        try {
-                            Artisan::call('umpo:sync-mahasiswa');
-                            $output = Artisan::output();
-                            
-                            Notification::make()
-                                ->title('Sinkronisasi Selesai')
-                                ->body('Data mahasiswa aktif berhasil ditarik dan diproses.')
-                                ->success()
-                                ->send();
-                        } catch (\Exception $e) {
-                            Notification::make()
-                                ->title('Error Sinkronisasi')
-                                ->body($e->getMessage())
-                                ->danger()
-                                ->send();
-                        }
-                    }),
+                    ->modalHeading('Sinkronisasi Mahasiswa Aktif dari API UMPO (Tahun 2026)')
+                    ->modalWidth('3xl')
+                    ->modalFooterActions([])
+                    ->modalContent(fn () => view('filament.modals.umpo-sync-progress')),
                 Tables\Actions\Action::make('randomize_groups')
                     ->label('Bagi Kelompok Acak')
                     ->icon('heroicon-o-arrows-right-left')
@@ -302,14 +294,13 @@ class AttendanceResource extends Resource
                     ->icon('heroicon-o-document-arrow-down')
                     ->color('info')
                     ->visible(fn () => (auth()->user()?->can('export', Attendance::class) ?? false) && Group::exists() && Mentor::exists()) /** @phpstan-ignore-line */
-                    ->action(function () {
+                    ->action(function ($livewire) {
                         try {
-                            // Konfigurasi memory dan waktu eksekusi
                             ini_set('memory_limit', '2048M');
                             ini_set('max_execution_time', 600);
 
-                            // Gunakan CSV untuk menghindari masalah memory PhpSpreadsheet
-                            return Excel::download(new AttendanceDataExport, 'data-peserta-' . date('Y-m-d-H-i-s') . '.csv', \Maatwebsite\Excel\Excel::CSV);
+                            $filters = $livewire->tableFilters ?? [];
+                            return Excel::download(new AttendanceDataExport($filters), 'data-peserta-' . date('Y-m-d-H-i-s') . '.csv', \Maatwebsite\Excel\Excel::CSV);
                         } catch (\Exception $e) {
                             Notification::make()
                                 ->title('Export Gagal')
@@ -320,21 +311,21 @@ class AttendanceResource extends Resource
                             return null;
                         }
                     })
-                    ->tooltip('Export semua data peserta ke file CSV'),
+                    ->tooltip('Export data peserta (sesuai filter aktif) ke file CSV'),
                 Tables\Actions\Action::make('export_excel')
                     ->label('Export Excel')
                     ->icon('heroicon-o-document-arrow-down')
                     ->color('success')
                     ->visible(fn () => (auth()->user()?->can('export', Attendance::class) ?? false) && Group::exists() && Mentor::exists()) /** @phpstan-ignore-line */
-                    ->action(function () {
+                    ->action(function ($livewire) {
                         try {
                             ini_set('memory_limit', '2048M');
                             ini_set('max_execution_time', 600);
 
+                            $filters = $livewire->tableFilters ?? [];
                             $filename = 'data-peserta-' . date('Y-m-d-H-i-s') . '.xlsx';
 
-                            return Excel::download(new AttendanceDataExport(), $filename);
-
+                            return Excel::download(new AttendanceDataExport($filters), $filename);
                         } catch (\Exception $e) {
                             Notification::make()
                                 ->title('Export Gagal')
@@ -345,7 +336,7 @@ class AttendanceResource extends Resource
                             return null;
                         }
                     })
-                    ->tooltip('Export data peserta ke format Excel (.xlsx)'),
+                    ->tooltip('Export data peserta (sesuai filter aktif) ke format Excel (.xlsx)'),
                 Tables\Actions\Action::make('download_template')
                     ->label('Download Template')
                     ->icon('heroicon-o-arrow-down-tray')
@@ -434,6 +425,11 @@ class AttendanceResource extends Resource
                     ->modalWidth('md')
             ])
             ->actions([
+                Tables\Actions\Action::make('point_history')
+                    ->label('Riwayat Poin')
+                    ->icon('heroicon-o-chart-bar')
+                    ->color('info')
+                    ->url(fn (Attendance $record): string => static::getUrl('point_history', ['record' => $record])),
                 Tables\Actions\Action::make('mark_lulus')
                     ->label('Lulus')
                     ->icon('heroicon-o-check-circle')
@@ -551,6 +547,7 @@ class AttendanceResource extends Resource
             'index' => Pages\ListAttendances::route('/'),
             'create' => Pages\CreateAttendance::route('/create'),
             'edit' => Pages\EditAttendance::route('/{record}/edit'),
+            'point_history' => Pages\ViewPointHistory::route('/{record}/point-history'),
         ];
     }
 

@@ -61,6 +61,17 @@ class HomeController extends Controller
             'mentor' => $student->mentor ? $student->mentor->name : 'Belum ditentukan'
         ], JSON_UNESCAPED_UNICODE);
 
+        // Hitung nilai dan ambil matriks presensi
+        $assessment = \App\Services\ScoreCalculationService::recalculateForStudent($student->id);
+        $matrix = \App\Services\ScoreCalculationService::getStudentPresenceMatrix($student->id);
+        $submissions = \App\Models\AttendanceSubmission::where('student_id', $student->id)
+            ->with(['presenceSession', 'mentor'])
+            ->orderBy('submitted_at', 'desc')
+            ->get();
+
+        // Refresh status student
+        $student->refresh();
+
         // Cek Sertifikat
         $certDir = storage_path('app/public/certificates');
         $certificateFile = null;
@@ -75,7 +86,10 @@ class HomeController extends Controller
             'student' => $student,
             'uniqueCode' => $uniqueCode,
             'rawBarcode' => $rawBarcode,
-            'certificateUrl' => $certificateFile
+            'certificateUrl' => $certificateFile,
+            'assessment' => $assessment,
+            'matrix' => $matrix,
+            'submissions' => $submissions,
         ]);
     }
 
@@ -208,19 +222,17 @@ class HomeController extends Controller
             'study_program.required' => 'Program studi wajib dipilih'
         ]);
 
-        // Validasi anti-bot: Cek apakah nama sudah ada di sistem
-        $existingName = Attendance::where('name', 'LIKE', '%' . trim($request->name) . '%')
-            ->orWhere('name', 'LIKE', trim($request->name) . '%')
-            ->orWhere('name', 'LIKE', '%' . trim($request->name))
-            ->first();
+        // Validasi nama: Cek apakah nama lengkap yang persis sama sudah ada di sistem
+        $trimmedName = trim($request->name);
+        $existingName = Attendance::whereRaw('LOWER(TRIM(name)) = ?', [strtolower($trimmedName)])->first();
 
         if ($existingName) {
             return back()->withErrors([
-                'name' => 'Nama peserta sudah terdaftar dalam sistem. Silakan gunakan nama yang berbeda atau hubungi admin jika ini adalah kesalahan.'
+                'name' => 'Peserta dengan nama "' . $existingName->name . '" sudah terdaftar dalam sistem (NIM: ' . $existingName->student_id . ').'
             ])->withInput();
         }
 
-        // Validasi anti-bot: Cek apakah fakultas dan program studi valid dari data yang tersedia
+        // Validasi fakultas dan program studi valid dari data yang tersedia
         $availableFaculties = $this->getFaculties();
         $availablePrograms = $this->getStudyPrograms();
 
@@ -233,17 +245,6 @@ class HomeController extends Controller
         if (!in_array($request->study_program, $availablePrograms)) {
             return back()->withErrors([
                 'study_program' => 'Program studi yang dipilih tidak valid.'
-            ])->withInput();
-        }
-
-        // Validasi rate limiting: Cek apakah ada submission dalam 5 menit terakhir dari IP yang sama
-        $recentSubmission = Attendance::where('created_at', '>=', now()->subMinutes(5))
-            ->where('raw_barcode', 'LIKE', '%' . $request->ip() . '%')
-            ->exists();
-
-        if ($recentSubmission) {
-            return back()->withErrors([
-                'general' => 'Terlalu banyak submission dalam waktu singkat. Silakan tunggu beberapa menit sebelum mencoba lagi.'
             ])->withInput();
         }
 

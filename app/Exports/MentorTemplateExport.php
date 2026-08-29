@@ -17,18 +17,19 @@ class MentorTemplateExport implements FromArray, WithHeadings, WithStyles, WithC
         $data = [];
         
         if ($groups->isNotEmpty()) {
-            foreach ($groups as $index => $group) {
+            foreach ($groups->take(5) as $index => $group) {
                 $data[] = [
                     $group->name,
                     'Pendamping ' . ($index + 1),
                     '2024000' . str_pad($index + 1, 3, '0', STR_PAD_LEFT),
+                    '0812345678' . str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                     'password123'
                 ];
             }
         } else {
             $data = [
-                ['Kelompok A', 'Ahmad Mentor', '2024000001', 'password123'],
-                ['Kelompok B', 'Budi Pendamping', '2024000002', 'password456'],
+                ['Kelompok 1', 'Ahmad Mentor', '2024000001', '081234567890', 'password123'],
+                ['Kelompok 2', 'Budi Pendamping', '2024000002', '085712345678', 'password456'],
             ];
         }
         
@@ -37,18 +38,39 @@ class MentorTemplateExport implements FromArray, WithHeadings, WithStyles, WithC
 
     public function headings(): array
     {
-        return ['Nama Kelompok', 'Nama Pendamping', 'NIM', 'Kata Sandi'];
+        return [
+            'Nama Kelompok',
+            'Nama Pendamping',
+            'NIM',
+            'Nomor WhatsApp / Telp',
+            'Kata Sandi'
+        ];
     }
 
     public function styles(Worksheet $sheet)
     {
         return [
-            1 => ['font' => ['bold' => true]],
+            1 => [
+                'font' => [
+                    'bold' => true,
+                    'color' => ['argb' => 'FFFFFF']
+                ],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['argb' => '2563EB']
+                ]
+            ],
         ];
     }
 
     public function columnWidths(): array
     {
-        return ['A' => 20, 'B' => 25, 'C' => 15, 'D' => 15];
+        return [
+            'A' => 25, // Nama Kelompok
+            'B' => 30, // Nama Pendamping
+            'C' => 18, // NIM
+            'D' => 22, // No. WA / Telp
+            'E' => 18  // Kata Sandi
+        ];
     }
 }

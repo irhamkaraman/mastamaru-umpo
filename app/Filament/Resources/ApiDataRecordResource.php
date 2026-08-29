@@ -184,7 +184,7 @@ class ApiDataRecordResource extends Resource
                                                     elseif ($dbCol === 'name' && (str_contains($keyLower, 'nama') || str_contains($keyLower, 'name'))) $guess = $key;
                                                     elseif ($dbCol === 'faculty' && (str_contains($keyLower, 'fakultas') || str_contains($keyLower, 'faculty'))) $guess = $key;
                                                     elseif ($dbCol === 'study_program' && (str_contains($keyLower, 'jurusan') || str_contains($keyLower, 'prodi') || str_contains($keyLower, 'program'))) $guess = $key;
-                                                    elseif ($dbCol === 'phone_number' && (str_contains($keyLower, 'telepon') || str_contains($keyLower, 'hp') || str_contains($keyLower, 'phone'))) $guess = $key;
+                                                    elseif ($dbCol === 'phone_number' && (str_contains($keyLower, 'telepon') || str_contains($keyLower, 'telp') || str_contains($keyLower, 'hp') || str_contains($keyLower, 'phone') || str_contains($keyLower, 'wa'))) $guess = $key;
                                                     elseif ($dbCol === 'gender' && (str_contains($keyLower, 'sex') || str_contains($keyLower, 'gender') || str_contains($keyLower, 'kelamin'))) $guess = $key;
                                                     
                                                     if ($guess) break;

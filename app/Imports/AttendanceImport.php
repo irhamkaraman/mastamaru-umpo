@@ -6,7 +6,6 @@ use App\Models\Attendance;
 use App\Models\Group;
 use App\Models\Mentor;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\SkipsErrors;
@@ -22,11 +21,6 @@ class AttendanceImport implements ToCollection, SkipsOnError, SkipsOnFailure, Wi
 
     protected $importedCount = 0;
     protected $skippedCount = 0;
-
-    public function __construct()
-    {
-        // Constructor sederhana tanpa session tracking
-    }
 
     public function collection(Collection $collection)
     {
@@ -64,58 +58,65 @@ class AttendanceImport implements ToCollection, SkipsOnError, SkipsOnFailure, Wi
                     continue;
                 }
 
-                // Akses data berdasarkan indeks kolom (A=0, B=1, C=2, D=3)
-                $namaPeserta = isset($row[0]) ? trim($row[0]) : null;
-                $nimPeserta = isset($row[1]) ? trim($row[1]) : null;
-                $fakultasPeserta = isset($row[2]) ? trim($row[2]) : null;
-                $programStudi = isset($row[3]) ? trim($row[3]) : null;
+                // Format template baru:
+                // Kolom 0: nama_peserta
+                // Kolom 1: nim_peserta
+                // Kolom 2: no_telp_wa (bisa kosong atau jika template lama adalah fakultas)
+                // Kolom 3: fakultas
+                // Kolom 4: program_studi
+                $col0 = isset($row[0]) ? trim((string)$row[0]) : null;
+                $col1 = isset($row[1]) ? trim((string)$row[1]) : null;
+                $col2 = isset($row[2]) ? trim((string)$row[2]) : null;
+                $col3 = isset($row[3]) ? trim((string)$row[3]) : null;
+                $col4 = isset($row[4]) ? trim((string)$row[4]) : null;
 
-                if (!$namaPeserta || !$nimPeserta) {
+                if (!$col0 || !$col1) {
                     $this->skippedCount++;
                     continue;
                 }
 
-                // Jika fakultas tidak ada, pilih secara random
-                if (!$fakultasPeserta) {
-                    $faculties = [
-                        'Fakultas Teknik',
-                        'Fakultas Ekonomi dan Bisnis',
-                        'Fakultas Ilmu Sosial dan Politik',
-                        'Fakultas Hukum',
-                        'Fakultas Pertanian',
-                        'Fakultas Kedokteran',
-                        'Fakultas Keguruan dan Ilmu Pendidikan',
-                        'Fakultas Matematika dan Ilmu Pengetahuan Alam',
-                        'Fakultas Peternakan',
-                        'Fakultas Kehutanan',
-                        'Fakultas Ilmu Kelautan dan Perikanan',
-                        'Fakultas Kesehatan Masyarakat',
-                        'Fakultas Farmasi',
-                        'Fakultas Ilmu Budaya'
-                    ];
-                    $fakultasPeserta = $faculties[array_rand($faculties)];
+                $namaPeserta = $col0;
+                $nimPeserta = $col1;
+                $phoneNumber = null;
+                $fakultasPeserta = null;
+                $programStudi = null;
+
+                // Cek apakah kolom 2 adalah nomor telepon (mengandung angka telepon) atau teks fakultas
+                if ($col4 !== null && $col4 !== '') {
+                    // Berarti format 5 kolom (ada no telp di col 2)
+                    $phoneNumber = $col2;
+                    $fakultasPeserta = $col3;
+                    $programStudi = $col4;
+                } elseif (preg_match('/^[0-9+\-\s]{6,20}$/', $col2 ?? '')) {
+                    // Col 2 terdeteksi nomor telepon
+                    $phoneNumber = $col2;
+                    $fakultasPeserta = $col3;
+                    $programStudi = $col4;
+                } else {
+                    // Format lama 4 kolom (Col 2 = Fakultas, Col 3 = Prodi)
+                    $fakultasPeserta = $col2;
+                    $programStudi = $col3;
                 }
 
-                // Jika program studi tidak ada, pilih secara random
-                if (!$programStudi) {
-                    $studyPrograms = [
-                        'Teknik Informatika',
-                        'Sistem Informasi',
-                        'Teknik Elektro',
-                        'Manajemen',
-                        'Akuntansi',
-                        'Ilmu Komunikasi',
-                        'Hukum',
-                        'Agroteknologi',
-                        'Kedokteran',
-                        'Pendidikan Bahasa Indonesia'
-                    ];
-                    $programStudi = $studyPrograms[array_rand($studyPrograms)];
+                // Format nomor HP ke standar 08...
+                if ($phoneNumber) {
+                    $cleanPhone = preg_replace('/[^0-9]/', '', $phoneNumber);
+                    if (str_starts_with($cleanPhone, '628')) {
+                        $phoneNumber = '08' . substr($cleanPhone, 3);
+                    } elseif (str_starts_with($cleanPhone, '8')) {
+                        $phoneNumber = '0' . $cleanPhone;
+                    } else {
+                        $phoneNumber = $cleanPhone;
+                    }
                 }
 
                 // Cek apakah peserta dengan NIM ini sudah ada
                 $existingAttendance = Attendance::where('student_id', $nimPeserta)->first();
                 if ($existingAttendance) {
+                    // Update nomor telepon / data jika ada pembaruan
+                    if ($phoneNumber && empty($existingAttendance->phone_number)) {
+                        $existingAttendance->update(['phone_number' => $phoneNumber]);
+                    }
                     $this->skippedCount++;
                     continue;
                 }
@@ -141,10 +142,12 @@ class AttendanceImport implements ToCollection, SkipsOnError, SkipsOnFailure, Wi
                     'mentor_id' => $selectedMentor['mentor_id'],
                     'name' => $namaPeserta,
                     'student_id' => $nimPeserta,
+                    'phone_number' => $phoneNumber,
                     'faculty' => $fakultasPeserta,
                     'study_program' => $programStudi,
                     'unique_code' => $uniqueCode,
                     'raw_barcode' => $rawBarcode,
+                    'status' => 'gagal',
                 ]);
 
                 $this->importedCount++;
@@ -158,7 +161,6 @@ class AttendanceImport implements ToCollection, SkipsOnError, SkipsOnFailure, Wi
     private function generateUniqueCode(): string
     {
         do {
-            // Generate kode dengan kombinasi huruf besar dan angka (8 karakter)
             $letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
             $numbers = '0123456789';
             $characters = $letters . $numbers;
@@ -184,11 +186,11 @@ class AttendanceImport implements ToCollection, SkipsOnError, SkipsOnFailure, Wi
 
     public function batchSize(): int
     {
-        return 50; // Kurangi batch size untuk update progress yang lebih sering
+        return 100;
     }
 
     public function chunkSize(): int
     {
-        return 50; // Kurangi chunk size untuk update progress yang lebih sering
+        return 100;
     }
 }

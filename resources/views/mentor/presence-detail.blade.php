@@ -516,9 +516,14 @@
                                                 };
                                             @endphp
                                             <div
-                                                class="text-xs px-3 py-2 {{ $statusClasses }} rounded-full font-medium shadow-sm">
-                                                {{ ucfirst($submission->status) }}
+                                                class="text-xs px-3 py-1.5 {{ $statusClasses }} rounded-full font-medium shadow-sm flex items-center gap-1">
+                                                <span>{{ ucfirst($submission->status) }}</span>
+                                                <span class="font-bold bg-white/20 px-1 py-0.5 rounded text-[10px]">+{{ $submission->score_points }}p</span>
                                             </div>
+                                            <button type="button" onclick="showStudentHistoryModal('{{ $submission->student_id }}')"
+                                                class="text-xs px-2.5 py-1.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-full font-medium shadow-xs transition">
+                                                Riwayat Poin
+                                            </button>
                                         </div>
                                     </div>
                                 @empty
@@ -581,6 +586,10 @@
                                                 onclick="changeAbsentStudentStatus('{{ $student->id }}', '{{ addslashes($student->name) }}')"
                                                 class="text-xs px-3 py-2 bg-gradient-to-r from-blue-400 to-cyan-500 text-white rounded-full hover:from-blue-500 hover:to-cyan-600 transition-all duration-300 transform hover:scale-105 font-medium shadow-sm">
                                                 Opsi
+                                            </button>
+                                            <button type="button" onclick="showStudentHistoryModal('{{ $student->id }}')"
+                                                class="text-xs px-2.5 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-full font-medium shadow-xs transition">
+                                                Riwayat Poin
                                             </button>
                                         </div>
                                     </div>
@@ -1762,4 +1771,139 @@
                     background: #94a3b8;
                 }
             </style>
-        @endsection
+            <!-- Modal Riwayat Poin Peserta -->
+    <div id="student-history-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between pb-4 border-b border-gray-100 flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900" id="hist-student-name">Riwayat Poin Peserta</h3>
+                        <p class="text-xs text-gray-500" id="hist-student-nim">NIM: -</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeStudentHistoryModal()" class="text-gray-400 hover:text-gray-600 text-2xl font-semibold">&times;</button>
+            </div>
+            
+            <div class="overflow-y-auto py-4 space-y-4 flex-1" id="hist-modal-body">
+                <div class="text-center py-8 text-gray-400">Memuat data riwayat poin...</div>
+            </div>
+            
+            <div class="pt-3 border-t border-gray-100 flex justify-end flex-shrink-0">
+                <button type="button" onclick="closeStudentHistoryModal()" class="px-5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-sm transition">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showStudentHistoryModal(studentId) {
+            const modal = document.getElementById('student-history-modal');
+            const body = document.getElementById('hist-modal-body');
+            modal.classList.remove('hidden');
+            body.innerHTML = '<div class="text-center py-8 text-gray-400">Memuat data riwayat poin...</div>';
+
+            fetch(`/mentor/student/${studentId}/point-history`)
+                .then(res => res.json())
+                .then(res => {
+                    if (!res.success) {
+                        body.innerHTML = '<div class="text-center py-6 text-red-500">Gagal memuat riwayat poin.</div>';
+                        return;
+                    }
+                    const d = res.data;
+                    document.getElementById('hist-student-name').textContent = d.student.name;
+                    document.getElementById('hist-student-nim').textContent = `NIM: ${d.student.nim} | ${d.student.study_program || ''}`;
+
+                    let matrixHtml = '';
+                    for (let dayNum in d.matrix) {
+                        const day = d.matrix[dayNum];
+                        matrixHtml += `
+                            <tr class="border-b border-gray-100 text-xs">
+                                <td class="py-2.5 px-3 font-semibold text-gray-800">Hari ${day.day}</td>
+                                <td class="py-2.5 px-3">${day.datang.submission ? `<span class="text-green-700 font-medium">${day.datang.status} (+${day.datang.points}p)</span>` : '<span class="text-gray-400">-</span>'}</td>
+                                <td class="py-2.5 px-3">${day.pulang.submission ? `<span class="text-blue-700 font-medium">${day.pulang.status} (+${day.pulang.points}p)</span>` : '<span class="text-gray-400">-</span>'}</td>
+                                <td class="py-2.5 px-3 text-right font-bold text-purple-700">${day.total} Poin</td>
+                            </tr>
+                        `;
+                    }
+
+                    let timelineHtml = '';
+                    if (d.history && d.history.length > 0) {
+                        d.history.forEach(item => {
+                            timelineHtml += `
+                                <div class="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl text-xs">
+                                    <div>
+                                        <div class="font-semibold text-gray-800">${item.session_name} (${item.session_type})</div>
+                                        <div class="text-gray-500 text-[11px]">${item.time} &bull; Dicatat oleh ${item.mentor_name}</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="inline-block px-2 py-0.5 rounded font-bold text-xs bg-purple-100 text-purple-800">+${item.score_points} Poin</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        timelineHtml = '<div class="text-xs text-gray-400 italic text-center py-2">Belum ada aktivitas presensi tercatat.</div>';
+                    }
+
+                    body.innerHTML = `
+                        <!-- Stats Grid -->
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-purple-50 p-3 rounded-2xl border border-purple-100">
+                                <div class="text-[11px] text-purple-600 font-medium">Total Poin</div>
+                                <div class="text-xl font-bold text-purple-700">${d.assessment.total_points}</div>
+                            </div>
+                            <div class="bg-blue-50 p-3 rounded-2xl border border-blue-100">
+                                <div class="text-[11px] text-blue-600 font-medium">Nilai Akhir</div>
+                                <div class="text-xl font-bold text-blue-700">${d.assessment.final_score}%</div>
+                            </div>
+                            <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
+                                <div class="text-[11px] text-emerald-600 font-medium">Predikat</div>
+                                <div class="text-xl font-bold text-emerald-700">${d.assessment.grade}</div>
+                            </div>
+                        </div>
+
+                        <!-- Matriks Harian -->
+                        <div>
+                            <h5 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Matriks Kehadiran 5 Hari</h5>
+                            <div class="overflow-x-auto rounded-xl border border-gray-100">
+                                <table class="w-full text-left">
+                                    <thead class="bg-gray-50 text-[11px] text-gray-500 uppercase">
+                                        <tr>
+                                            <th class="py-2 px-3">Hari</th>
+                                            <th class="py-2 px-3">Datang</th>
+                                            <th class="py-2 px-3">Pulang</th>
+                                            <th class="py-2 px-3 text-right">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${matrixHtml}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Log -->
+                        <div>
+                            <h5 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Log Riwayat Presensi</h5>
+                            <div class="space-y-1.5 max-h-48 overflow-y-auto">
+                                ${timelineHtml}
+                            </div>
+                        </div>
+                    `;
+                })
+                .catch(err => {
+                    body.innerHTML = '<div class="text-center py-6 text-red-500">Terjadi kesalahan koneksi.</div>';
+                });
+        }
+
+        function closeStudentHistoryModal() {
+            document.getElementById('student-history-modal').classList.add('hidden');
+        }
+    </script>
+@endsection
