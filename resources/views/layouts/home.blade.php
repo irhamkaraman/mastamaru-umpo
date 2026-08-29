@@ -36,7 +36,7 @@
     <header class="site-header">
         <div class="site-header-inner">
             <a href="{{ route('home.index') }}" class="brand-lockup" aria-label="Kembali ke halaman utama">
-                <span class="brand-logo brand-logo-mastamaru"><img src="{{ asset('img/logo_mastamaru_2025.png') }}" alt="Logo MASTAMARU" loading="eager"></span>
+                <span class="brand-logo brand-logo-mastamaru"><img src="{{ asset('img/logo_mastamaru_2026.png') }}" alt="Logo MASTAMARU" loading="eager"></span>
                 <span class="brand-copy"><strong>MASTAMARU</strong><span>Sistem presensi mahasiswa baru</span></span>
             </a>
             <div class="campus-lockup">

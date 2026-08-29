@@ -111,7 +111,7 @@
                         <div class="absolute inset-0 bg-white/20 rounded-full blur-xl animate-glow"></div>
                     </div>
                     <div class="relative">
-                        <img src="{{ asset('img/logo_mastamaru_2025.png') }}" alt="Logo MASTAMARU 2025" class="h-20 w-20 md:h-24 md:w-24 object-contain animate-float drop-shadow-2xl" style="animation-delay: 1s">
+                        <img src="{{ asset('img/logo_mastamaru_2026.png') }}" alt="Logo MASTAMARU 2026" class="h-20 w-20 md:h-24 md:w-24 object-contain animate-float drop-shadow-2xl" style="animation-delay: 1s">
                         <div class="absolute inset-0 bg-white/20 rounded-full blur-xl animate-glow" style="animation-delay: 1s"></div>
                     </div>
                 </div>

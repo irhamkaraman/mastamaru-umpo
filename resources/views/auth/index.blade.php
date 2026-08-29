@@ -6,7 +6,7 @@
 <div class="mentor-login-shell w-full max-w-5xl z-10">
     <div class="mentor-login-brand">
         <div class="mentor-brand-logos">
-            <span class="mentor-logo mentor-logo-masta"><img src="{{ asset('img/logo_mastamaru_2025.png') }}" alt="Logo MASTAMARU"></span>
+            <span class="mentor-logo mentor-logo-masta"><img src="{{ asset('img/logo_mastamaru_2026.png') }}" alt="Logo MASTAMARU"></span>
             <span class="mentor-logo mentor-logo-campus"><img src="{{ asset('img/logo_Universitas-Muhammadiyah-Ponorogo-1.png') }}" alt="Logo Universitas Muhammadiyah Ponorogo"></span>
         </div>
         <p class="mentor-eyebrow">Area pemandu</p>
