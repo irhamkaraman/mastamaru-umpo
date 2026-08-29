@@ -169,7 +169,13 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 bg-white">
-                            @foreach($matrix['days'] as $dayNum => $d)
+                            @php
+                                $participantDays = collect($matrix['days'])->filter(function($d) {
+                                    return $d['datang']['submission'] !== null || $d['pulang']['submission'] !== null;
+                                });
+                            @endphp
+                            
+                            @forelse($participantDays as $dayNum => $d)
                                 <tr class="hover:bg-gray-50/80 transition">
                                     <td class="px-4 py-3 font-bold text-gray-900">Hari {{ $dayNum }}</td>
                                     <td class="px-4 py-3">
@@ -194,7 +200,13 @@
                                         {{ $d['total'] }} Poin
                                     </td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="px-4 py-6 text-center text-gray-500 text-sm">
+                                        Belum ada riwayat presensi yang tercatat.
+                                    </td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>

@@ -61,8 +61,18 @@ class HomeController extends Controller
             'mentor' => $student->mentor ? $student->mentor->name : 'Belum ditentukan'
         ], JSON_UNESCAPED_UNICODE);
 
-        // Hitung nilai dan ambil matriks presensi
-        $assessment = \App\Services\ScoreCalculationService::recalculateForStudent($student->id);
+        // Ambil assessment saat ini tanpa recalculate ulang (agar manual override admin tidak kerestore)
+        $assessment = \App\Models\StudentAssessment::firstOrCreate(
+            ['student_id' => $student->id],
+            [
+                'total_presence_points' => 0,
+                'activity_score' => null,
+                'attendance_score' => 0,
+                'final_score' => 0,
+                'grade' => 'D',
+                'status' => 'gagal'
+            ]
+        );
         $matrix = \App\Services\ScoreCalculationService::getStudentPresenceMatrix($student->id);
         $submissions = \App\Models\AttendanceSubmission::where('student_id', $student->id)
             ->with(['presenceSession', 'mentor'])
