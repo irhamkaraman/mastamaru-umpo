@@ -152,8 +152,12 @@
                                                                     <div class="mt-1 flex items-center gap-1.5">
                                                                         <a href="https://wa.me/{{ $cleanPhone }}" target="_blank" class="inline-flex items-center text-xs font-semibold text-green-700 bg-green-100 hover:bg-green-200 px-2 py-0.5 rounded-md transition shadow-xs">
                                                                             <i class="fab fa-whatsapp text-green-600 mr-1"></i>
-                                                                            {{ $mentor['phone_number'] }}
+                                                                            No. WA: {{ $mentor['phone_number'] }}
                                                                         </a>
+                                                                    </div>
+                                                                @else
+                                                                    <div class="mt-1">
+                                                                        <span class="text-xs font-semibold text-gray-400 italic">No. WA: Belum ditambahkan</span>
                                                                     </div>
                                                                 @endif
                                                             </div>
