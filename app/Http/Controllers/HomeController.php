@@ -82,11 +82,11 @@ class HomeController extends Controller
         // Refresh status student
         $student->refresh();
 
-        // Cek Sertifikat
+        // Cek Sertifikat (Format DOCX)
         $certDir = storage_path('app/public/certificates');
         $certificateFile = null;
         if (is_dir($certDir)) {
-            $files = glob($certDir . '/' . $student->student_id . '_*.png');
+            $files = glob($certDir . '/' . $student->student_id . '_sertifikat_*.docx');
             if (!empty($files)) {
                 $certificateFile = asset('storage/certificates/' . basename($files[0]));
             }

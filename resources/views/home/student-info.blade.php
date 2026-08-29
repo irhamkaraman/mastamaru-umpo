@@ -248,7 +248,15 @@
                     <p class="text-sm text-green-700 mb-4">Selamat! Anda dinyatakan <strong class="uppercase">LULUS</strong> MASTAMARU 2026. Sertifikat kegiatan Anda telah diterbitkan.</p>
                     
                     <div class="mb-6 flex justify-center">
-                        <img src="{{ $certificateUrl }}" alt="Sertifikat Anda" class="w-full max-w-2xl h-auto rounded-xl shadow-md border-4 border-white">
+                        <div class="bg-white p-6 rounded-2xl shadow-md border border-green-100 flex flex-col items-center justify-center max-w-sm w-full">
+                            <div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4">
+                                <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM17 20H7v-2h10v2zm0-4H7v-2h10v2zm-3-4H7v-2h7v2z" />
+                                </svg>
+                            </div>
+                            <h4 class="font-bold text-gray-800 text-lg mb-1">Dokumen Sertifikat</h4>
+                            <p class="text-sm text-gray-500 mb-4 text-center">Format Microsoft Word (.docx)</p>
+                        </div>
                     </div>
 
                     <a href="{{ $certificateUrl }}" download class="bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-medium py-2 px-6 rounded-xl transition duration-200 inline-flex items-center shadow-lg shadow-green-200">
