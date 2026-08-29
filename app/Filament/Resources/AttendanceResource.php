@@ -478,8 +478,8 @@ class AttendanceResource extends Resource
                             $slugName = \Illuminate\Support\Str::slug($record->name, '_');
                             return response()->download(
                                 $filePath,
-                                "sertifikat_{$record->student_id}_{$slugName}.docx",
-                                ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+                                "sertifikat_{$record->student_id}_{$slugName}.pdf",
+                                ['Content-Type' => 'application/pdf']
                             );
                         } catch (\Exception $e) {
                             Notification::make()

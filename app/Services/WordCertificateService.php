@@ -8,6 +8,8 @@ use App\Models\StudentAssessment;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use PhpOffice\PhpWord\TemplateProcessor;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\Settings;
 use ZipArchive;
 
 class WordCertificateService
@@ -73,19 +75,37 @@ class WordCertificateService
         }
 
         // Hapus file lama untuk peserta ini
-        $oldFiles = glob($outputDir . '/' . $attendance->student_id . '_sertifikat_*.docx');
+        $oldFiles = glob($outputDir . '/' . $attendance->student_id . '_sertifikat_*.{docx,pdf}', GLOB_BRACE);
         foreach ($oldFiles as $old) {
             @unlink($old);
         }
 
-        // Nama file output
+        // Nama file output (DOCX sementara)
         $slugName = Str::slug($attendance->name, '_');
-        $fileName = "{$attendance->student_id}_sertifikat_{$slugName}.docx";
-        $outputPath = $outputDir . '/' . $fileName;
+        $docxFileName = "{$attendance->student_id}_sertifikat_{$slugName}.docx";
+        $docxOutputPath = $outputDir . '/' . $docxFileName;
 
-        $processor->saveAs($outputPath);
+        $processor->saveAs($docxOutputPath);
 
-        return $outputPath;
+        // --- KONVERSI DOCX KE PDF ---
+        // Setup DomPDF renderer
+        Settings::setPdfRendererPath(base_path('vendor/dompdf/dompdf'));
+        Settings::setPdfRendererName(Settings::PDF_RENDERER_DOMPDF);
+
+        // Load DOCX dan tulis ke PDF
+        $phpWord = IOFactory::load($docxOutputPath);
+        $pdfWriter = IOFactory::createWriter($phpWord, 'PDF');
+
+        // Nama file PDF
+        $pdfFileName = "{$attendance->student_id}_sertifikat_{$slugName}.pdf";
+        $pdfOutputPath = $outputDir . '/' . $pdfFileName;
+
+        $pdfWriter->save($pdfOutputPath);
+
+        // Hapus file DOCX sementara
+        @unlink($docxOutputPath);
+
+        return $pdfOutputPath;
     }
 
     /**
@@ -126,10 +146,26 @@ class WordCertificateService
             }
 
             $slugName = Str::slug($attendance->name, '_');
-            $fileName = "{$attendance->student_id}_sertifikat_{$slugName}.docx";
-            $filePath = $tempDir . '/' . $fileName;
-            $processor->saveAs($filePath);
-            $generatedFiles[] = ['path' => $filePath, 'name' => $fileName];
+            $docxFileName = "{$attendance->student_id}_sertifikat_{$slugName}.docx";
+            $docxFilePath = $tempDir . '/' . $docxFileName;
+            $processor->saveAs($docxFilePath);
+
+            // Setup DomPDF renderer
+            Settings::setPdfRendererPath(base_path('vendor/dompdf/dompdf'));
+            Settings::setPdfRendererName(Settings::PDF_RENDERER_DOMPDF);
+
+            // Konversi ke PDF
+            $phpWord = IOFactory::load($docxFilePath);
+            $pdfWriter = IOFactory::createWriter($phpWord, 'PDF');
+
+            $pdfFileName = "{$attendance->student_id}_sertifikat_{$slugName}.pdf";
+            $pdfFilePath = $tempDir . '/' . $pdfFileName;
+            $pdfWriter->save($pdfFilePath);
+
+            // Hapus DOCX sementara
+            @unlink($docxFilePath);
+
+            $generatedFiles[] = ['path' => $pdfFilePath, 'name' => $pdfFileName];
         }
 
         // Buat ZIP

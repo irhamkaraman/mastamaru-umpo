@@ -259,7 +259,7 @@
                                 </svg>
                             </div>
                             <h4 class="font-bold text-gray-800 text-lg mb-1">Dokumen Sertifikat</h4>
-                            <p class="text-sm text-gray-500 mb-4 text-center">Format Microsoft Word (.docx)</p>
+                            <p class="text-sm text-gray-500 mb-4 text-center">Format Dokumen PDF (.pdf)</p>
                         </div>
                     </div>
 
