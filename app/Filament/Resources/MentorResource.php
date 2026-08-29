@@ -241,14 +241,15 @@ class MentorResource extends Resource
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup')
                     ->modalContent(function (Mentor $record) {
-                        $submissions = \App\Models\AttendanceSubmission::where('mentor_id', $record->id)
-                            ->with(['student', 'presenceSession'])
-                            ->orderBy('submitted_at', 'desc')
+                        $participants = \App\Models\Attendance::where('group_id', $record->group_id)
+                            ->with(['attendanceSubmissions' => function ($q) {
+                                $q->with('presenceSession')->orderBy('submitted_at', 'desc');
+                            }])
                             ->get();
 
                         return view('filament.modals.mentor-point-history', [
                             'mentor' => $record,
-                            'submissions' => $submissions,
+                            'participants' => $participants,
                         ]);
                     }),
                 Tables\Actions\EditAction::make(),
