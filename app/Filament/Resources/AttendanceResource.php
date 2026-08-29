@@ -7,9 +7,11 @@ use App\Filament\Resources\AttendanceResource\RelationManagers;
 use App\Models\Attendance;
 use App\Models\Group;
 use App\Models\Mentor;
+use App\Models\CertificateTemplate;
 use App\Imports\AttendanceImport;
 use App\Exports\AttendanceTemplateExport;
 use App\Exports\AttendanceDataExport;
+use App\Services\WordCertificateService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -435,15 +437,49 @@ class AttendanceResource extends Resource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->modalHeading('Tandai Lulus & Generate Sertifikat')
+                    ->modalHeading('Tandai Peserta Lulus')
+                    ->modalDescription('Peserta akan ditandai Lulus. Gunakan tombol "Cetak Sertifikat" untuk mengunduh sertifikatnya.')
+                    ->action(function (Attendance $record) {
+                        $record->update(['status' => 'lulus']);
+                        Notification::make()
+                            ->title('Peserta Ditandai Lulus')
+                            ->body('Gunakan tombol Cetak Sertifikat untuk mengunduh sertifikat peserta.')
+                            ->success()
+                            ->send();
+                    }),
+                Tables\Actions\Action::make('cetak_sertifikat')
+                    ->label('Cetak Sertifikat')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('info')
                     ->action(function (Attendance $record) {
                         try {
-                            $record->update(['status' => 'lulus']);
-                            app(\App\Http\Controllers\CertificateController::class)->generateForAttendance($record);
+                            $status = $record->status ?? 'gagal';
+                            $template = CertificateTemplate::getActiveFor($status);
+
+                            if (!$template) {
+                                Notification::make()
+                                    ->title('Template Tidak Ditemukan')
+                                    ->body('Tidak ada template sertifikat aktif untuk status "' . strtoupper($status) . '". Silakan upload dan aktifkan template di menu Template Sertifikat.')
+                                    ->warning()
+                                    ->send();
+                                return;
+                            }
+
+                            $service = app(WordCertificateService::class);
+                            $filePath = $service->generate($record, $template);
+
                             Notification::make()
-                                ->title('Berhasil Ditandai Lulus & Sertifikat Dibuat')
+                                ->title('Sertifikat Berhasil Dibuat')
+                                ->body('File sertifikat untuk ' . $record->name . ' sedang diunduh.')
                                 ->success()
                                 ->send();
+
+                            $slugName = \Illuminate\Support\Str::slug($record->name, '_');
+                            return response()->download(
+                                $filePath,
+                                "sertifikat_{$record->student_id}_{$slugName}.docx",
+                                ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+                            );
                         } catch (\Exception $e) {
                             Notification::make()
                                 ->title('Gagal Membuat Sertifikat')
@@ -460,14 +496,6 @@ class AttendanceResource extends Resource
                     ->modalHeading('Tandai Tidak Lulus')
                     ->action(function (Attendance $record) {
                         $record->update(['status' => 'gagal']);
-                        // Hapus sertifikat jika sebelumnya pernah digenerate
-                        $certDir = storage_path('app/public/certificates');
-                        $oldFiles = glob($certDir . '/' . $record->student_id . '_*.png');
-                        if($oldFiles) {
-                            foreach ($oldFiles as $file) {
-                                @unlink($file);
-                            }
-                        }
                         Notification::make()
                             ->title('Peserta Ditandai Tidak Lulus')
                             ->success()
@@ -479,29 +507,70 @@ class AttendanceResource extends Resource
             ->bulkActions([
                 BulkActionGroup::make([
                     Tables\Actions\BulkAction::make('mark_lulus_bulk')
-                        ->label('Tandai Lulus & Generate')
+                        ->label('Tandai Lulus')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->requiresConfirmation()
                         ->modalHeading('Tandai Lulus Masal')
-                        ->modalDescription('Apakah Anda yakin ingin menandai lulus dan membuat sertifikat untuk peserta yang dipilih?')
+                        ->modalDescription('Peserta terpilih akan ditandai Lulus.')
                         ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
-                            $success = 0;
-                            $controller = app(\App\Http\Controllers\CertificateController::class);
+                            $count = $records->count();
                             foreach ($records as $record) {
-                                try {
-                                    $record->update(['status' => 'lulus']);
-                                    $controller->generateForAttendance($record);
-                                    $success++;
-                                } catch (\Exception $e) {
-                                    // Skip on error
-                                }
+                                $record->update(['status' => 'lulus']);
                             }
                             Notification::make()
                                 ->title('Selesai')
-                                ->body("Berhasil menandai lulus dan membuat $success sertifikat.")
+                                ->body("$count peserta berhasil ditandai lulus.")
                                 ->success()
                                 ->send();
+                        }),
+                    Tables\Actions\BulkAction::make('cetak_sertifikat_bulk')
+                        ->label('Cetak Sertifikat (ZIP)')
+                        ->icon('heroicon-o-archive-box-arrow-down')
+                        ->color('info')
+                        ->requiresConfirmation()
+                        ->modalHeading('Cetak Sertifikat Masal')
+                        ->modalDescription('Sertifikat untuk semua peserta terpilih akan digenerate dan dikemas dalam satu file ZIP untuk diunduh.')
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            try {
+                                // Ambil status dominan dari pilihan (prioritas: lulus)
+                                $hasLulus = $records->where('status', 'lulus')->count() > 0;
+                                $statusForTemplate = $hasLulus ? 'lulus' : ($records->first()?->status ?? 'gagal');
+
+                                $template = CertificateTemplate::getActiveFor('semua')
+                                    ?? CertificateTemplate::getActiveFor($statusForTemplate);
+
+                                if (!$template) {
+                                    Notification::make()
+                                        ->title('Template Tidak Ditemukan')
+                                        ->body('Tidak ada template sertifikat aktif. Silakan upload dan aktifkan template di menu Template Sertifikat.')
+                                        ->warning()
+                                        ->send();
+                                    return;
+                                }
+
+                                $service = app(WordCertificateService::class);
+                                $zipPath = $service->generateBulk($records->load(['group', 'mentor', 'assessment']), $template);
+
+                                Notification::make()
+                                    ->title('ZIP Sertifikat Siap')
+                                    ->body($records->count() . ' sertifikat berhasil digenerate.')
+                                    ->success()
+                                    ->send();
+
+                                return response()->download(
+                                    $zipPath,
+                                    'sertifikat_bulk_' . date('Ymd_His') . '.zip',
+                                    ['Content-Type' => 'application/zip']
+                                )->deleteFileAfterSend(true);
+
+                            } catch (\Exception $e) {
+                                Notification::make()
+                                    ->title('Gagal Generate ZIP Sertifikat')
+                                    ->body($e->getMessage())
+                                    ->danger()
+                                    ->send();
+                            }
                         }),
                     Tables\Actions\BulkAction::make('mark_gagal_bulk')
                         ->label('Tandai Gagal')
@@ -509,23 +578,15 @@ class AttendanceResource extends Resource
                         ->color('danger')
                         ->requiresConfirmation()
                         ->modalHeading('Tandai Gagal Masal')
-                        ->modalDescription('Apakah Anda yakin ingin menandai tidak lulus peserta yang dipilih? (Sertifikat mereka juga akan dihapus jika ada)')
+                        ->modalDescription('Apakah Anda yakin ingin menandai tidak lulus peserta yang dipilih?')
                         ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
-                            $success = 0;
-                            $certDir = storage_path('app/public/certificates');
+                            $count = $records->count();
                             foreach ($records as $record) {
                                 $record->update(['status' => 'gagal']);
-                                $oldFiles = glob($certDir . '/' . $record->student_id . '_*.png');
-                                if($oldFiles) {
-                                    foreach ($oldFiles as $file) {
-                                        @unlink($file);
-                                    }
-                                }
-                                $success++;
                             }
                             Notification::make()
                                 ->title('Selesai')
-                                ->body("Berhasil menandai tidak lulus $success peserta.")
+                                ->body("$count peserta berhasil ditandai tidak lulus.")
                                 ->success()
                                 ->send();
                         }),
