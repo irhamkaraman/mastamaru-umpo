@@ -441,6 +441,7 @@ class AttendanceResource extends Resource
                     ->modalDescription('Peserta akan ditandai Lulus. Gunakan tombol "Cetak Sertifikat" untuk mengunduh sertifikatnya.')
                     ->action(function (Attendance $record) {
                         $record->update(['status' => 'lulus']);
+                        \Illuminate\Support\Facades\Cache::forget('student_data_' . $record->student_id);
                         Notification::make()
                             ->title('Peserta Ditandai Lulus')
                             ->body('Gunakan tombol Cetak Sertifikat untuk mengunduh sertifikat peserta.')
@@ -496,6 +497,7 @@ class AttendanceResource extends Resource
                     ->modalHeading('Tandai Tidak Lulus')
                     ->action(function (Attendance $record) {
                         $record->update(['status' => 'gagal']);
+                        \Illuminate\Support\Facades\Cache::forget('student_data_' . $record->student_id);
                         Notification::make()
                             ->title('Peserta Ditandai Tidak Lulus')
                             ->success()
@@ -517,6 +519,7 @@ class AttendanceResource extends Resource
                             $count = $records->count();
                             foreach ($records as $record) {
                                 $record->update(['status' => 'lulus']);
+                                \Illuminate\Support\Facades\Cache::forget('student_data_' . $record->student_id);
                             }
                             Notification::make()
                                 ->title('Selesai')
