@@ -19,7 +19,7 @@
                 </div>
                 
                 <div>
-                    <form action="{{ route('mentor.participants.generate-certificates') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membuat (generate) sertifikat untuk semua peserta yang LULUS? Proses ini mungkin membutuhkan waktu beberapa saat.')">
+                    <form id="generate-cert-form" action="{{ route('mentor.participants.generate-certificates') }}" method="POST">
                         @csrf
                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-5 rounded-xl transition duration-200 shadow-sm flex items-center">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,3 +118,37 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.getElementById('generate-cert-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "Sertifikat akan dibuat untuk semua peserta yang berstatus LULUS. Proses ini mungkin membutuhkan waktu beberapa saat.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#2563eb', // blue-600
+            cancelButtonColor: '#6b7280', // gray-500
+            confirmButtonText: 'Ya, Cetak Sekarang!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Show loading state
+                Swal.fire({
+                    title: 'Sedang Memproses...',
+                    text: 'Mohon tunggu, sertifikat sedang dibuat dan akan otomatis terunduh saat selesai.',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
+                // Submit the form
+                this.submit();
+            }
+        });
+    });
+</script>
+@endpush
