@@ -579,6 +579,10 @@ Route::prefix('mentor')->group(function () {
     Route::get('/dashboard', [MentorAuthController::class, 'dashboard'])->name('mentor.dashboard')->middleware('mentor.auth');
     Route::post('/update-profile', [MentorAuthController::class, 'updateProfile'])->name('mentor.update-profile')->middleware('mentor.auth');
 
+    // Route untuk daftar peserta kelompok mentor
+    Route::get('/participants', [MentorAuthController::class, 'participants'])->name('mentor.participants')->middleware('mentor.auth');
+    Route::post('/participants/generate-certificates', [MentorAuthController::class, 'generateCertificates'])->name('mentor.participants.generate-certificates')->middleware('mentor.auth');
+
     // Rute untuk detail presensi mentor
     Route::get('/presence/{slug}', [PresenceController::class, 'show'])->name('mentor.presence.detail')->middleware('mentor.auth');
 

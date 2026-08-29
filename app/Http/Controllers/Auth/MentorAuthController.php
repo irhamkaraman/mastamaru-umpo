@@ -205,4 +205,75 @@ class MentorAuthController extends Controller
         // Hapus cache mentor untuk semua mentor (opsional)
         // Cache::flush(); // Hati-hati, ini akan menghapus semua cache
     }
+    /**
+     * Halaman daftar peserta kelompok
+     */
+    public function participants()
+    {
+        try {
+            $mentorId = session('mentor_id');
+            if (!$mentorId) {
+                return redirect('/mentor/login')->with('error', 'Sesi tidak valid.');
+            }
+
+            $mentor = Mentor::with('group')->find($mentorId);
+            if (!$mentor || !$mentor->group_id) {
+                return redirect()->route('mentor.dashboard')->with('error', 'Anda tidak memiliki kelompok yang ditugaskan.');
+            }
+
+            // Ambil peserta dalam kelompok
+            $participants = \App\Models\Attendance::where('group_id', $mentor->group_id)->get();
+
+            return view('mentor.participants', compact('mentor', 'participants'));
+        } catch (\Exception $e) {
+            Log::error('Error di participants mentor: ' . $e->getMessage());
+            return redirect()->route('mentor.dashboard')->with('error', 'Terjadi kesalahan saat memuat daftar peserta.');
+        }
+    }
+
+    /**
+     * Generate sertifikat masal untuk peserta di kelompok
+     */
+    public function generateCertificates()
+    {
+        try {
+            $mentorId = session('mentor_id');
+            if (!$mentorId) {
+                return redirect('/mentor/login')->with('error', 'Sesi tidak valid.');
+            }
+
+            $mentor = Mentor::find($mentorId);
+            if (!$mentor || !$mentor->group_id) {
+                return redirect()->route('mentor.dashboard')->with('error', 'Anda tidak memiliki kelompok yang ditugaskan.');
+            }
+
+            // Ambil template aktif
+            $template = \App\Models\CertificateTemplate::getActiveFor('lulus');
+            if (!$template) {
+                return redirect()->back()->with('error', 'Template sertifikat lulus belum diatur atau belum aktif.');
+            }
+
+            // Ambil peserta lulus
+            $lulusParticipants = \App\Models\Attendance::where('group_id', $mentor->group_id)
+                ->where('status', 'lulus')
+                ->get();
+
+            if ($lulusParticipants->isEmpty()) {
+                return redirect()->back()->with('error', 'Belum ada peserta yang lulus di kelompok Anda.');
+            }
+
+            $service = app(\App\Services\WordCertificateService::class);
+            $generatedCount = 0;
+
+            foreach ($lulusParticipants as $participant) {
+                $service->generate($participant, $template);
+                $generatedCount++;
+            }
+
+            return redirect()->back()->with('success', "Berhasil men-generate {$generatedCount} sertifikat untuk peserta yang lulus.");
+        } catch (\Exception $e) {
+            Log::error('Error generate sertifikat mentor: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat men-generate sertifikat: ' . $e->getMessage());
+        }
+    }
 }

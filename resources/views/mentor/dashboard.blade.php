@@ -104,9 +104,17 @@
                             <p class="text-gray-600">Kelola kehadiran peserta kelompok Anda</p>
                         </div>
                     </div>
-                     <div class="mentor-live-pill flex items-center bg-green-50 px-4 py-2 rounded-full border border-green-200">
-                        <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse mr-2"></div>
-                        <span class="text-sm font-medium text-green-700">Live Session</span>
+                    <div class="flex items-center gap-3">
+                        <a href="{{ route('mentor.participants') }}" class="inline-flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl font-semibold transition-colors border border-blue-200 shadow-sm text-sm">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            Daftar Peserta & Sertifikat
+                        </a>
+                        <div class="mentor-live-pill flex items-center bg-green-50 px-4 py-2 rounded-xl border border-green-200">
+                            <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse mr-2"></div>
+                            <span class="text-sm font-medium text-green-700">Live Session</span>
+                        </div>
                     </div>
                 </div>
 
