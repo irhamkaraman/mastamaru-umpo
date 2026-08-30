@@ -140,8 +140,13 @@ class ScoreCalculationService
         for ($day = 1; $day <= $maxDay; $day++) {
             $daySessions = $groupedByDay->get($day, collect());
             
-            $datangSession = $daySessions->firstWhere('session_type', 'datang');
-            $pulangSession = $daySessions->firstWhere('session_type', 'pulang');
+            $datangSession = $daySessions->where('session_type', 'datang')->first(function($session) use ($submissions) {
+                return $submissions->has($session->id);
+            }) ?? $daySessions->firstWhere('session_type', 'datang');
+
+            $pulangSession = $daySessions->where('session_type', 'pulang')->first(function($session) use ($submissions) {
+                return $submissions->has($session->id);
+            }) ?? $daySessions->firstWhere('session_type', 'pulang');
 
             $datangSub = $datangSession ? ($submissions->get($datangSession->id)) : null;
             $pulangSub = $pulangSession ? ($submissions->get($pulangSession->id)) : null;
