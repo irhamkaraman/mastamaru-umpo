@@ -46,11 +46,15 @@ Route::get('/super-fix', function () {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
         
         // MANUAL GENERATE PERMISSIONS: 
-        $resources = ['api_configuration', 'api_data_record'];
+        $resources = [
+            'api_configuration', 'api_data_record', 'attendance', 
+            'certificate_template', 'group', 'mentor', 
+            'presence_session', 'role', 'user', 'page'
+        ];
         $prefixes = [
             'view', 'view_any', 'create', 'update', 'restore', 
             'restore_any', 'replicate', 'reorder', 'delete', 
-            'delete_any', 'force_delete', 'force_delete_any'
+            'delete_any', 'force_delete', 'force_delete_any', 'export'
         ];
         
         foreach ($resources as $res) {
@@ -60,6 +64,17 @@ Route::get('/super-fix', function () {
                     'guard_name' => 'web'
                 ]);
             }
+        }
+        
+        // Generate khusus untuk halaman admin (Filament Pages)
+        $pagePermissions = [
+            'view_credit_page', 'view_api_data_page'
+        ];
+        foreach ($pagePermissions as $pp) {
+            \Spatie\Permission\Models\Permission::firstOrCreate([
+                'name' => $pp,
+                'guard_name' => 'web'
+            ]);
         }
 
         // Hapus cache web native
