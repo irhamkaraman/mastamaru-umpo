@@ -746,7 +746,8 @@
                             day: 'numeric',
                             hour: '2-digit',
                             minute: '2-digit',
-                            second: '2-digit'
+                            second: '2-digit',
+                            hour12: false
                         });
                         document.getElementById('time-display').textContent = timeString;
 
@@ -951,7 +952,7 @@
                                     title: 'Sesi Presensi Berakhir',
                                     html: `<div class="text-center">
                              <p class="mb-3">Sesi presensi telah berakhir pada:</p>
-                             <p class="font-semibold text-lg text-red-600">${new Date(data.session_end_time).toLocaleString('id-ID')}</p>
+                             <p class="font-semibold text-lg text-red-600">${new Date(data.session_end_time).toLocaleString('id-ID', { hour12: false })}</p>
                              <p class="mt-3 text-sm text-gray-600">Klik "Mengerti" untuk melanjutkan.</p>
                            </div>`,
                                     allowOutsideClick: false,
@@ -1380,7 +1381,7 @@
                                             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                             </svg>
-                                            ${submission.submitted_at || new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', second: '2-digit'})}
+                                            ${submission.submitted_at || new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false})}
                                         </div>
                                     </div>
                                     <div class="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
@@ -1468,7 +1469,7 @@
                         Swal.fire({
                             icon: 'warning',
                             title: 'Presensi Belum Dimulai',
-                            text: `Sesi presensi belum dimulai. Waktu mulai: ${sessionStartTime.toLocaleString('id-ID')}`,
+                            text: `Sesi presensi belum dimulai. Waktu mulai: ${sessionStartTime.toLocaleString('id-ID', { hour12: false })}`,
                             timer: 5000,
                             timerProgressBar: true,
                             showConfirmButton: false
@@ -1480,7 +1481,7 @@
                         Swal.fire({
                             icon: 'warning',
                             title: 'Presensi Telah Berakhir',
-                            text: `Sesi presensi sudah berakhir. Waktu berakhir: ${sessionEndTime.toLocaleString('id-ID')}`,
+                            text: `Sesi presensi sudah berakhir. Waktu berakhir: ${sessionEndTime.toLocaleString('id-ID', { hour12: false })}`,
                             timer: 5000,
                             timerProgressBar: true,
                             showConfirmButton: false

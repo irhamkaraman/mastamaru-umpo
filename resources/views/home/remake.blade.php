@@ -485,7 +485,7 @@
             historyList.innerHTML = '';
 
             participantHistory.forEach((participant) => {
-                const timestamp = new Date(participant.timestamp).toLocaleString('id-ID');
+                const timestamp = new Date(participant.timestamp).toLocaleString('id-ID', { hour12: false });
                 const historyItem = document.createElement('div');
                 historyItem.className = 'bg-white border border-green-200 rounded-xl p-4 shadow-sm';
                 historyItem.innerHTML = `
