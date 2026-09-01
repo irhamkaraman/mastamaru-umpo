@@ -15,7 +15,7 @@ class SyncUmpoMahasiswa extends Command
      *
      * @var string
      */
-    protected $signature = 'umpo:sync-mahasiswa';
+    protected $signature = 'umpo:sync-mahasiswa {--debug}';
 
     /**
      * The console command description.
@@ -135,6 +135,7 @@ class SyncUmpoMahasiswa extends Command
         $bar->start();
         $chunks = array_chunk($mhsData, 250);
         $countProcessed = 0;
+        $allDebugData = [];
         foreach ($chunks as $chunk) {
             $upsertData = [];
             foreach ($chunk as $mhs) {
@@ -175,16 +176,26 @@ class SyncUmpoMahasiswa extends Command
                 $bar->advance();
             }
             if (! empty($upsertData)) {
-                Attendance::upsert(
-                    $upsertData,
-                    ['student_id'],
-                    ['name', 'study_program', 'faculty', 'phone_number', 'updated_at']
-                );
+                if ($this->option('debug')) {
+                    $allDebugData = array_merge($allDebugData, $upsertData);
+                } else {
+                    Attendance::upsert(
+                        $upsertData,
+                        ['student_id'],
+                        ['name', 'study_program', 'faculty', 'phone_number', 'updated_at']
+                    );
+                }
             }
         }
         $bar->finish();
         $this->newLine();
-        $this->info('Selesai! Berhasil memproses dan menyinkronkan '.$countProcessed.' data peserta tahun 2026.');
+        
+        if ($this->option('debug')) {
+            $this->line(json_encode($allDebugData, JSON_PRETTY_PRINT));
+            $this->info('DEBUG MODE: Menampilkan ' . count($allDebugData) . ' data siap simpan tanpa dimasukkan ke database.');
+        } else {
+            $this->info('Selesai! Berhasil memproses dan menyinkronkan '.$countProcessed.' data peserta tahun 2026.');
+        }
 
         return Command::SUCCESS;
     }
