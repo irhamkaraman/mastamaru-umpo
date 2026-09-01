@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PresenceController extends Controller
 {
@@ -271,7 +272,7 @@ class PresenceController extends Controller
                 'manual_code.required' => 'Kode unik wajib diisi.',
                 'manual_code.size' => 'Kode unik harus 8 karakter.',
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => $e->validator->errors()->first(),
@@ -430,7 +431,7 @@ class PresenceController extends Controller
                 'message' => 'Record presensi untuk '.$student->name.' berhasil dibuat ('.$statusText[$request->status].', +'.$points.' poin).',
                 'points' => $points,
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => $e->validator->errors()->first(),

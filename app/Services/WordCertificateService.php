@@ -7,8 +7,6 @@ use App\Models\CertificateTemplate;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
-use PhpOffice\PhpWord\IOFactory;
-use PhpOffice\PhpWord\Settings;
 use PhpOffice\PhpWord\TemplateProcessor;
 use ZipArchive;
 
@@ -68,19 +66,12 @@ class WordCertificateService
         $docxFileName = "{$attendance->student_id}_sertifikat_{$slugName}.docx";
         $docxOutputPath = $outputDir.'/'.$docxFileName;
         $processor->saveAs($docxOutputPath);
-        Settings::setPdfRendererPath(base_path('vendor/dompdf/dompdf'));
-        Settings::setPdfRendererName(Settings::PDF_RENDERER_DOMPDF);
-        $phpWord = IOFactory::load($docxOutputPath);
-        $pdfWriter = IOFactory::createWriter($phpWord, 'PDF');
-        $pdfFileName = "{$attendance->student_id}_sertifikat_{$slugName}.pdf";
-        $pdfOutputPath = $outputDir.'/'.$pdfFileName;
-        $pdfWriter->save($pdfOutputPath);
-        @unlink($docxOutputPath);
+
         $attendance->update([
-            'certificate_file' => 'certificates/'.$pdfFileName,
+            'certificate_file' => 'certificates/'.$docxFileName,
         ]);
 
-        return $pdfOutputPath;
+        return $docxOutputPath;
     }
 
     /**
@@ -125,18 +116,11 @@ class WordCertificateService
             $docxFileName = "{$attendance->student_id}_sertifikat_{$slugName}.docx";
             $docxFilePath = $tempDir.'/'.$docxFileName;
             $processor->saveAs($docxFilePath);
-            Settings::setPdfRendererPath(base_path('vendor/dompdf/dompdf'));
-            Settings::setPdfRendererName(Settings::PDF_RENDERER_DOMPDF);
-            $phpWord = IOFactory::load($docxFilePath);
-            $pdfWriter = IOFactory::createWriter($phpWord, 'PDF');
-            $pdfFileName = "{$attendance->student_id}_sertifikat_{$slugName}.pdf";
-            $pdfFilePath = $tempDir.'/'.$pdfFileName;
-            $pdfWriter->save($pdfFilePath);
-            @unlink($docxFilePath);
+            
             $attendance->update([
-                'certificate_file' => 'certificates/'.$pdfFileName,
+                'certificate_file' => 'certificates/'.$docxFileName,
             ]);
-            $generatedFiles[] = ['path' => $pdfFilePath, 'name' => $pdfFileName];
+            $generatedFiles[] = ['path' => $docxFilePath, 'name' => $docxFileName];
         }
         if (empty($generatedFiles)) {
             @rmdir($tempDir);

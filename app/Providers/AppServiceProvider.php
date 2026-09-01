@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\AttendanceSubmission;
+use App\Observers\AttendanceSubmissionObserver;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
@@ -18,6 +20,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
-        \App\Models\AttendanceSubmission::observe(\App\Observers\AttendanceSubmissionObserver::class);
+        AttendanceSubmission::observe(AttendanceSubmissionObserver::class);
     }
 }

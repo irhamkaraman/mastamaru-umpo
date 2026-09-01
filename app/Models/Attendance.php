@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Attendance extends Model
 {
@@ -39,6 +40,7 @@ class Attendance extends Model
         'raw_barcode',
         'unique_code',
         'status',
+        'certificate_file',
     ];
 
     /**
@@ -54,10 +56,13 @@ class Attendance extends Model
      */
     public function hasCertificate(): bool
     {
-        $slugName = \Illuminate\Support\Str::slug($this->name, '_');
-        $pdfFileName = "{$this->student_id}_sertifikat_{$slugName}.pdf";
+        if (empty($this->certificate_file)) {
+            return false;
+        }
 
-        return file_exists(storage_path('app/public/certificates/'.$pdfFileName));
+        $path = storage_path('app/public/'.$this->certificate_file);
+
+        return file_exists($path);
     }
 
     /**
@@ -71,7 +76,7 @@ class Attendance extends Model
     /**
      * Get the assessment for the attendance.
      */
-    public function assessment(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function assessment(): HasOne
     {
         return $this->hasOne(StudentAssessment::class, 'student_id', 'id');
     }

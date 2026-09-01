@@ -7,6 +7,7 @@ use App\Exports\MentorTemplateExport;
 use App\Filament\Resources\MentorResource\Pages;
 use App\Filament\Resources\MentorResource\RelationManagers;
 use App\Imports\MentorImport;
+use App\Models\Attendance;
 use App\Models\Group;
 use App\Models\Mentor;
 use Exception;
@@ -236,7 +237,7 @@ class MentorResource extends Resource
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup')
                     ->modalContent(function (Mentor $record) {
-                        $participants = \App\Models\Attendance::where('group_id', $record->group_id)
+                        $participants = Attendance::where('group_id', $record->group_id)
                             ->with(['attendanceSubmissions' => function ($q) {
                                 $q->with('presenceSession')->orderBy('submitted_at', 'desc');
                             }])

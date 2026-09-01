@@ -6,14 +6,18 @@ use App\Models\Attendance;
 use App\Models\AttendanceSubmission;
 use App\Models\Group;
 use App\Models\Mentor;
+use App\Services\ScoreCalculationService;
 use Closure;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Exceptions\Halt;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\UniqueConstraintViolationException;
 
 class AttendanceSubmissionsRelationManager extends RelationManager
 {
@@ -80,7 +84,7 @@ class AttendanceSubmissionsRelationManager extends RelationManager
                     ->live()
                     ->afterStateUpdated(function ($state, callable $set, $livewire) {
                         $session = $livewire->getOwnerRecord();
-                        $points = \App\Services\ScoreCalculationService::calculatePoints($session->session_type ?? 'datang', $state);
+                        $points = ScoreCalculationService::calculatePoints($session->session_type ?? 'datang', $state);
                         $set('score_points', $points);
                     })
                     ->default('hadir'),
@@ -253,7 +257,7 @@ class AttendanceSubmissionsRelationManager extends RelationManager
                             ]);
                             $count++;
                         }
-                        \Filament\Notifications\Notification::make()
+                        Notification::make()
                             ->title('Selesai')
                             ->body("$count peserta berhasil ditandai Alpa.")
                             ->success()
@@ -261,13 +265,13 @@ class AttendanceSubmissionsRelationManager extends RelationManager
                     }),
                 Tables\Actions\CreateAction::make()
                     ->label('Tambah Presensi')
-                    ->using(function (array $data, string $model): \Illuminate\Database\Eloquent\Model {
+                    ->using(function (array $data, string $model): Model {
                         try {
                             $data['presence_session_id'] = $this->getOwnerRecord()->id;
 
                             return $model::create($data);
-                        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
-                            \Filament\Notifications\Notification::make()
+                        } catch (UniqueConstraintViolationException $e) {
+                            Notification::make()
                                 ->title('Data Sudah Ada')
                                 ->body('Peserta ini sudah memiliki data presensi pada sesi ini. Silakan pilih peserta lain atau edit data yang sudah ada.')
                                 ->danger()

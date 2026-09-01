@@ -3,7 +3,9 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ApiDataRecordResource\Pages;
+use App\Models\ApiConfiguration;
 use App\Models\ApiDataRecord;
+use App\Models\Attendance;
 use Exception;
 use Filament\Forms;
 use Filament\Forms\Components\Actions;
@@ -21,6 +23,7 @@ use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\HtmlString;
 use Log;
 
 class ApiDataRecordResource extends Resource
@@ -54,7 +57,7 @@ class ApiDataRecordResource extends Resource
                     ])->columns(2),
                 Forms\Components\Placeholder::make('tutorial_sync')
                     ->label('')
-                    ->content(new \Illuminate\Support\HtmlString('
+                    ->content(new HtmlString('
                         <div class="p-4 rounded-lg bg-warning-50 border border-warning-200 dark:bg-warning-900/30 dark:border-warning-800 text-warning-800 dark:text-warning-300 text-sm mb-2 shadow-sm">
                             <strong class="block mb-2 text-base flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Langkah Memasukkan Data ke Tabel Peserta (Insert)</strong>
                             <ol class="list-decimal ml-5 space-y-1">
@@ -83,7 +86,7 @@ class ApiDataRecordResource extends Resource
 
                                 return;
                             }
-                            $config = \App\Models\ApiConfiguration::find($configId);
+                            $config = ApiConfiguration::find($configId);
                             if (! $config) {
                                 return;
                             }
@@ -249,7 +252,7 @@ class ApiDataRecordResource extends Resource
                                         }
                                     }
                                 }
-                                \App\Models\Attendance::updateOrCreate(
+                                Attendance::updateOrCreate(
                                     ['student_id' => $item[$studentIdKey]],
                                     $mappedData
                                 );

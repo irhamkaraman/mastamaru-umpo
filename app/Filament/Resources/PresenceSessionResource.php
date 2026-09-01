@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
 class PresenceSessionResource extends Resource
@@ -41,7 +42,7 @@ class PresenceSessionResource extends Resource
                     ->maxLength(255)
                     ->live(onBlur: true)
                     ->afterStateUpdated(function (string $operation, $state, Set $set) {
-                        $set('slug', \Illuminate\Support\Str::slug($state));
+                        $set('slug', Str::slug($state));
                     }),
                 Forms\Components\Select::make('session_type')
                     ->label('Tipe Sesi (Bobot Poin)')
@@ -184,7 +185,7 @@ class PresenceSessionResource extends Resource
                     ->color('success')
                     ->visible(fn () => auth()->user()?->can('export', PresenceSession::class) ?? false) /** @phpstan-ignore-line */
                     ->action(function (PresenceSession $record) {
-                        $fileName = 'data-presensi-'.\Illuminate\Support\Str::slug($record->session_name).'-'.now()->format('Y-m-d-H-i-s').'.xlsx';
+                        $fileName = 'data-presensi-'.Str::slug($record->session_name).'-'.now()->format('Y-m-d-H-i-s').'.xlsx';
                         Notification::make()
                             ->title('Export Berhasil')
                             ->body('Data presensi untuk sesi "'.$record->session_name.'" berhasil diexport.')

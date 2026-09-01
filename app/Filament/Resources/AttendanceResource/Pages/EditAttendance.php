@@ -3,10 +3,16 @@
 namespace App\Filament\Resources\AttendanceResource\Pages;
 
 use App\Filament\Resources\AttendanceResource;
+use App\Models\Attendance;
+use App\Models\CertificateTemplate;
 use App\Models\Mentor;
+use App\Services\WordCertificateService;
 use Exception;
 use Filament\Actions;
+use Filament\Forms\Components\FileUpload;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Str;
 
 class EditAttendance extends EditRecord
 {
@@ -20,23 +26,23 @@ class EditAttendance extends EditRecord
                 ->icon('heroicon-o-arrow-up-tray')
                 ->color('success')
                 ->form([
-                    \Filament\Forms\Components\FileUpload::make('certificate_file')
+                    FileUpload::make('certificate_file')
                         ->label('File Sertifikat PDF')
                         ->acceptedFileTypes(['application/pdf'])
                         ->required(),
                 ])
-                ->action(function (array $data, \App\Models\Attendance $record) {
+                ->action(function (array $data, Attendance $record) {
                     $file = $data['certificate_file'];
                     $certDir = storage_path('app/public/certificates');
                     if (! is_dir($certDir)) {
                         mkdir($certDir, 0755, true);
                     }
                     $tempPath = storage_path('app/public/'.$file);
-                    $slugName = \Illuminate\Support\Str::slug($record->name, '_');
+                    $slugName = Str::slug($record->name, '_');
                     $timestamp = time();
                     $targetFilename = $record->student_id.'_sertifikat_'.$timestamp.'.pdf';
                     $targetPath = $certDir.'/'.$targetFilename;
-                    $oldFiles = glob($certDir.'/'.$record->student_id.'_sertifikat_*.pdf');
+                    $oldFiles = glob($certDir.'/'.$record->student_id.'_sertifikat_*.{docx,pdf}', GLOB_BRACE);
                     if (is_array($oldFiles)) {
                         foreach ($oldFiles as $oldFile) {
                             @unlink($oldFile);
@@ -45,7 +51,8 @@ class EditAttendance extends EditRecord
                     if (file_exists($tempPath)) {
                         rename($tempPath, $targetPath);
                     }
-                    \Filament\Notifications\Notification::make()
+                    $record->update(['certificate_file' => 'certificates/'.$targetFilename]);
+                    Notification::make()
                         ->title('Sertifikat Berhasil Diupload')
                         ->success()
                         ->send();
@@ -54,12 +61,12 @@ class EditAttendance extends EditRecord
                 ->label('Cetak Sertifikat')
                 ->icon('heroicon-o-document-arrow-down')
                 ->color('info')
-                ->action(function (\App\Models\Attendance $record) {
+                ->action(function (Attendance $record) {
                     try {
                         $status = $record->status ?? 'gagal';
-                        $template = \App\Models\CertificateTemplate::getActiveFor($status);
+                        $template = CertificateTemplate::getActiveFor($status);
                         if (! $template) {
-                            \Filament\Notifications\Notification::make()
+                            Notification::make()
                                 ->title('Template Tidak Ditemukan')
                                 ->body('Tidak ada template sertifikat aktif untuk status "'.strtoupper($status).'".')
                                 ->warning()
@@ -67,9 +74,9 @@ class EditAttendance extends EditRecord
 
                             return;
                         }
-                        $service = app(\App\Services\WordCertificateService::class);
+                        $service = app(WordCertificateService::class);
                         $filePath = $service->generate($record, $template);
-                        $slugName = \Illuminate\Support\Str::slug($record->name, '_');
+                        $slugName = Str::slug($record->name, '_');
 
                         return response()->download(
                             $filePath,
@@ -77,7 +84,7 @@ class EditAttendance extends EditRecord
                             ['Content-Type' => 'application/pdf']
                         );
                     } catch (Exception $e) {
-                        \Filament\Notifications\Notification::make()
+                        Notification::make()
                             ->title('Gagal Mencetak Sertifikat')
                             ->body($e->getMessage())
                             ->danger()
@@ -89,25 +96,26 @@ class EditAttendance extends EditRecord
                 ->icon('heroicon-o-trash')
                 ->color('danger')
                 ->requiresConfirmation()
-                ->visible(function (\App\Models\Attendance $record) {
+                ->visible(function (Attendance $record) {
                     $certDir = storage_path('app/public/certificates');
-                    $files = glob($certDir.'/'.$record->student_id.'_sertifikat_*.pdf');
+                    $files = glob($certDir.'/'.$record->student_id.'_sertifikat_*.{docx,pdf}', GLOB_BRACE);
 
                     return is_array($files) && count($files) > 0;
                 })
-                ->action(function (\App\Models\Attendance $record) {
+                ->action(function (Attendance $record) {
                     $certDir = storage_path('app/public/certificates');
-                    $files = glob($certDir.'/'.$record->student_id.'_sertifikat_*.pdf');
+                    $files = glob($certDir.'/'.$record->student_id.'_sertifikat_*.{docx,pdf}', GLOB_BRACE);
                     if (is_array($files) && count($files) > 0) {
                         foreach ($files as $file) {
                             @unlink($file);
                         }
-                        \Filament\Notifications\Notification::make()
+                        $record->update(['certificate_file' => null]);
+                        Notification::make()
                             ->title('Sertifikat Berhasil Dihapus')
                             ->success()
                             ->send();
                     } else {
-                        \Filament\Notifications\Notification::make()
+                        Notification::make()
                             ->title('Sertifikat Tidak Ditemukan')
                             ->warning()
                             ->send();

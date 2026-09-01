@@ -7,6 +7,7 @@ use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class MentorTemplateExport implements FromArray, WithColumnWidths, WithHeadings, WithStyles
@@ -55,7 +56,7 @@ class MentorTemplateExport implements FromArray, WithColumnWidths, WithHeadings,
                     'color' => ['argb' => 'FFFFFF'],
                 ],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['argb' => '2563EB'],
                 ],
             ],

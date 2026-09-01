@@ -22,6 +22,8 @@ use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -220,7 +222,7 @@ class AttendanceResource extends Resource
                     'gagal' => 'GAGAL',
                     default => null,
                 })
-                ->icon(fn (Attendance $record) => (! empty($record->certificate_file) && $record->hasCertificate()) ? 'heroicon-s-document' : null)
+                ->icon(fn (Attendance $record) => $record->hasCertificate() ? 'heroicon-s-document' : null)
                 ->iconPosition('after')
                 ->searchable()
                 ->sortable(),
@@ -460,7 +462,7 @@ class AttendanceResource extends Resource
                     ->modalDescription('Peserta akan ditandai Lulus. Gunakan tombol "Cetak Sertifikat" untuk mengunduh sertifikatnya.')
                     ->action(function (Attendance $record) {
                         $record->update(['status' => 'lulus']);
-                        \Illuminate\Support\Facades\Cache::forget('student_data_'.$record->student_id);
+                        Cache::forget('student_data_'.$record->student_id);
                         Notification::make()
                             ->title('Peserta Ditandai Lulus')
                             ->body('Gunakan tombol Cetak Sertifikat untuk mengunduh sertifikat peserta.')
@@ -471,7 +473,7 @@ class AttendanceResource extends Resource
                     ->label('Cetak')
                     ->icon('heroicon-o-printer')
                     ->color('info')
-                    ->visible(fn (Attendance $record) => in_array($record->status, ['lulus', 'gagal']) && ! (! empty($record->certificate_file) && $record->hasCertificate()))
+                    ->visible(fn (Attendance $record) => in_array($record->status, ['lulus', 'gagal']) && ! $record->hasCertificate())
                     ->action(function (Attendance $record) {
                         try {
                             $status = $record->status ?? 'gagal';
@@ -496,8 +498,8 @@ class AttendanceResource extends Resource
 
                             return response()->download(
                                 $filePath,
-                                "sertifikat_{$record->student_id}_{$slugName}.pdf",
-                                ['Content-Type' => 'application/pdf']
+                                "sertifikat_{$record->student_id}_{$slugName}.docx",
+                                ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
                             );
                         } catch (Exception $e) {
                             Notification::make()
@@ -511,15 +513,15 @@ class AttendanceResource extends Resource
                     ->label('Unduh Sertifikat')
                     ->icon('heroicon-o-arrow-down-on-square')
                     ->color('success')
-                    ->visible(fn (Attendance $record) => in_array($record->status, ['lulus', 'gagal']) && ! empty($record->certificate_file) && $record->hasCertificate())
+                    ->visible(fn (Attendance $record) => in_array($record->status, ['lulus', 'gagal']) && $record->hasCertificate())
                     ->action(function (Attendance $record) {
                         $filePath = storage_path('app/public/'.$record->certificate_file);
                         $slugName = Str::slug($record->name, '_');
 
                         return response()->download(
                             $filePath,
-                            "sertifikat_{$record->student_id}_{$slugName}.pdf",
-                            ['Content-Type' => 'application/pdf']
+                            "sertifikat_{$record->student_id}_{$slugName}.docx",
+                            ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
                         );
                     }),
                 Tables\Actions\Action::make('mark_gagal')
@@ -530,7 +532,7 @@ class AttendanceResource extends Resource
                     ->modalHeading('Tandai Tidak Lulus')
                     ->action(function (Attendance $record) {
                         $record->update(['status' => 'gagal']);
-                        \Illuminate\Support\Facades\Cache::forget('student_data_'.$record->student_id);
+                        Cache::forget('student_data_'.$record->student_id);
                         Notification::make()
                             ->title('Peserta Ditandai Tidak Lulus')
                             ->success()
@@ -548,11 +550,11 @@ class AttendanceResource extends Resource
                         ->requiresConfirmation()
                         ->modalHeading('Tandai Lulus Masal')
                         ->modalDescription('Peserta terpilih akan ditandai Lulus.')
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        ->action(function (Collection $records) {
                             $count = $records->count();
                             foreach ($records as $record) {
                                 $record->update(['status' => 'lulus']);
-                                \Illuminate\Support\Facades\Cache::forget('student_data_'.$record->student_id);
+                                Cache::forget('student_data_'.$record->student_id);
                             }
                             Notification::make()
                                 ->title('Selesai')
@@ -567,7 +569,7 @@ class AttendanceResource extends Resource
                         ->requiresConfirmation()
                         ->modalHeading('Cetak Sertifikat Masal')
                         ->modalDescription('Sertifikat untuk semua peserta terpilih akan digenerate dan dikemas dalam satu file ZIP untuk diunduh.')
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        ->action(function (Collection $records) {
                             try {
                                 $service = app(WordCertificateService::class);
                                 $zipPath = $service->generateBulk($records->load(['group', 'mentor', 'assessment']));
@@ -597,11 +599,11 @@ class AttendanceResource extends Resource
                         ->requiresConfirmation()
                         ->modalHeading('Tandai Gagal Masal')
                         ->modalDescription('Apakah Anda yakin ingin menandai tidak lulus peserta yang dipilih?')
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        ->action(function (Collection $records) {
                             $count = $records->count();
                             foreach ($records as $record) {
                                 $record->update(['status' => 'gagal']);
-                                \Illuminate\Support\Facades\Cache::forget('student_data_'.$record->student_id);
+                                Cache::forget('student_data_'.$record->student_id);
                             }
                             Notification::make()
                                 ->title('Selesai')
@@ -616,17 +618,18 @@ class AttendanceResource extends Resource
                         ->requiresConfirmation()
                         ->modalHeading('Hapus Sertifikat Masal')
                         ->modalDescription('Semua file sertifikat untuk peserta yang dipilih akan dihapus secara permanen.')
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        ->action(function (Collection $records) {
                             $certDir = storage_path('app/public/certificates');
                             $deletedCount = 0;
                             foreach ($records as $record) {
-                                $files = glob($certDir.'/'.$record->student_id.'_sertifikat_*.pdf');
+                                $files = glob($certDir.'/'.$record->student_id.'_sertifikat_*.{docx,pdf}', GLOB_BRACE);
                                 if (is_array($files) && count($files) > 0) {
                                     foreach ($files as $file) {
                                         @unlink($file);
                                         $deletedCount++;
                                     }
                                 }
+                                $record->update(['certificate_file' => null]);
                             }
                             Notification::make()
                                 ->title('Selesai')
@@ -641,12 +644,12 @@ class AttendanceResource extends Resource
                         ->requiresConfirmation()
                         ->modalHeading('Reset Status Gagal')
                         ->modalDescription('Peserta terpilih yang berstatus Gagal akan diubah kembali menjadi Proses.')
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        ->action(function (Collection $records) {
                             $count = 0;
                             foreach ($records as $record) {
                                 if ($record->status === 'gagal') {
                                     $record->update(['status' => 'proses']);
-                                    \Illuminate\Support\Facades\Cache::forget('student_data_'.$record->student_id);
+                                    Cache::forget('student_data_'.$record->student_id);
                                     $count++;
                                 }
                             }

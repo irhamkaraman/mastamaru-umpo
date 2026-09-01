@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\MentorResource\RelationManagers;
 
+use App\Models\Attendance;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
@@ -51,7 +52,7 @@ class AttendancesRelationManager extends RelationManager
                 Tables\Filters\SelectFilter::make('faculty')
                     ->label('Fakultas')
                     ->options(function () {
-                        return \App\Models\Attendance::distinct()
+                        return Attendance::distinct()
                             ->pluck('faculty', 'faculty')
                             ->filter()
                             ->toArray();
@@ -59,7 +60,7 @@ class AttendancesRelationManager extends RelationManager
                 Tables\Filters\SelectFilter::make('study_program')
                     ->label('Program Studi')
                     ->options(function () {
-                        return \App\Models\Attendance::distinct()
+                        return Attendance::distinct()
                             ->pluck('study_program', 'study_program')
                             ->filter()
                             ->toArray();

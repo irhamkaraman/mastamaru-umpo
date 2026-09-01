@@ -5,6 +5,9 @@ namespace App\Console\Commands;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class SyncPermissions extends Command
 {
@@ -35,7 +38,7 @@ class SyncPermissions extends Command
         Artisan::call('view:clear');
         $this->line(Artisan::output());
         $this->info('2. Membersihkan cache Spatie Permission secara paksa...');
-        app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
         Artisan::call('permission:cache-reset');
         $this->line(Artisan::output());
         $this->info('3. Men-generate ulang Filament Shield permissions...');
@@ -44,8 +47,8 @@ class SyncPermissions extends Command
         $this->info('4. Memaksa role "super_admin" untuk mendapatkan semua permission...');
         $superAdminRoleName = config('filament-shield.super_admin.name', 'super_admin');
         try {
-            $role = \Spatie\Permission\Models\Role::firstOrCreate(['name' => $superAdminRoleName, 'guard_name' => 'web']);
-            $permissions = \Spatie\Permission\Models\Permission::all();
+            $role = Role::firstOrCreate(['name' => $superAdminRoleName, 'guard_name' => 'web']);
+            $permissions = Permission::all();
             $role->syncPermissions($permissions);
             $this->info('✅ Berhasil menyinkronkan '.$permissions->count().' permission ke role '.$superAdminRoleName);
         } catch (Exception $e) {

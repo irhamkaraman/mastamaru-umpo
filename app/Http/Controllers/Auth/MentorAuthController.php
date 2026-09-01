@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Attendance;
+use App\Models\CertificateTemplate;
 use App\Models\Mentor;
+use App\Models\PresenceSession;
+use App\Services\WordCertificateService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -89,7 +93,7 @@ class MentorAuthController extends Controller
                 return redirect('/mentor/login')->with('error', 'Data mentor tidak ditemukan. Silakan login kembali.');
             }
             $activeSessions = Cache::remember('active_sessions_all', 60, function () {
-                return \App\Models\PresenceSession::where('is_active', true)
+                return PresenceSession::where('is_active', true)
                     ->orderByRaw('
                         CASE 
                             WHEN NOW() BETWEEN start_time AND end_time THEN 1 
@@ -101,7 +105,7 @@ class MentorAuthController extends Controller
                     ->get();
             });
             $todayStats = Cache::remember('today_stats_'.date('Y-m-d'), 60, function () {
-                return \App\Models\PresenceSession::where('is_active', true)
+                return PresenceSession::where('is_active', true)
                     ->whereDate('start_time', today())
                     ->count();
             });
@@ -193,7 +197,7 @@ class MentorAuthController extends Controller
             if (! $mentor || ! $mentor->group_id) {
                 return redirect()->route('mentor.dashboard')->with('error', 'Anda tidak memiliki kelompok yang ditugaskan.');
             }
-            $participants = \App\Models\Attendance::with('assessment')
+            $participants = Attendance::with('assessment')
                 ->where('group_id', $mentor->group_id)
                 ->get();
 
@@ -231,18 +235,18 @@ class MentorAuthController extends Controller
             if ($mentor->student_id !== $request->input('mentor_nim') || ! \Hash::check($request->input('mentor_password'), $mentor->password)) {
                 return redirect()->back()->with('error', 'Otorisasi gagal! NIM atau Password yang Anda masukkan tidak sesuai.');
             }
-            $templateLulus = \App\Models\CertificateTemplate::getActiveFor('lulus') ?? \App\Models\CertificateTemplate::getActiveFor('semua');
-            $templateGagal = \App\Models\CertificateTemplate::getActiveFor('gagal') ?? \App\Models\CertificateTemplate::getActiveFor('semua');
+            $templateLulus = CertificateTemplate::getActiveFor('lulus') ?? CertificateTemplate::getActiveFor('semua');
+            $templateGagal = CertificateTemplate::getActiveFor('gagal') ?? CertificateTemplate::getActiveFor('semua');
             if (! $templateLulus && ! $templateGagal) {
                 return redirect()->back()->with('error', 'Template sertifikat belum diatur atau belum aktif.');
             }
-            $participants = \App\Models\Attendance::where('group_id', $mentor->group_id)
+            $participants = Attendance::where('group_id', $mentor->group_id)
                 ->whereIn('id', $selectedIds)
                 ->get();
             if ($participants->isEmpty()) {
                 return redirect()->back()->with('error', 'Peserta yang Anda pilih tidak valid atau belum ada peserta di kelompok Anda.');
             }
-            $service = app(\App\Services\WordCertificateService::class);
+            $service = app(WordCertificateService::class);
             $generatedCount = 0;
             foreach ($participants as $participant) {
                 $status = $participant->status ?? 'gagal';
@@ -300,7 +304,7 @@ class MentorAuthController extends Controller
             if ($mentor->student_id !== $request->input('mentor_nim') || ! \Hash::check($request->input('mentor_password'), $mentor->password)) {
                 return redirect()->back()->with('error', 'Otorisasi gagal! NIM atau Password salah.');
             }
-            $participants = \App\Models\Attendance::where('group_id', $mentor->group_id)
+            $participants = Attendance::where('group_id', $mentor->group_id)
                 ->whereIn('id', $selectedIds)
                 ->get();
             if ($participants->isEmpty()) {

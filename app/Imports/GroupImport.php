@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\Group;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\SkipsErrors;
@@ -20,7 +21,7 @@ class GroupImport implements SkipsOnError, SkipsOnFailure, ToModel, WithBatchIns
     use Importable, SkipsErrors, SkipsFailures;
 
     /**
-     * @return \Illuminate\Database\Eloquent\Model|null
+     * @return Model|null
      */
     public function model(array $row)
     {

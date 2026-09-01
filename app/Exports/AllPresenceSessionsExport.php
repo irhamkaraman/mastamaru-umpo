@@ -5,11 +5,13 @@ namespace App\Exports;
 use App\Models\Attendance;
 use App\Models\AttendanceSubmission;
 use App\Models\PresenceSession;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class AllPresenceSessionsExport implements FromCollection, WithHeadings, WithMapping, WithStyles
@@ -75,8 +77,8 @@ class AllPresenceSessionsExport implements FromCollection, WithHeadings, WithMap
         return [
             $session->session_name,
             $session->session_code,
-            \Carbon\Carbon::parse($session->start_time)->format('d/m/Y H:i'),
-            \Carbon\Carbon::parse($session->end_time)->format('d/m/Y H:i'),
+            Carbon::parse($session->start_time)->format('d/m/Y H:i'),
+            Carbon::parse($session->end_time)->format('d/m/Y H:i'),
             $student->name,
             $student->student_id,
             $student->group->name ?? 'Tidak ada kelompok',
@@ -84,7 +86,7 @@ class AllPresenceSessionsExport implements FromCollection, WithHeadings, WithMap
             $student->faculty ?? 'Tidak tersedia',
             $student->study_program ?? 'Tidak tersedia',
             $submission ? $this->getStatusLabel($submission->status) : 'Tidak Hadir',
-            $submission ? \Carbon\Carbon::parse($submission->submitted_at)->format('d/m/Y H:i:s') : '-',
+            $submission ? Carbon::parse($submission->submitted_at)->format('d/m/Y H:i:s') : '-',
             $submission ? $this->getMethodLabel($submission->submission_method) : '-',
             $submission->notes ?? '-',
         ];
@@ -99,7 +101,7 @@ class AllPresenceSessionsExport implements FromCollection, WithHeadings, WithMap
             1 => [
                 'font' => ['bold' => true],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => 'E3F2FD'],
                 ],
             ],

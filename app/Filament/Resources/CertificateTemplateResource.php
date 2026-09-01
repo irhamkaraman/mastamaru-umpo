@@ -12,6 +12,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\HtmlString;
 
 class CertificateTemplateResource extends Resource
 {
@@ -98,7 +99,7 @@ class CertificateTemplateResource extends Resource
                                     </tr>";
                                 }
 
-                                return new \Illuminate\Support\HtmlString("
+                                return new HtmlString("
                                     <div style='font-size:13px;'>
                                         <p style='margin-bottom:8px;color:#555;'>Gunakan placeholder berikut di dalam file Word Anda. PhpWord menggunakan format <code style='background:#f3f4f6;padding:2px 6px;border-radius:4px;font-weight:700;'>\${nama}</code> (kurung kurawal tunggal tanpa spasi):</p>
                                         <table style='border-collapse:collapse;width:100%;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;'>
@@ -202,7 +203,7 @@ class CertificateTemplateResource extends Resource
                         $found = $service->detectPlaceholders($path);
                         $supported = WordCertificateService::getSupportedPlaceholders();
                         if (empty($found)) {
-                            return new \Illuminate\Support\HtmlString(
+                            return new HtmlString(
                                 '<div style="padding:16px;color:#888;">Tidak ada placeholder yang terdeteksi, atau file belum dapat dibaca.</div>'
                             );
                         }
@@ -217,7 +218,7 @@ class CertificateTemplateResource extends Resource
                             </tr>";
                         }
 
-                        return new \Illuminate\Support\HtmlString("
+                        return new HtmlString("
                             <div style='padding:16px;'>
                                 <table style='width:100%;border-collapse:collapse;border:1px solid #e5e7eb;'>
                                     <thead>

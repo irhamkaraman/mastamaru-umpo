@@ -6,6 +6,8 @@ use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class EmptyPresenceSessionExport implements FromArray, WithHeadings, WithStyles, WithTitle
@@ -47,7 +49,7 @@ class EmptyPresenceSessionExport implements FromArray, WithHeadings, WithStyles,
             1 => [
                 'font' => ['bold' => true, 'size' => 12],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => 'FF6B6B'],
                 ],
                 'font' => ['color' => ['rgb' => 'FFFFFF'], 'bold' => true],
@@ -55,7 +57,7 @@ class EmptyPresenceSessionExport implements FromArray, WithHeadings, WithStyles,
             2 => [
                 'font' => ['italic' => true],
                 'alignment' => [
-                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
                 ],
             ],
         ];

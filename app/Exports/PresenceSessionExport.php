@@ -12,6 +12,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class PresenceSessionExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithStyles, WithTitle
@@ -95,7 +96,7 @@ class PresenceSessionExport implements FromCollection, ShouldAutoSize, WithHeadi
             1 => [
                 'font' => ['bold' => true, 'size' => 12],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => '4F81BD'],
                 ],
                 'font' => ['color' => ['rgb' => 'FFFFFF'], 'bold' => true],

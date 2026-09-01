@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Models\AttendanceSubmission;
 use App\Models\Group;
+use App\Models\StudentAssessment;
+use App\Services\ScoreCalculationService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -47,7 +50,7 @@ class HomeController extends Controller
             'fakultas' => $student->faculty,
             'mentor' => $student->mentor ? $student->mentor->name : 'Belum ditentukan',
         ], JSON_UNESCAPED_UNICODE);
-        $assessment = \App\Models\StudentAssessment::firstOrCreate(
+        $assessment = StudentAssessment::firstOrCreate(
             ['student_id' => $student->id],
             [
                 'total_presence_points' => 0,
@@ -58,18 +61,17 @@ class HomeController extends Controller
                 'status' => 'proses',
             ]
         );
-        $matrix = \App\Services\ScoreCalculationService::getStudentPresenceMatrix($student->id);
-        $submissions = \App\Models\AttendanceSubmission::where('student_id', $student->id)
+        $matrix = ScoreCalculationService::getStudentPresenceMatrix($student->id);
+        $submissions = AttendanceSubmission::where('student_id', $student->id)
             ->with(['presenceSession', 'mentor'])
             ->orderBy('submitted_at', 'desc')
             ->get();
         $student->refresh();
-        $certDir = storage_path('app/public/certificates');
         $certificateFile = null;
-        if (is_dir($certDir)) {
-            $files = glob($certDir.'/'.$student->student_id.'_sertifikat_*.pdf');
-            if (count($files) > 0) {
-                $certificateFile = asset('storage/certificates/'.basename($files[0]));
+        if (!empty($student->certificate_file)) {
+            $path = storage_path('app/public/' . $student->certificate_file);
+            if (file_exists($path)) {
+                $certificateFile = asset('storage/' . $student->certificate_file);
             }
         }
 

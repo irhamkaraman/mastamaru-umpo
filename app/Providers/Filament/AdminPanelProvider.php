@@ -2,6 +2,13 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\CreditPage;
+use App\Filament\Widgets\ActiveGroupsWidget;
+use App\Filament\Widgets\ActiveSessionsWidget;
+use App\Filament\Widgets\GroupAttendanceWidget;
+use App\Filament\Widgets\PresenceTrendWidget;
+use App\Filament\Widgets\SystemInfoWidget;
+use App\Filament\Widgets\TotalStatsWidget;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -41,18 +48,18 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 Widgets\AccountWidget::class,
                 Widgets\FilamentInfoWidget::class,
-                \App\Filament\Widgets\TotalStatsWidget::class,
-                \App\Filament\Widgets\SystemInfoWidget::class,
-                \App\Filament\Widgets\ActiveGroupsWidget::class,
-                \App\Filament\Widgets\PresenceTrendWidget::class,
-                \App\Filament\Widgets\ActiveSessionsWidget::class,
-                \App\Filament\Widgets\GroupAttendanceWidget::class,
+                TotalStatsWidget::class,
+                SystemInfoWidget::class,
+                ActiveGroupsWidget::class,
+                PresenceTrendWidget::class,
+                ActiveSessionsWidget::class,
+                GroupAttendanceWidget::class,
             ])
             ->userMenuItems([
                 UserMenuItem::make()
                     ->label('Tentang Sistem')
                     ->icon('heroicon-o-information-circle')
-                    ->url(fn () => \App\Filament\Pages\CreditPage::getUrl())
+                    ->url(fn () => CreditPage::getUrl())
                     ->openUrlInNewTab(false),
             ])
             ->middleware([

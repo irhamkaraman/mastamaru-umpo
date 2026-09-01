@@ -5,6 +5,8 @@ namespace App\Console\Commands;
 use App\Models\Attendance;
 use Exception;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class SyncUmpoMahasiswa extends Command
 {
@@ -30,7 +32,7 @@ class SyncUmpoMahasiswa extends Command
         $this->info('Fetching Data Jurusan dari API UMPO...');
         $jurusanUrl = 'https://apikey.umpo.ac.id/api/jurusan/find-All';
         try {
-            $jurusanResponse = \Illuminate\Support\Facades\Http::timeout(30)->get($jurusanUrl);
+            $jurusanResponse = Http::timeout(30)->get($jurusanUrl);
             if (! $jurusanResponse->successful()) {
                 $this->error('Gagal mengambil data Jurusan: HTTP '.$jurusanResponse->status());
 
@@ -45,7 +47,7 @@ class SyncUmpoMahasiswa extends Command
         $this->info('Fetching Data Fakultas dari API UMPO...');
         $fakultasUrl = 'https://apikey.umpo.ac.id/api/fakultas/find-all';
         try {
-            $fakultasResponse = \Illuminate\Support\Facades\Http::timeout(30)->get($fakultasUrl);
+            $fakultasResponse = Http::timeout(30)->get($fakultasUrl);
             if (! $fakultasResponse->successful()) {
                 $this->error('Gagal mengambil data Fakultas: HTTP '.$fakultasResponse->status());
 
@@ -78,7 +80,7 @@ class SyncUmpoMahasiswa extends Command
         ]);
         $authToken = null;
         try {
-            $tokenResponse = \Illuminate\Support\Facades\Http::timeout(15)
+            $tokenResponse = Http::timeout(15)
                 ->withoutVerifying()
                 ->withHeaders(['Accept' => 'application/json'])
                 ->post($tokenUrl);
@@ -99,7 +101,7 @@ class SyncUmpoMahasiswa extends Command
         $this->info('Fetching Data Mahasiswa Tahun 2026 dari API UMPO...');
         $mhsUrl = 'https://apikey.umpo.ac.id/api-key/mahasiswas/find-all?tahun=2026';
         try {
-            $mhsResponse = \Illuminate\Support\Facades\Http::timeout(60)
+            $mhsResponse = Http::timeout(60)
                 ->withoutVerifying()
                 ->withHeaders([
                     'Authorization' => $authToken,
@@ -140,9 +142,9 @@ class SyncUmpoMahasiswa extends Command
                 $programStudi = $jurusanDict[$dictKey] ?? $kodeJur;
                 $namaFakultas = $fakultasDict[$kodeFak] ?? $kodeFak;
                 $phoneNumber = $mhs['teleponMhs'] ?? $mhs['telepon'] ?? $mhs['phone'] ?? null;
-                $uniqueCode = \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(8));
+                $uniqueCode = Str::upper(Str::random(8));
                 while (isset($existingUniqueCodes[$uniqueCode])) {
-                    $uniqueCode = \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(8));
+                    $uniqueCode = Str::upper(Str::random(8));
                 }
                 $existingUniqueCodes[$uniqueCode] = true;
                 $upsertData[] = [

@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Middleware\MentorAuth;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -13,12 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'mentor.auth' => App\Http\Middleware\MentorAuth::class,
+            'mentor.auth' => MentorAuth::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Handle 419 CSRF Token Mismatch Error
-        $exceptions->render(function (Symfony\Component\HttpKernel\Exception\HttpException $e, $request) {
+        $exceptions->render(function (HttpException $e, $request) {
             if ($e->getStatusCode() === 419) {
                 return response()->view('errors.419', [], 419);
             }
