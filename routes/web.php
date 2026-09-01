@@ -71,8 +71,7 @@ Route::get('/super-fix', function () {
         }
         $userListMsg .= '</ul>';
 
-        // Lupakan cache Spatie sekali lagi setelah assign
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         return '<h1>✅ SUKSES (SUPER FIX PRODUCTION LEVEL)!</h1>'
             . '<p>Cache dibersihkan, seluruh Permission (' . $permissions->count() . ') di-generate, dan Role <strong>super_admin</strong> telah diberikan ke SEMUA akun admin:</p>'
