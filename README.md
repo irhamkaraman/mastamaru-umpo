@@ -41,13 +41,7 @@ Menghubungkan ke API UMPO, mengambil token otentikasi dinamis, dan melakukan *up
 php artisan umpo:sync-mahasiswa
 ```
 
-### 2. Pencocokan & Sinkronisasi Data Mentah API (`ApiDataRecord`)
-Menarik data mentah dari endpoint API konfigurasi ke tabel penampungan perbandingan:
-```bash
-php artisan api:sync-records
-```
-
-### 3. Sinkronisasi & Reset Hak Akses (Shield)
+### 2. Sinkronisasi & Reset Hak Akses (Shield)
 Memperbarui seluruh permission Filament Shield saat ada resource atau permission baru, membersihkan cache secara total, dan memastikan super_admin mendapat akses (sangat disarankan saat deploy ke production):
 ```bash
 php artisan app:sync-permissions
