@@ -25,6 +25,14 @@ class SyncUmpoMahasiswa extends Command
     protected $description = 'Sync active students from UMPO API and translate their majors.';
 
     /**
+     * Filter sinkronisasi berdasarkan Jenis Kelas (reguler/transfer).
+     * Anda dapat mengatur array ini untuk membatasi jenis kelas yang ditarik.
+     *
+     * @var array
+     */
+    protected $allowedJenis = ['Reguler', 'Reguler-Transfer'];
+
+    /**
      * Execute the console command.
      */
     public function handle()
@@ -134,6 +142,12 @@ class SyncUmpoMahasiswa extends Command
                 if (empty($nim)) {
                     $bar->advance();
 
+                    continue;
+                }
+                
+                $jenis = trim($mhs['jenis'] ?? '');
+                if (!in_array($jenis, $this->allowedJenis)) {
+                    $bar->advance();
                     continue;
                 }
                 $kodeFak = $mhs['kodeFakultas'] ?? '';
