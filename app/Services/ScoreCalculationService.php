@@ -129,6 +129,11 @@ class ScoreCalculationService
             $materiSession = $daySessions->where('session_type', 'materi')->first(function ($session) use ($submissions) {
                 return $submissions->has($session->id);
             }) ?? $daySessions->firstWhere('session_type', 'materi');
+
+            $datangSub = $datangSession ? $submissions->get($datangSession->id) : null;
+            $pulangSub = $pulangSession ? $submissions->get($pulangSession->id) : null;
+            $materiSub = $materiSession ? $submissions->get($materiSession->id) : null;
+
             $formatSessionSlot = function (?PresenceSession $session, ?AttendanceSubmission $sub) {
                 if ($sub) {
                     return [
