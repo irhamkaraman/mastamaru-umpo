@@ -14,23 +14,10 @@ use Spatie\Permission\PermissionRegistrar;
 
 class SyncPermissions extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'app:sync-permissions {--verify : Jalankan pengecekan verifikasi permission}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Perintah SAKTI: Generate semua permission, assign super_admin ke semua user, reset cache, dan verifikasi.';
 
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
         $this->newLine();
@@ -48,7 +35,7 @@ class SyncPermissions extends Command
             $this->warn('    ⚠️ Peringatan saat reset cache: ' . $e->getMessage());
         }
 
-        $this->info('3️⃣  Men-generate seluruh hak akses (Resource, Custom Action, Page, Widget)...');
+        $this->info('2️⃣  Men-generate seluruh hak akses secara instan (Batch Insert)...');
 
         $resources = [
             'attendance',
@@ -96,7 +83,6 @@ class SyncPermissions extends Command
             }
         }
 
-        // Custom Page & Widget Permissions
         $specialPermissions = [
             'view_credit_page',
             'view_api_data_page',
@@ -121,13 +107,11 @@ class SyncPermissions extends Command
             ];
         }
 
-        // Eksekusi 1 QUERY TUNGGAL untuk semua permission (Super Cepat!)
         DB::table('permissions')->insertOrIgnore($allPermRecords);
 
         $allPermissions = Permission::where('guard_name', 'web')->get();
         $this->line("    ✅ Total {$allPermissions->count()} permissions terdaftar di database.");
 
-        // 4. Hubungkan seluruh permission ke role super_admin secara instan
         $this->info('3️⃣  Menghubungkan seluruh permission ke role super_admin...');
         $superAdminRoleName = config('filament-shield.super_admin.name', 'super_admin');
         $role = Role::firstOrCreate(['name' => $superAdminRoleName, 'guard_name' => 'web']);
@@ -142,7 +126,6 @@ class SyncPermissions extends Command
         DB::table('role_has_permissions')->insertOrIgnore($rolePermissions);
         $this->line("    ✅ Role '{$superAdminRoleName}' sekarang memiliki {$allPermissions->count()} permissions.");
 
-        // 5. Berikan Role super_admin ke SEMUA User di Database (Batch)
         $this->info('4️⃣  Memasangkan role super_admin ke seluruh akun user...');
         $userIds = DB::table('users')->pluck('id');
         if ($userIds->isEmpty()) {
@@ -169,7 +152,7 @@ class SyncPermissions extends Command
         $userTableData = $users->map(function ($u) {
             return [
                 'ID' => $u->id,
-                'Name' => $u->name,
+                'Nama' => $u->name,
                 'Email' => $u->email,
                 'Roles' => 'super_admin',
             ];
@@ -177,10 +160,9 @@ class SyncPermissions extends Command
 
         $this->table(['ID', 'Nama', 'Email', 'Roles Aktif'], $userTableData);
 
-        // 6. Reset Cache Spatie
         app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $this->info('6️⃣  Menjalankan UJI VERIFIKASI Hak Akses Real-Time...');
+        $this->info('5️⃣  Menjalankan UJI VERIFIKASI Hak Akses Real-Time...');
         $criticalChecks = [
             'create_attendance' => 'Tambah Peserta (+)',
             'export_attendance' => 'Export Data CSV',
@@ -214,4 +196,3 @@ class SyncPermissions extends Command
         return Command::SUCCESS;
     }
 }
-
