@@ -47,10 +47,10 @@ Menarik data mentah dari endpoint API konfigurasi ke tabel penampungan perbandin
 php artisan api:sync-records
 ```
 
-### 3. Generate Ulang Hak Akses Shield
-Memperbarui seluruh permission Filament Shield saat ada resource atau permission baru:
+### 3. Sinkronisasi & Reset Hak Akses (Shield)
+Memperbarui seluruh permission Filament Shield saat ada resource atau permission baru, membersihkan cache secara total, dan memastikan super_admin mendapat akses (sangat disarankan saat deploy ke production):
 ```bash
-php artisan shield:generate --all
+php artisan app:sync-permissions
 ```
 
 ---
@@ -119,13 +119,12 @@ Buka browser Anda dan kunjungi:
 
 ## 🛠️ Catatan Penting & Troubleshooting
 
-### 1. Hak Akses (Role & Permission) Tidak Muncul?
-Jika menu baru disembunyikan karena permission belum diperbarui, jalankan:
+### 1. Hak Akses (Role & Permission) / Tombol Tidak Muncul?
+Jika menu baru disembunyikan karena permission belum diperbarui atau tombol tidak muncul di server production, jalankan perintah sapu bersih berikut:
 ```bash
-php artisan shield:generate --all
-php artisan permission:cache-reset
-php artisan optimize:clear
+php artisan app:sync-permissions
 ```
+*Perintah di atas akan secara otomatis membersihkan semua layer cache Laravel, reset cache Spatie Permission, men-generate ulang Shield untuk semua pages/resources/widgets, dan memaksa sinkronisasi hak akses ke role `super_admin`.*
 
 ---
 
