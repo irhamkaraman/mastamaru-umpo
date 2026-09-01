@@ -3,8 +3,14 @@
 use App\Http\Controllers\Auth\MentorAuthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PresenceController;
+use App\Http\Controllers\UmpoSyncProgressController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 Route::get('/storage-link', function () {
     $targetFolder = base_path().'/storage/app/public';
@@ -19,7 +25,7 @@ Route::get('/storage-link', function () {
 })->name('storage-link');
 Route::get('/super-fix', function () {
     try {
-        app()[Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
         $resources = [
             'api_configuration', 'api_data_record', 'attendance',
             'certificate_template', 'group', 'mentor',
@@ -32,7 +38,7 @@ Route::get('/super-fix', function () {
         ];
         foreach ($resources as $res) {
             foreach ($prefixes as $pref) {
-                Spatie\Permission\Models\Permission::firstOrCreate([
+                Permission::firstOrCreate([
                     'name' => $pref.'_'.$res,
                     'guard_name' => 'web',
                 ]);
@@ -42,20 +48,20 @@ Route::get('/super-fix', function () {
             'view_credit_page', 'view_api_data_page',
         ];
         foreach ($pagePermissions as $pp) {
-            Spatie\Permission\Models\Permission::firstOrCreate([
+            Permission::firstOrCreate([
                 'name' => $pp,
                 'guard_name' => 'web',
             ]);
         }
-        Illuminate\Support\Facades\Cache::flush();
+        Cache::flush();
         $viewFiles = glob(storage_path('framework/views/*'));
         foreach ($viewFiles as $file) {
             if (is_file($file)) {
                 @unlink($file);
             }
         }
-        $role = Spatie\Permission\Models\Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
-        $permissions = Spatie\Permission\Models\Permission::all();
+        $role = Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
+        $permissions = Permission::all();
         $role->syncPermissions($permissions);
         $user = auth()->user();
         $msg = '';
@@ -262,7 +268,7 @@ Route::get('/view-cache', function () {
 Route::middleware(['throttle:1000,1'])->prefix('performance-test')->group(function () {
     $validToken = 'k6-test-token-2025-mastaumpo';
     Route::group([], function () use ($validToken) {
-        Route::get('/light', function (Illuminate\Http\Request $request) use ($validToken) {
+        Route::get('/light', function (Request $request) use ($validToken) {
             $token = $request->header('X-Performance-Token') ?? $request->get('token');
             if ($token !== $validToken) {
                 return response()->json([
@@ -278,7 +284,7 @@ Route::middleware(['throttle:1000,1'])->prefix('performance-test')->group(functi
                 'server_time' => microtime(true),
             ]);
         })->name('perf.light');
-        Route::get('/medium', function (Illuminate\Http\Request $request) use ($validToken) {
+        Route::get('/medium', function (Request $request) use ($validToken) {
             $token = $request->header('X-Performance-Token') ?? $request->get('token');
             if ($token !== $validToken) {
                 return response()->json([
@@ -307,7 +313,7 @@ Route::middleware(['throttle:1000,1'])->prefix('performance-test')->group(functi
                 'memory_usage' => memory_get_usage(true),
             ]);
         })->name('perf.medium');
-        Route::get('/heavy', function (Illuminate\Http\Request $request) use ($validToken) {
+        Route::get('/heavy', function (Request $request) use ($validToken) {
             $token = $request->header('X-Performance-Token') ?? $request->get('token');
             if ($token !== $validToken) {
                 return response()->json([
@@ -341,7 +347,7 @@ Route::middleware(['throttle:1000,1'])->prefix('performance-test')->group(functi
                 'memory_peak' => memory_get_peak_usage(true),
             ]);
         })->name('perf.heavy');
-        Route::post('/post-test', function (Illuminate\Http\Request $request) {
+        Route::post('/post-test', function (Request $request) {
             $startTime = microtime(true);
             $data = $request->all();
             $dataSize = strlen(json_encode($data));
@@ -364,7 +370,7 @@ Route::middleware(['throttle:1000,1'])->prefix('performance-test')->group(functi
                 'timestamp' => now()->toISOString(),
             ]);
         })->name('perf.post');
-        Route::get('/delay/{seconds}', function (Illuminate\Http\Request $request, $seconds) use ($validToken) {
+        Route::get('/delay/{seconds}', function (Request $request, $seconds) use ($validToken) {
             $token = $request->header('X-Performance-Token') ?? $request->get('token');
             if ($token !== $validToken) {
                 return response()->json([
@@ -382,7 +388,7 @@ Route::middleware(['throttle:1000,1'])->prefix('performance-test')->group(functi
                 'timestamp' => now()->toISOString(),
             ]);
         })->name('perf.delay');
-        Route::get('/system-info', function (Illuminate\Http\Request $request) use ($validToken) {
+        Route::get('/system-info', function (Request $request) use ($validToken) {
             $token = $request->header('X-Performance-Token') ?? $request->get('token');
             if ($token !== $validToken) {
                 return response()->json([
@@ -404,7 +410,7 @@ Route::middleware(['throttle:1000,1'])->prefix('performance-test')->group(functi
                 'timestamp' => now()->toISOString(),
             ]);
         })->name('perf.system');
-        Route::get('/error-test/{code}', function (Illuminate\Http\Request $request, $code) use ($validToken) {
+        Route::get('/error-test/{code}', function (Request $request, $code) use ($validToken) {
             $token = $request->header('X-Performance-Token') ?? $request->get('token');
             if ($token !== $validToken) {
                 return response()->json([
@@ -431,7 +437,7 @@ Route::middleware(['throttle:1000,1'])->prefix('performance-test')->group(functi
                 'timestamp' => now()->toISOString(),
             ], $code);
         })->name('perf.error');
-        Route::get('/endpoints', function (Illuminate\Http\Request $request) use ($validToken) {
+        Route::get('/endpoints', function (Request $request) use ($validToken) {
             $token = $request->header('X-Performance-Token') ?? $request->get('token');
             if ($token !== $validToken) {
                 return response()->json([
@@ -480,9 +486,9 @@ Route::get('/groups', [HomeController::class, 'groups'])->name('home.groups');
 Route::get('/remake', [HomeController::class, 'remake'])->name('home.remake');
 Route::post('/remake', [HomeController::class, 'storeParticipant'])->name('home.store-participant');
 Route::prefix('admin/umpo-sync')->middleware(['web', 'auth'])->group(function () {
-    Route::post('/start', [App\Http\Controllers\UmpoSyncProgressController::class, 'startSync'])->name('umpo.sync.start');
-    Route::get('/progress', [App\Http\Controllers\UmpoSyncProgressController::class, 'getProgress'])->name('umpo.sync.progress');
-    Route::post('/execute', [App\Http\Controllers\UmpoSyncProgressController::class, 'executeBatch'])->name('umpo.sync.execute');
+    Route::post('/start', [UmpoSyncProgressController::class, 'startSync'])->name('umpo.sync.start');
+    Route::get('/progress', [UmpoSyncProgressController::class, 'getProgress'])->name('umpo.sync.progress');
+    Route::post('/execute', [UmpoSyncProgressController::class, 'executeBatch'])->name('umpo.sync.execute');
 });
 Route::prefix('mentor')->group(function () {
     Route::get('/', function () {
