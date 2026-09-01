@@ -274,10 +274,12 @@ class MentorAuthController extends Controller
                 return redirect()->back()->with('error', 'Otorisasi gagal! NIM atau Password yang Anda masukkan tidak sesuai.');
             }
 
-            // Ambil template aktif
-            $template = \App\Models\CertificateTemplate::getActiveFor('lulus');
-            if (!$template) {
-                return redirect()->back()->with('error', 'Template sertifikat lulus belum diatur atau belum aktif.');
+            // Cache template
+            $templateLulus = \App\Models\CertificateTemplate::getActiveFor('lulus') ?? \App\Models\CertificateTemplate::getActiveFor('semua');
+            $templateGagal = \App\Models\CertificateTemplate::getActiveFor('gagal') ?? \App\Models\CertificateTemplate::getActiveFor('semua');
+
+            if (!$templateLulus && !$templateGagal) {
+                return redirect()->back()->with('error', 'Template sertifikat belum diatur atau belum aktif.');
             }
 
             // Ambil peserta yang dipilih
@@ -293,11 +295,31 @@ class MentorAuthController extends Controller
             $generatedCount = 0;
 
             foreach ($participants as $participant) {
+                $status = $participant->status ?? 'gagal';
+                if ($status === 'proses') {
+                    $status = 'lulus'; // Paksa lulus jika dicetak dari status proses (seperti permintaan warning)
+                }
+
+                $template = $status === 'lulus' ? $templateLulus : $templateGagal;
+
+                if (!$template) continue;
+
                 $service->generate($participant, $template);
+                
+                // Update status to match the certificate generated
+                $participant->update(['status' => $status]);
+                if ($participant->assessment) {
+                    $participant->assessment->update(['status' => $status]);
+                }
+                
                 $generatedCount++;
             }
 
-            return redirect()->back()->with('success', "Berhasil men-generate {$generatedCount} sertifikat untuk peserta yang lulus.");
+            if ($generatedCount === 0) {
+                return redirect()->back()->with('error', 'Gagal men-generate sertifikat. Pastikan template untuk status peserta tersedia.');
+            }
+
+            return redirect()->back()->with('success', "Berhasil men-generate {$generatedCount} sertifikat.");
         } catch (\Exception $e) {
             Log::error('Error generate sertifikat mentor: ' . $e->getMessage());
             
@@ -309,6 +331,62 @@ class MentorAuthController extends Controller
             }
             
             return redirect()->back()->with('error', 'Terjadi kesalahan saat men-generate sertifikat: ' . $errorMessage);
+        }
+    }
+
+    public function setParticipantStatus(Request $request)
+    {
+        try {
+            $mentorId = session('mentor_id');
+            if (!$mentorId) {
+                return redirect()->back()->with('error', 'Sesi tidak valid.');
+            }
+
+            $request->validate([
+                'selected_students' => 'required|string',
+                'mentor_nim' => 'required|string',
+                'mentor_password' => 'required|string',
+                'status' => 'required|in:lulus,gagal',
+            ]);
+
+            $selectedIds = json_decode($request->input('selected_students'), true);
+            if (!is_array($selectedIds) || empty($selectedIds)) {
+                return redirect()->back()->with('error', 'Tidak ada peserta yang dipilih.');
+            }
+
+            $mentor = Mentor::find($mentorId);
+            if (!$mentor || !$mentor->group_id) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki kelompok yang ditugaskan.');
+            }
+
+            // Otorisasi NIM dan Password
+            if ($mentor->student_id !== $request->input('mentor_nim') || !\Hash::check($request->input('mentor_password'), $mentor->password)) {
+                return redirect()->back()->with('error', 'Otorisasi gagal! NIM atau Password salah.');
+            }
+
+            $participants = \App\Models\Attendance::where('group_id', $mentor->group_id)
+                ->whereIn('id', $selectedIds)
+                ->get();
+
+            if ($participants->isEmpty()) {
+                return redirect()->back()->with('error', 'Peserta tidak valid.');
+            }
+
+            $status = $request->input('status');
+            $updatedCount = 0;
+
+            foreach ($participants as $participant) {
+                $participant->update(['status' => $status]);
+                if ($participant->assessment) {
+                    $participant->assessment->update(['status' => $status]);
+                }
+                $updatedCount++;
+            }
+
+            return redirect()->back()->with('success', "Berhasil mengatur status $status untuk $updatedCount peserta.");
+        } catch (\Exception $e) {
+            Log::error('Error set status peserta mentor: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
         }
     }
 }

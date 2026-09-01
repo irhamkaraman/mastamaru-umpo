@@ -150,14 +150,26 @@
                         <p class="text-xs text-gray-500 mt-1">Perhitungan poin presensi Datang & Pulang selama 5 hari kegiatan.</p>
                     </div>
                     <div class="flex items-center gap-3">
-                        <div class="px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl text-center">
-                            <span class="text-[11px] text-indigo-600 font-medium block">Total Poin</span>
-                            <span class="text-lg font-black text-indigo-700">{{ $matrix['total_points'] }} / 100</span>
-                        </div>
-                        <div class="px-4 py-2 bg-purple-50 border border-purple-100 rounded-xl text-center">
-                            <span class="text-[11px] text-purple-600 font-medium block">Predikat</span>
-                            <span class="text-lg font-black text-purple-700">{{ $assessment->grade }}</span>
-                        </div>
+                        @if($student->status === 'lulus')
+                            <div class="px-6 py-3 bg-green-50 border border-green-200 rounded-xl text-center w-full shadow-sm">
+                                <span class="text-xs text-green-600 font-bold block uppercase tracking-wider mb-1">Status Kelulusan</span>
+                                <span class="text-2xl font-black text-green-700">LULUS</span>
+                            </div>
+                        @elseif($student->status === 'gagal')
+                            <div class="px-6 py-3 bg-red-50 border border-red-200 rounded-xl text-center w-full shadow-sm">
+                                <span class="text-xs text-red-600 font-bold block uppercase tracking-wider mb-1">Status Kelulusan</span>
+                                <span class="text-2xl font-black text-red-700">GAGAL</span>
+                            </div>
+                        @else
+                            <div class="px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl text-center">
+                                <span class="text-[11px] text-indigo-600 font-medium block">Total Poin</span>
+                                <span class="text-lg font-black text-indigo-700">{{ $matrix['total_points'] }} / 100</span>
+                            </div>
+                            <div class="px-4 py-2 bg-purple-50 border border-purple-100 rounded-xl text-center">
+                                <span class="text-[11px] text-purple-600 font-medium block">Predikat</span>
+                                <span class="text-lg font-black text-purple-700">{{ $assessment->grade }}</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
 

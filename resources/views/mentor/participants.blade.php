@@ -72,18 +72,35 @@
             @endif
 
             <!-- Aksi Tabel -->
-            <div class="mb-4 flex justify-end">
-                <form id="generate-cert-form" action="{{ route('mentor.participants.generate-certificates') }}" method="POST">
+            <div class="mb-4">
+                <form id="generate-cert-form" action="{{ route('mentor.participants.generate-certificates') }}" method="POST" class="flex flex-col sm:flex-row flex-wrap gap-4 items-end sm:items-center justify-end bg-gray-50/50 p-3 rounded-xl border border-gray-100">
                     @csrf
                     <input type="hidden" name="selected_students" id="selected_students_input" value="[]">
                     <input type="hidden" name="mentor_nim" id="mentor_nim_input" value="">
                     <input type="hidden" name="mentor_password" id="mentor_password_input" value="">
-                    <button type="submit" id="btn-cetak-sertifikat" disabled class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-5 rounded-xl transition duration-200 shadow-sm flex items-center opacity-50 cursor-not-allowed">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        Terbitkan Sertifikat
-                    </button>
+                    <input type="hidden" name="status" id="status_input" value="">
+                    
+                    <div class="flex items-center gap-2 border-r border-gray-300 pr-4">
+                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider mr-1">Ubah Status:</span>
+                        <button type="button" onclick="confirmBulkAction('lulus')" id="btn-set-lulus" disabled class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-3 rounded-lg transition duration-200 shadow-sm flex items-center opacity-50 cursor-not-allowed text-xs">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            Lulus
+                        </button>
+                        <button type="button" onclick="confirmBulkAction('gagal')" id="btn-set-gagal" disabled class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-3 rounded-lg transition duration-200 shadow-sm flex items-center opacity-50 cursor-not-allowed text-xs">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            Gagal
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-2 pl-2">
+                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider mr-1">Penerbitan:</span>
+                        <button type="button" onclick="confirmBulkAction('cetak')" id="btn-cetak-sertifikat" disabled class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 shadow-sm flex items-center opacity-50 cursor-not-allowed text-xs">
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Cetak Sertifikat
+                        </button>
+                    </div>
                 </form>
             </div>
 
@@ -152,12 +169,20 @@
                                         @endif
                                     </td>
                                     <td class="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium text-center hidden md:table-cell">
-                                        <button type="button" onclick="showPointHistory('{{ $participant->id }}', '{{ addslashes($participant->name) }}')" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center mx-auto" title="Riwayat Poin">
-                                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                            <span>Riwayat Poin</span>
-                                        </button>
+                                        <div class="flex flex-col gap-2 justify-center items-center">
+                                            @if(!$hasCert)
+                                                <div class="flex gap-1 mb-1">
+                                                    <button type="button" onclick="singleAction('lulus', '{{ $participant->id }}')" class="text-[10px] uppercase font-bold text-green-700 bg-green-100 hover:bg-green-200 px-2 py-1 rounded shadow-sm transition-colors" title="Set Lulus">Lulus</button>
+                                                    <button type="button" onclick="singleAction('gagal', '{{ $participant->id }}')" class="text-[10px] uppercase font-bold text-red-700 bg-red-100 hover:bg-red-200 px-2 py-1 rounded shadow-sm transition-colors" title="Set Gagal">Gagal</button>
+                                                </div>
+                                            @endif
+                                            <button type="button" onclick="showPointHistory('{{ $participant->id }}', '{{ addslashes($participant->name) }}')" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center mx-auto" title="Riwayat Poin">
+                                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                                <span>Riwayat Poin</span>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
@@ -211,6 +236,8 @@
     const selectAllCheckbox = document.getElementById('selectAll');
     const studentCheckboxes = document.querySelectorAll('.student-checkbox');
     const btnCetak = document.getElementById('btn-cetak-sertifikat');
+    const btnLulus = document.getElementById('btn-set-lulus');
+    const btnGagal = document.getElementById('btn-set-gagal');
     const inputSelectedStudents = document.getElementById('selected_students_input');
 
     function updateCetakButtonState() {
@@ -218,9 +245,17 @@
         if (selectedCount > 0) {
             btnCetak.removeAttribute('disabled');
             btnCetak.classList.remove('opacity-50', 'cursor-not-allowed');
+            btnLulus.removeAttribute('disabled');
+            btnLulus.classList.remove('opacity-50', 'cursor-not-allowed');
+            btnGagal.removeAttribute('disabled');
+            btnGagal.classList.remove('opacity-50', 'cursor-not-allowed');
         } else {
             btnCetak.setAttribute('disabled', 'disabled');
             btnCetak.classList.add('opacity-50', 'cursor-not-allowed');
+            btnLulus.setAttribute('disabled', 'disabled');
+            btnLulus.classList.add('opacity-50', 'cursor-not-allowed');
+            btnGagal.setAttribute('disabled', 'disabled');
+            btnGagal.classList.add('opacity-50', 'cursor-not-allowed');
         }
     }
 
@@ -232,7 +267,7 @@
     if(selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', function() {
             studentCheckboxes.forEach(checkbox => {
-                checkbox.checked = this.checked;
+                if(!checkbox.disabled) checkbox.checked = this.checked;
             });
             updateCetakButtonState();
             updateSelectedStudentsInput();
@@ -241,8 +276,9 @@
 
     studentCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
-            const allChecked = Array.from(studentCheckboxes).every(cb => cb.checked);
-            const someChecked = Array.from(studentCheckboxes).some(cb => cb.checked);
+            const enabledCheckboxes = Array.from(studentCheckboxes).filter(cb => !cb.disabled);
+            const allChecked = enabledCheckboxes.length > 0 && enabledCheckboxes.every(cb => cb.checked);
+            const someChecked = enabledCheckboxes.some(cb => cb.checked);
             
             if(selectAllCheckbox) {
                 selectAllCheckbox.checked = allChecked;
@@ -254,42 +290,66 @@
         });
     });
 
-    document.getElementById('generate-cert-form').addEventListener('submit', function(e) {
-        e.preventDefault();
+    let currentActionType = '';
 
-        // Validasi apakah ada status yang bukan LULUS
-        const selectedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
-        let hasNonLulus = false;
+    window.singleAction = function(actionType, studentId) {
+        document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = false);
+        const cb = document.querySelector(`.student-checkbox[value="${studentId}"]`);
+        if(cb) cb.checked = true;
+        
+        updateCetakButtonState();
+        updateSelectedStudentsInput();
+        
+        confirmBulkAction(actionType);
+    };
 
-        selectedCheckboxes.forEach(cb => {
-            if (cb.getAttribute('data-status') !== 'lulus') {
-                hasNonLulus = true;
-            }
-        });
+    window.confirmBulkAction = function(actionType) {
+        currentActionType = actionType;
+        const form = document.getElementById('generate-cert-form');
+        
+        if (actionType === 'lulus' || actionType === 'gagal') {
+            form.action = "{{ route('mentor.participants.set-status') }}";
+            document.getElementById('status_input').value = actionType;
+            promptAuthorization(form, actionType);
+        } else if (actionType === 'cetak') {
+            form.action = "{{ route('mentor.participants.generate-certificates') }}";
+            
+            const selectedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
+            let hasNonLulus = false;
 
-        if (hasNonLulus) {
-            Swal.fire({
-                title: 'Perhatian!',
-                text: "Anda memilih beberapa peserta yang statusnya belum LULUS. Peserta ini tetap akan diterbitkan sertifikatnya secara paksa. Lanjutkan?",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#2563eb',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Ya, Tetap Terbitkan',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    promptAuthorization(this);
+            selectedCheckboxes.forEach(cb => {
+                if (cb.getAttribute('data-status') !== 'lulus') {
+                    hasNonLulus = true;
                 }
             });
-        } else {
-            promptAuthorization(this);
-        }
-    });
 
-    function promptAuthorization(form) {
+            if (hasNonLulus) {
+                Swal.fire({
+                    title: 'Perhatian!',
+                    text: "Anda memilih beberapa peserta yang statusnya belum LULUS. Peserta ini tetap akan diterbitkan sertifikatnya secara paksa. Lanjutkan?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#2563eb',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Tetap Terbitkan',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        promptAuthorization(form, actionType);
+                    }
+                });
+            } else {
+                promptAuthorization(form, actionType);
+            }
+        }
+    };
+
+    function promptAuthorization(form, actionType) {
+        let actionText = actionType === 'cetak' ? 'Penerbitan' : 'Perubahan Status';
+        let btnText = actionType === 'cetak' ? 'Verifikasi & Terbitkan' : 'Verifikasi & Simpan';
+
         Swal.fire({
-            title: 'Otorisasi Penerbitan',
+            title: 'Otorisasi ' + actionText,
             html: `
                 <div class="mt-2 text-left">
                     <p class="text-sm text-gray-600 mb-3 text-center">Masukkan NIM dan Kata Sandi Anda untuk memverifikasi tindakan ini.</p>
@@ -299,7 +359,7 @@
             `,
             focusConfirm: false,
             showCancelButton: true,
-            confirmButtonText: 'Verifikasi & Terbitkan',
+            confirmButtonText: btnText,
             cancelButtonText: 'Batal',
             confirmButtonColor: '#2563eb',
             preConfirm: () => {
@@ -315,15 +375,19 @@
                 document.getElementById('mentor_nim_input').value = result.value.nim;
                 document.getElementById('mentor_password_input').value = result.value.password;
                 
-                processSubmit(form);
+                processSubmit(form, actionType);
             }
         });
     }
 
-    function processSubmit(form) {
+    function processSubmit(form, actionType) {
+        let msg = actionType === 'cetak' 
+            ? 'Mohon tunggu, sertifikat sedang dibuat dan akan otomatis terunduh saat selesai.'
+            : 'Mohon tunggu, status peserta sedang diperbarui...';
+
         Swal.fire({
             title: 'Sedang Memproses...',
-            text: 'Mohon tunggu, sertifikat sedang dibuat dan akan otomatis terunduh saat selesai.',
+            text: msg,
             allowOutsideClick: false,
             showConfirmButton: false,
             didOpen: () => {

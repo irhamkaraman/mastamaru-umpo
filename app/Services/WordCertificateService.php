@@ -105,6 +105,11 @@ class WordCertificateService
         // Hapus file DOCX sementara
         @unlink($docxOutputPath);
 
+        // Update database with the relative path from storage/app/public/certificates
+        $attendance->update([
+            'certificate_file' => 'certificates/' . $pdfFileName
+        ]);
+
         return $pdfOutputPath;
     }
 
@@ -112,14 +117,8 @@ class WordCertificateService
      * Generate sertifikat untuk banyak peserta dan hasilkan ZIP.
      * Mengembalikan path absolut ke file .zip.
      */
-    public function generateBulk(Collection $attendances, CertificateTemplate $template): string
+    public function generateBulk(Collection $attendances, ?CertificateTemplate $defaultTemplate = null): string
     {
-        $wordFilePath = storage_path('app/public/' . $template->word_file);
-
-        if (!file_exists($wordFilePath)) {
-            throw new \Exception("File template Word tidak ditemukan: {$wordFilePath}");
-        }
-
         $outputDir = storage_path('app/public/certificates');
         if (!is_dir($outputDir)) {
             mkdir($outputDir, 0755, true);
@@ -129,8 +128,26 @@ class WordCertificateService
         mkdir($tempDir, 0755, true);
 
         $generatedFiles = [];
+        
+        $templateLulus = CertificateTemplate::getActiveFor('lulus') ?? CertificateTemplate::getActiveFor('semua');
+        $templateGagal = CertificateTemplate::getActiveFor('gagal') ?? CertificateTemplate::getActiveFor('semua');
 
         foreach ($attendances as $attendance) {
+            $template = $defaultTemplate;
+            if (!$template) {
+                $status = $attendance->status ?? 'gagal';
+                $template = $status === 'lulus' ? $templateLulus : $templateGagal;
+            }
+
+            if (!$template) {
+                continue;
+            }
+
+            $wordFilePath = storage_path('app/public/' . $template->word_file);
+            if (!file_exists($wordFilePath)) {
+                continue;
+            }
+
             $nomorSertifikat = $template->generateNextNumber();
             $replacements = $this->buildReplacements($attendance, $nomorSertifikat);
 
@@ -164,8 +181,18 @@ class WordCertificateService
 
             // Hapus DOCX sementara
             @unlink($docxFilePath);
+            
+            // Update db
+            $attendance->update([
+                'certificate_file' => 'certificates/' . $pdfFileName
+            ]);
 
             $generatedFiles[] = ['path' => $pdfFilePath, 'name' => $pdfFileName];
+        }
+
+        if (empty($generatedFiles)) {
+            @rmdir($tempDir);
+            throw new \Exception('Tidak ada sertifikat yang dapat di-generate (Mungkin template untuk status tersebut belum diatur atau file Word tidak ditemukan).');
         }
 
         // Buat ZIP

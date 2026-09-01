@@ -226,6 +226,8 @@ class AttendanceResource extends Resource
                         'gagal' => 'GAGAL',
                         default => null,
                     })
+                    ->icon(fn (Attendance $record) => (!empty($record->certificate_file) && $record->hasCertificate()) ? 'heroicon-s-document' : null)
+                    ->iconPosition('after')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('unique_code')
@@ -485,18 +487,19 @@ class AttendanceResource extends Resource
                             ->send();
                     }),
                 Tables\Actions\Action::make('cetak_sertifikat')
-                    ->label('Cetak Sertifikat')
-                    ->icon('heroicon-o-document-arrow-down')
+                    ->label('Cetak')
+                    ->icon('heroicon-o-printer')
                     ->color('info')
+                    ->visible(fn (Attendance $record) => in_array($record->status, ['lulus', 'gagal']) && !( !empty($record->certificate_file) && $record->hasCertificate() ))
                     ->action(function (Attendance $record) {
                         try {
                             $status = $record->status ?? 'gagal';
-                            $template = CertificateTemplate::getActiveFor($status);
+                            $template = CertificateTemplate::getActiveFor($status) ?? CertificateTemplate::getActiveFor('semua');
 
                             if (!$template) {
                                 Notification::make()
                                     ->title('Template Tidak Ditemukan')
-                                    ->body('Tidak ada template sertifikat aktif untuk status "' . strtoupper($status) . '". Silakan upload dan aktifkan template di menu Template Sertifikat.')
+                                    ->body("Tidak ada template sertifikat aktif untuk status '{$status}'.")
                                     ->warning()
                                     ->send();
                                 return;
@@ -524,6 +527,20 @@ class AttendanceResource extends Resource
                                 ->danger()
                                 ->send();
                         }
+                    }),
+                Tables\Actions\Action::make('unduh_sertifikat')
+                    ->label('Unduh Sertifikat')
+                    ->icon('heroicon-o-arrow-down-on-square')
+                    ->color('success')
+                    ->visible(fn (Attendance $record) => in_array($record->status, ['lulus', 'gagal']) && !empty($record->certificate_file) && $record->hasCertificate())
+                    ->action(function (Attendance $record) {
+                        $filePath = storage_path('app/public/' . $record->certificate_file);
+                        $slugName = Str::slug($record->name, '_');
+                        return response()->download(
+                            $filePath,
+                            "sertifikat_{$record->student_id}_{$slugName}.pdf",
+                            ['Content-Type' => 'application/pdf']
+                        );
                     }),
                 Tables\Actions\Action::make('mark_gagal')
                     ->label('Gagal')
@@ -572,24 +589,8 @@ class AttendanceResource extends Resource
                         ->modalDescription('Sertifikat untuk semua peserta terpilih akan digenerate dan dikemas dalam satu file ZIP untuk diunduh.')
                         ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
                             try {
-                                // Ambil status dominan dari pilihan (prioritas: lulus)
-                                $hasLulus = $records->where('status', 'lulus')->count() > 0;
-                                $statusForTemplate = $hasLulus ? 'lulus' : ($records->first()?->status ?? 'gagal');
-
-                                $template = CertificateTemplate::getActiveFor('semua')
-                                    ?? CertificateTemplate::getActiveFor($statusForTemplate);
-
-                                if (!$template) {
-                                    Notification::make()
-                                        ->title('Template Tidak Ditemukan')
-                                        ->body('Tidak ada template sertifikat aktif. Silakan upload dan aktifkan template di menu Template Sertifikat.')
-                                        ->warning()
-                                        ->send();
-                                    return;
-                                }
-
                                 $service = app(WordCertificateService::class);
-                                $zipPath = $service->generateBulk($records->load(['group', 'mentor', 'assessment']), $template);
+                                $zipPath = $service->generateBulk($records->load(['group', 'mentor', 'assessment']));
 
                                 Notification::make()
                                     ->title('ZIP Sertifikat Siap')
