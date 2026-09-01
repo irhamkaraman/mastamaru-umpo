@@ -22,5 +22,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Fix for MySQL key length issue on older versions
         Schema::defaultStringLength(191);
+        
+        \App\Models\AttendanceSubmission::observe(\App\Observers\AttendanceSubmissionObserver::class);
     }
 }

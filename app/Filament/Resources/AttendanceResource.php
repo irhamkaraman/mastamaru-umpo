@@ -143,9 +143,48 @@ class AttendanceResource extends Resource
                     ->view('filament.forms.components.barcode-display')
                     ->dehydrated(false)
                     ->hiddenOn('create'),
+                Forms\Components\Section::make('Penilaian & Kelulusan')
+                    ->schema([
+                        Forms\Components\Select::make('status')
+                            ->label('Status Kelulusan')
+                            ->options([
+                                'proses' => 'Proses',
+                                'lulus' => 'Lulus',
+                                'gagal' => 'Gagal',
+                            ])
+                            ->default('proses')
+                            ->helperText('Status kelulusan. Ubah secara manual jika diperlukan.'),
+                        Forms\Components\Fieldset::make('Data Poin (Otomatis)')
+                            ->relationship('assessment')
+                            ->schema([
+                                Forms\Components\TextInput::make('total_presence_points')
+                                    ->label('Poin Kehadiran')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->numeric(),
+                                Forms\Components\TextInput::make('attendance_score')
+                                    ->label('Skor Kehadiran')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->numeric(),
+                                Forms\Components\TextInput::make('final_score')
+                                    ->label('Nilai Akhir')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->numeric(),
+                                Forms\Components\TextInput::make('grade')
+                                    ->label('Grade')
+                                    ->disabled()
+                                    ->dehydrated(false),
+                            ])
+                            ->columns(4)
+                            ->hiddenOn('create'),
+                    ])
+                    ->collapsible(),
             ]);
     }
 
+    
     public static function table(Table $table): Table
     {
         return $table
@@ -475,7 +514,7 @@ class AttendanceResource extends Resource
                                 ->success()
                                 ->send();
 
-                            $slugName = \Illuminate\Support\Str::slug($record->name, '_');
+                            $slugName = Str::slug($record->name, '_');
                             return response()->download(
                                 $filePath,
                                 "sertifikat_{$record->student_id}_{$slugName}.pdf",
@@ -586,10 +625,58 @@ class AttendanceResource extends Resource
                             $count = $records->count();
                             foreach ($records as $record) {
                                 $record->update(['status' => 'gagal']);
+                                \Illuminate\Support\Facades\Cache::forget('student_data_' . $record->student_id);
                             }
                             Notification::make()
                                 ->title('Selesai')
                                 ->body("$count peserta berhasil ditandai tidak lulus.")
+                                ->success()
+                                ->send();
+                        }),
+                    Tables\Actions\BulkAction::make('hapus_sertifikat_bulk')
+                        ->label('Hapus Sertifikat Terbit')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Hapus Sertifikat Masal')
+                        ->modalDescription('Semua file sertifikat untuk peserta yang dipilih akan dihapus secara permanen.')
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            $certDir = storage_path('app/public/certificates');
+                            $deletedCount = 0;
+                            foreach ($records as $record) {
+                                $files = glob($certDir . '/' . $record->student_id . '_sertifikat_*.pdf');
+                                if (is_array($files) && count($files) > 0) {
+                                    foreach ($files as $file) {
+                                        @unlink($file);
+                                        $deletedCount++;
+                                    }
+                                }
+                            }
+                            Notification::make()
+                                ->title('Selesai')
+                                ->body("$deletedCount file sertifikat berhasil dihapus.")
+                                ->success()
+                                ->send();
+                        }),
+                    Tables\Actions\BulkAction::make('reset_status_gagal_bulk')
+                        ->label('Reset Status Gagal')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->modalHeading('Reset Status Gagal')
+                        ->modalDescription('Peserta terpilih yang berstatus Gagal akan diubah kembali menjadi Proses.')
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            $count = 0;
+                            foreach ($records as $record) {
+                                if ($record->status === 'gagal') {
+                                    $record->update(['status' => 'proses']);
+                                    \Illuminate\Support\Facades\Cache::forget('student_data_' . $record->student_id);
+                                    $count++;
+                                }
+                            }
+                            Notification::make()
+                                ->title('Selesai')
+                                ->body("$count peserta berhasil direset ke status proses.")
                                 ->success()
                                 ->send();
                         }),

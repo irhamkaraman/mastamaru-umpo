@@ -1,5 +1,5 @@
 <div class="space-y-4">
-    @if($getRecord() && $getRecord()->raw_barcode)
+    @if($getRecord())
         <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
             <div class="text-center">
                 <!-- Toggle Mode Button -->
@@ -44,7 +44,21 @@
                 <div class="mt-4 text-left">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Data Raw QR Code:</label>
                     <div class="bg-gray-50 dark:bg-gray-700 p-3 border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
-                        <div class="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words overflow-wrap-break-word word-break-break-all max-w-full">{{ $getRecord()->raw_barcode }}</div>
+                        @php
+                            $raw = $getRecord()->raw_barcode;
+                            if (!$raw) {
+                                $raw = json_encode([
+                                    'nama' => $getRecord()->name,
+                                    'student_id' => $getRecord()->student_id,
+                                    'fakultas' => $getRecord()->faculty,
+                                    'prodi' => $getRecord()->study_program,
+                                    'kelompok' => optional($getRecord()->group)->name ?? '-',
+                                    'pendamping' => optional($getRecord()->mentor)->name ?? '-',
+                                    'kode_unik' => $getRecord()->unique_code ?? '-'
+                                ]);
+                            }
+                        @endphp
+                        <div class="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words overflow-wrap-break-word word-break-break-all max-w-full">{{ $raw }}</div>
                     </div>
                 </div>
             </div>
@@ -72,9 +86,23 @@
             document.documentElement.classList.add('dark');
         }
 
-        @if($getRecord() && $getRecord()->raw_barcode)
+        @if($getRecord())
             // Generate QR Code
-            const qrData = @json($getRecord()->raw_barcode);
+            @php
+                $raw = $getRecord()->raw_barcode;
+                if (!$raw) {
+                    $raw = json_encode([
+                        'nama' => $getRecord()->name,
+                        'student_id' => $getRecord()->student_id,
+                        'fakultas' => $getRecord()->faculty,
+                        'prodi' => $getRecord()->study_program,
+                        'kelompok' => optional($getRecord()->group)->name ?? '-',
+                        'pendamping' => optional($getRecord()->mentor)->name ?? '-',
+                        'kode_unik' => $getRecord()->unique_code ?? '-'
+                    ]);
+                }
+            @endphp
+            const qrData = @json($raw);
             const qrElement = document.getElementById('qrcode-{{ $getRecord()->id }}');
 
             if (qrElement && qrData) {
