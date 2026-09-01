@@ -51,6 +51,7 @@ class PresenceSessionResource extends Resource
                         'pulang' => 'Sesi Pulang (Hadir: 10, Sakit: 7, Izin: 5)',
                     ])
                     ->default('datang')
+                    ->disabled(fn (string $operation): bool => $operation === 'edit')
                     ->required(),
                 Forms\Components\Select::make('day_number')
                     ->label('Hari Kegiatan Ke-')
@@ -64,6 +65,7 @@ class PresenceSessionResource extends Resource
                         7 => 'Hari Ke-7',
                     ])
                     ->default(1)
+                    ->disabled(fn (string $operation): bool => $operation === 'edit')
                     ->required(),
                 Forms\Components\TextInput::make('slug')
                     ->label('Slug')
@@ -163,7 +165,7 @@ class PresenceSessionResource extends Resource
                     ->label('Export Semua Data Presensi')
                     ->icon('heroicon-o-document-arrow-down')
                     ->color('primary')
-                    ->visible(fn () => auth()->user()?->can('export', \App\Models\PresenceSession::class) ?? false) /** @phpstan-ignore-line */
+                    ->visible(fn () => auth()->user()?->can('export', PresenceSession::class) ?? false) /** @phpstan-ignore-line */
                     ->action(function () {
                         $fileName = 'semua-data-presensi-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
 
@@ -182,7 +184,7 @@ class PresenceSessionResource extends Resource
                     ->label('Export Data Presensi')
                     ->icon('heroicon-o-document-arrow-down')
                     ->color('success')
-                    ->visible(fn () => auth()->user()?->can('export', \App\Models\PresenceSession::class) ?? false) /** @phpstan-ignore-line */
+                    ->visible(fn () => auth()->user()?->can('export', PresenceSession::class) ?? false) /** @phpstan-ignore-line */
                     ->action(function (PresenceSession $record) {
                         $fileName = 'data-presensi-' . \Illuminate\Support\Str::slug($record->session_name) . '-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
 

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PresenceSessionResource\RelationManagers;
 
+use App\Models\AttendanceSubmission;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -40,7 +41,7 @@ class AttendanceSubmissionsRelationManager extends RelationManager
                                 $presenceSessionId = request()->route('record');
                                 $recordId = request()->route('attendance_submission');
 
-                                $exists = \App\Models\AttendanceSubmission::where('student_id', $value)
+                                $exists = AttendanceSubmission::where('student_id', $value)
                                     ->where('presence_session_id', $presenceSessionId)
                                     ->when($recordId, function ($query) use ($recordId) {
                                         return $query->where('id', '!=', $recordId);
@@ -55,7 +56,7 @@ class AttendanceSubmissionsRelationManager extends RelationManager
                     ])
                     ->afterStateUpdated(function (callable $set, $state) {
                         if ($state) {
-                            $student = \App\Models\Attendance::find($state);
+                            $student = Attendance::find($state);
                             if ($student) {
                                 $set('group_id', $student->group_id);
                                 $set('mentor_id', $student->mentor_id);
@@ -75,9 +76,21 @@ class AttendanceSubmissionsRelationManager extends RelationManager
                         'terlambat' => 'Terlambat',
                         'izin' => 'Izin',
                         'sakit' => 'Sakit',
+                        'alpa' => 'Alpa / Tanpa Keterangan',
                     ])
                     ->required()
+                    ->live()
+                    ->afterStateUpdated(function ($state, callable $set, $livewire) {
+                        $session = $livewire->getOwnerRecord();
+                        $points = \App\Services\ScoreCalculationService::calculatePoints($session->session_type ?? 'datang', $state);
+                        $set('score_points', $points);
+                    })
                     ->default('hadir'),
+                Forms\Components\TextInput::make('score_points')
+                    ->label('Poin (Otomatis)')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->numeric(),
                 Forms\Components\Select::make('submission_method')
                     ->label('Metode Presensi')
                     ->options([
@@ -130,14 +143,22 @@ class AttendanceSubmissionsRelationManager extends RelationManager
                     ->label('Waktu Presensi')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
                     ->label('Status')
-                    ->colors([
-                        'success' => 'hadir',
-                        'warning' => 'terlambat',
-                        'info' => 'izin',
-                        'danger' => 'sakit',
-                    ]),
+                    ->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'hadir' => 'success',
+                        'terlambat' => 'warning',
+                        'izin' => 'info',
+                        'sakit', 'alpa' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn ($state) => ucfirst($state)),
+                Tables\Columns\TextColumn::make('score_points')
+                    ->label('Poin')
+                    ->badge()
+                    ->color(fn ($state) => $state > 0 ? 'success' : 'danger')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('submission_method')
                     ->label('Metode')
                     ->badge()
@@ -193,6 +214,7 @@ class AttendanceSubmissionsRelationManager extends RelationManager
                         'terlambat' => 'Terlambat',
                         'izin' => 'Izin',
                         'sakit' => 'Sakit',
+                        'alpa' => 'Alpa',
                     ]),
                 Tables\Filters\SelectFilter::make('submission_method')
                     ->label('Metode Presensi')
@@ -203,6 +225,48 @@ class AttendanceSubmissionsRelationManager extends RelationManager
                     ]),
             ])
             ->headerActions([
+                Tables\Actions\Action::make('mark_all_absent')
+                    ->label('Tandai Semua Belum Hadir')
+                    ->icon('heroicon-o-exclamation-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Tandai Semua Belum Hadir')
+                    ->modalDescription('Aksi ini akan membuatkan data presensi dengan status "Alpa" untuk semua peserta di kelompok ini yang BELUM memiliki data presensi di sesi ini.')
+                    ->action(function (RelationManager $livewire) {
+                        $session = $livewire->getOwnerRecord();
+                        
+                        $existingStudentIds = AttendanceSubmission::where('presence_session_id', $session->id)
+                            ->pluck('student_id')
+                            ->toArray();
+                            
+                        // Get all students associated with this session's group (or all if not filtered, but we filter by mentor/group typically)
+                        // Wait, a presence session belongs to a group. Let's check PresenceSession model.
+                        $missingStudents = Attendance::whereNotIn('id', $existingStudentIds)
+                            ->where('group_id', $session->group_id)
+                            ->get();
+                        
+                        $count = 0;
+                        foreach ($missingStudents as $student) {
+                            AttendanceSubmission::create([
+                                'presence_session_id' => $session->id,
+                                'student_id' => $student->id,
+                                'group_id' => $student->group_id,
+                                'mentor_id' => $student->mentor_id,
+                                'status' => 'alpa',
+                                'submission_method' => 'manual',
+                                'submitted_at' => now(),
+                                'score_points' => 0,
+                                'notes' => 'Otomatis ditandai Alpa (Belum Hadir)'
+                            ]);
+                            $count++;
+                        }
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->title('Selesai')
+                            ->body("$count peserta berhasil ditandai Alpa.")
+                            ->success()
+                            ->send();
+                    }),
                 Tables\Actions\CreateAction::make()
                     ->label('Tambah Presensi')
                     ->using(function (array $data, string $model): \Illuminate\Database\Eloquent\Model {

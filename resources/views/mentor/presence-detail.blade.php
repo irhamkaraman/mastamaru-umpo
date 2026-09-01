@@ -485,7 +485,7 @@
                             <div id="present-students" class="space-y-3 max-h-96 lg:max-h-[500px] overflow-y-auto">
                                 @forelse($presentStudents as $submission)
                                     <div
-                                        class="flex justify-between items-center p-4 lg:p-5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 border-opacity-50 hover:from-green-100 hover:to-emerald-100 transition-all duration-300 transform hover:scale-[1.02] shadow-sm hover:shadow-md">
+                                        class="flex flex-col sm:flex-row justify-between sm:items-center p-4 lg:p-5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 border-opacity-50 hover:from-green-100 hover:to-emerald-100 transition-all duration-300 transform hover:scale-[1.02] shadow-sm hover:shadow-md gap-3 sm:gap-0">
                                         <div class="flex-1">
                                             <div class="font-semibold text-gray-800 text-sm lg:text-base mb-1">
                                                 {{ $submission->student->name ?? 'Nama tidak tersedia' }}</div>
@@ -503,22 +503,34 @@
                                                 {{ $submission->submitted_at->format('H:i:s') }}
                                             </div>
                                         </div>
-                                        <div class="flex items-center space-x-2">
+                                        <div class="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
                                             @php
                                                 $statusClasses = match ($submission->status) {
-                                                    'hadir'
-                                                        => 'bg-gradient-to-r from-green-400 to-emerald-500 text-white',
-                                                    'terlambat'
-                                                        => 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white',
-                                                    'izin' => 'bg-gradient-to-r from-blue-400 to-cyan-500 text-white',
-                                                    'sakit' => 'bg-gradient-to-r from-orange-400 to-red-500 text-white',
-                                                    default => 'bg-gradient-to-r from-gray-400 to-gray-500 text-white',
+                                                    'hadir' => 'bg-green-50 text-green-700 border-green-200',
+                                                    'terlambat' => 'bg-yellow-50 text-yellow-700 border-yellow-200',
+                                                    'izin' => 'bg-blue-50 text-blue-700 border-blue-200',
+                                                    'sakit' => 'bg-red-50 text-red-700 border-red-200',
+                                                    default => 'bg-gray-50 text-gray-700 border-gray-200',
+                                                };
+                                                $dotClasses = match ($submission->status) {
+                                                    'hadir' => 'bg-green-500',
+                                                    'terlambat' => 'bg-yellow-500',
+                                                    'izin' => 'bg-blue-500',
+                                                    'sakit' => 'bg-red-500',
+                                                    default => 'bg-gray-500',
+                                                };
+                                                $pointClasses = match ($submission->status) {
+                                                    'hadir' => 'bg-green-100 text-green-800',
+                                                    'terlambat' => 'bg-yellow-100 text-yellow-800',
+                                                    'izin' => 'bg-blue-100 text-blue-800',
+                                                    'sakit' => 'bg-red-100 text-red-800',
+                                                    default => 'bg-gray-100 text-gray-800',
                                                 };
                                             @endphp
-                                            <div
-                                                class="text-xs px-3 py-1.5 {{ $statusClasses }} rounded-full font-medium shadow-sm flex items-center gap-1">
+                                            <div class="text-xs px-2.5 py-1.5 {{ $statusClasses }} border rounded-md font-semibold flex items-center gap-1.5 cursor-default shadow-sm">
+                                                <span class="w-1.5 h-1.5 rounded-full {{ $dotClasses }}"></span>
                                                 <span>{{ ucfirst($submission->status) }}</span>
-                                                <span class="font-bold bg-white/20 px-1 py-0.5 rounded text-[10px]">+{{ $submission->score_points }}p</span>
+                                                <span class="font-bold {{ $pointClasses }} px-1.5 py-0.5 rounded text-[10px] ml-1">+{{ $submission->score_points }}p</span>
                                             </div>
                                             <button type="button" onclick="showStudentHistoryModal('{{ $submission->student_id }}')"
                                                 class="text-xs px-2.5 py-1.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-full font-medium shadow-xs transition">
@@ -559,7 +571,7 @@
                             <div id="absent-students" class="space-y-3 max-h-96 lg:max-h-[500px] overflow-y-auto">
                                 @forelse($absentStudents as $student)
                                     <div
-                                        class="flex justify-between items-center p-4 lg:p-5 bg-gradient-to-r from-red-50 to-rose-50 rounded-xl border border-red-200 border-opacity-50 hover:from-red-100 hover:to-rose-100 transition-all duration-300 transform hover:scale-[1.02] shadow-sm hover:shadow-md">
+                                        class="flex flex-col sm:flex-row justify-between sm:items-center p-4 lg:p-5 bg-gradient-to-r from-red-50 to-rose-50 rounded-xl border border-red-200 border-opacity-50 hover:from-red-100 hover:to-rose-100 transition-all duration-300 transform hover:scale-[1.02] shadow-sm hover:shadow-md gap-3 sm:gap-0">
                                         <div class="flex-1">
                                             <div class="font-semibold text-gray-800 text-sm lg:text-base mb-1">
                                                 {{ $student->name }}</div>
@@ -577,10 +589,10 @@
                                                 {{ $student->student_id }}
                                             </div>
                                         </div>
-                                        <div class="flex items-center space-x-2">
-                                            <div
-                                                class="text-xs px-3 py-2 bg-gradient-to-r from-red-400 to-rose-500 text-white rounded-full font-medium shadow-sm">
-                                                Belum Hadir
+                                        <div class="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
+                                            <div class="text-xs px-2.5 py-1.5 bg-red-50 text-red-600 border border-red-100 rounded-md font-semibold flex items-center gap-1.5 cursor-default shadow-sm">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                                <span>Belum Hadir</span>
                                             </div>
                                             <button
                                                 onclick="changeAbsentStudentStatus('{{ $student->id }}', '{{ addslashes($student->name) }}')"
@@ -611,7 +623,7 @@
             </div>
 
             <!-- Include jsQR library -->
-            <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+            <script src="{{ asset('vendor/jsqr.js') }}?v=1.0"></script>
 
             <script>
                 class PresenceScanner {
@@ -1304,16 +1316,31 @@
                     // Function to get status classes based on attendance status
                     getStatusClasses(status) {
                         switch (status) {
-                            case 'hadir':
-                                return 'bg-gradient-to-r from-green-400 to-emerald-500 text-white';
-                            case 'terlambat':
-                                return 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white';
-                            case 'izin':
-                                return 'bg-gradient-to-r from-blue-400 to-cyan-500 text-white';
-                            case 'sakit':
-                                return 'bg-gradient-to-r from-orange-400 to-red-500 text-white';
-                            default:
-                                return 'bg-gradient-to-r from-gray-400 to-gray-500 text-white';
+                            case 'hadir': return 'bg-green-50 text-green-700 border-green-200';
+                            case 'terlambat': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                            case 'izin': return 'bg-blue-50 text-blue-700 border-blue-200';
+                            case 'sakit': return 'bg-red-50 text-red-700 border-red-200';
+                            default: return 'bg-gray-50 text-gray-700 border-gray-200';
+                        }
+                    }
+                    
+                    getDotClasses(status) {
+                        switch (status) {
+                            case 'hadir': return 'bg-green-500';
+                            case 'terlambat': return 'bg-yellow-500';
+                            case 'izin': return 'bg-blue-500';
+                            case 'sakit': return 'bg-red-500';
+                            default: return 'bg-gray-500';
+                        }
+                    }
+                    
+                    getPointClasses(status) {
+                        switch (status) {
+                            case 'hadir': return 'bg-green-100 text-green-800';
+                            case 'terlambat': return 'bg-yellow-100 text-yellow-800';
+                            case 'izin': return 'bg-blue-100 text-blue-800';
+                            case 'sakit': return 'bg-red-100 text-red-800';
+                            default: return 'bg-gray-100 text-gray-800';
                         }
                     }
 
@@ -1334,8 +1361,10 @@
                                     if (data.data.presentStudents.length > 0) {
                                         presentContainer.innerHTML = data.data.presentStudents.map(submission => {
                                             const statusClasses = this.getStatusClasses(submission.status);
+                                            const dotClasses = this.getDotClasses(submission.status);
+                                            const pointClasses = this.getPointClasses(submission.status);
                                             return `
-                                <div class="flex justify-between items-center p-4 lg:p-5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 border-opacity-50 hover:from-green-100 hover:to-emerald-100 transition-all duration-300 transform hover:scale-[1.02] shadow-sm hover:shadow-md">
+                                <div class="flex flex-col sm:flex-row justify-between sm:items-center p-4 lg:p-5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 border-opacity-50 hover:from-green-100 hover:to-emerald-100 transition-all duration-300 transform hover:scale-[1.02] shadow-sm hover:shadow-md gap-3 sm:gap-0">
                                     <div class="flex-1">
                                         <div class="font-semibold text-gray-800 text-sm lg:text-base mb-1">${submission.student_name}</div>
                                         <div class="text-xs lg:text-sm text-gray-600 mb-1">${submission.faculty || 'Fakultas tidak tersedia'}</div>
@@ -1354,10 +1383,16 @@
                                             ${submission.submitted_at || new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', second: '2-digit'})}
                                         </div>
                                     </div>
-                                    <div class="flex items-center space-x-2">
-                                        <div class="text-xs px-3 py-2 ${statusClasses} rounded-full font-medium shadow-sm">
-                                            ${submission.status ? submission.status.charAt(0).toUpperCase() + submission.status.slice(1) : 'Hadir'}
+                                    <div class="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
+                                        <div class="text-xs px-2.5 py-1.5 ${statusClasses} border rounded-md font-semibold flex items-center gap-1.5 cursor-default shadow-sm">
+                                            <span class="w-1.5 h-1.5 rounded-full ${dotClasses}"></span>
+                                            <span>${submission.status ? submission.status.charAt(0).toUpperCase() + submission.status.slice(1) : 'Hadir'}</span>
+                                            <span class="font-bold ${pointClasses} px-1.5 py-0.5 rounded text-[10px] ml-1">+${submission.score_points || 0}p</span>
                                         </div>
+                                        <button type="button" onclick="showStudentHistoryModal('${submission.student_id}')"
+                                            class="text-xs px-2.5 py-1.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-full font-medium shadow-xs transition">
+                                            Riwayat Poin
+                                        </button>
                                     </div>
                                 </div>
                                 `;
@@ -1377,7 +1412,7 @@
                                     const absentContainer = document.getElementById('absent-students');
                                     if (data.data.absentStudents.length > 0) {
                                         absentContainer.innerHTML = data.data.absentStudents.map(student => `
-                                <div class="flex justify-between items-center p-4 lg:p-5 bg-gradient-to-r from-red-50 to-rose-50 rounded-xl border border-red-200 border-opacity-50 hover:from-red-100 hover:to-rose-100 transition-all duration-300 transform hover:scale-[1.02] shadow-sm hover:shadow-md">
+                                <div class="flex flex-col sm:flex-row justify-between sm:items-center p-4 lg:p-5 bg-gradient-to-r from-red-50 to-rose-50 rounded-xl border border-red-200 border-opacity-50 hover:from-red-100 hover:to-rose-100 transition-all duration-300 transform hover:scale-[1.02] shadow-sm hover:shadow-md gap-3 sm:gap-0">
                                     <div class="flex-1">
                                         <div class="font-semibold text-gray-800 text-sm lg:text-base mb-1">${student.name}</div>
                                         <div class="text-xs lg:text-sm text-gray-600 mb-1">${student.faculty || 'Fakultas tidak tersedia'}</div>
@@ -1389,13 +1424,18 @@
                                             ${student.student_id}
                                         </div>
                                     </div>
-                                    <div class="flex items-center space-x-2">
-                                        <div class="text-xs px-3 py-2 bg-gradient-to-r from-red-400 to-rose-500 text-white rounded-full font-medium shadow-sm">
-                                            Belum Hadir
+                                    <div class="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
+                                        <div class="text-xs px-2.5 py-1.5 bg-red-50 text-red-600 border border-red-100 rounded-md font-semibold flex items-center gap-1.5 cursor-default shadow-sm">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                            <span>Belum Hadir</span>
                                         </div>
                                         <button onclick="changeAbsentStudentStatus('${student.id}', '${student.name.replace(/'/g, '\\\'')}')"
                                             class="text-xs px-3 py-2 bg-gradient-to-r from-blue-400 to-cyan-500 text-white rounded-full hover:from-blue-500 hover:to-cyan-600 transition-all duration-300 transform hover:scale-105 font-medium shadow-sm">
                                             Opsi
+                                        </button>
+                                        <button type="button" onclick="showStudentHistoryModal('${student.id}')"
+                                            class="text-xs px-2.5 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-full font-medium shadow-xs transition">
+                                            Riwayat Poin
                                         </button>
                                     </div>
                                 </div>
@@ -1819,19 +1859,6 @@
                     document.getElementById('hist-student-name').textContent = d.student.name;
                     document.getElementById('hist-student-nim').textContent = `NIM: ${d.student.nim} | ${d.student.study_program || ''}`;
 
-                    let matrixHtml = '';
-                    for (let dayNum in d.matrix) {
-                        const day = d.matrix[dayNum];
-                        matrixHtml += `
-                            <tr class="border-b border-gray-100 text-xs">
-                                <td class="py-2.5 px-3 font-semibold text-gray-800">Hari ${day.day}</td>
-                                <td class="py-2.5 px-3">${day.datang.submission ? `<span class="text-green-700 font-medium">${day.datang.status} (+${day.datang.points}p)</span>` : '<span class="text-gray-400">-</span>'}</td>
-                                <td class="py-2.5 px-3">${day.pulang.submission ? `<span class="text-blue-700 font-medium">${day.pulang.status} (+${day.pulang.points}p)</span>` : '<span class="text-gray-400">-</span>'}</td>
-                                <td class="py-2.5 px-3 text-right font-bold text-purple-700">${day.total} Poin</td>
-                            </tr>
-                        `;
-                    }
-
                     let timelineHtml = '';
                     if (d.history && d.history.length > 0) {
                         d.history.forEach(item => {
@@ -1865,26 +1892,6 @@
                             <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
                                 <div class="text-[11px] text-emerald-600 font-medium">Predikat</div>
                                 <div class="text-xl font-bold text-emerald-700">${d.assessment.grade}</div>
-                            </div>
-                        </div>
-
-                        <!-- Matriks Harian -->
-                        <div>
-                            <h5 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Matriks Kehadiran 5 Hari</h5>
-                            <div class="overflow-x-auto rounded-xl border border-gray-100">
-                                <table class="w-full text-left">
-                                    <thead class="bg-gray-50 text-[11px] text-gray-500 uppercase">
-                                        <tr>
-                                            <th class="py-2 px-3">Hari</th>
-                                            <th class="py-2 px-3">Datang</th>
-                                            <th class="py-2 px-3">Pulang</th>
-                                            <th class="py-2 px-3 text-right">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${matrixHtml}
-                                    </tbody>
-                                </table>
                             </div>
                         </div>
 

@@ -70,7 +70,7 @@ class HomeController extends Controller
                 'attendance_score' => 0,
                 'final_score' => 0,
                 'grade' => 'D',
-                'status' => 'gagal'
+                'status' => 'proses'
             ]
         );
         $matrix = \App\Services\ScoreCalculationService::getStudentPresenceMatrix($student->id);

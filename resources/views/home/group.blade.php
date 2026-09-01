@@ -444,9 +444,9 @@
         }
     </style>
 
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <link href="{{ asset('vendor/select2.min.css') }}?v=1.0" rel="stylesheet">
+    <script src="{{ asset('vendor/jquery.min.js') }}?v=1.0"></script>
+    <script src="{{ asset('vendor/select2.min.js') }}?v=1.0"></script>
     <style>
         .directory-controls .select2-container { width:100% !important; }
         .directory-controls .select2-container--default .select2-selection--single { height:50px !important; border:1px solid rgba(148,163,184,.28) !important; border-radius:15px !important; background:rgba(255,255,255,.86) !important; box-sizing:border-box; }

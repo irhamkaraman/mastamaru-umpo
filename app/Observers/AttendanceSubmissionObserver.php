@@ -8,6 +8,18 @@ use App\Services\ScoreCalculationService;
 class AttendanceSubmissionObserver
 {
     /**
+     * Handle the AttendanceSubmission "saving" event.
+     */
+    public function saving(AttendanceSubmission $attendanceSubmission): void
+    {
+        $session = $attendanceSubmission->presenceSession;
+        if ($session) {
+            $points = ScoreCalculationService::calculatePoints($session->session_type ?? 'datang', $attendanceSubmission->status);
+            $attendanceSubmission->score_points = $points;
+        }
+    }
+
+    /**
      * Handle the AttendanceSubmission "saved" event.
      */
     public function saved(AttendanceSubmission $attendanceSubmission): void

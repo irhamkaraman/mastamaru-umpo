@@ -106,7 +106,14 @@ class MentorAuthController extends Controller
             // Cache data sesi aktif dengan durasi 1 menit untuk real-time updates
             $activeSessions = Cache::remember('active_sessions_all', 60, function () {
                 return \App\Models\PresenceSession::where('is_active', true)
-                    ->orderBy('created_at', 'desc')
+                    ->orderByRaw("
+                        CASE 
+                            WHEN NOW() BETWEEN start_time AND end_time THEN 1 
+                            WHEN NOW() < start_time THEN 2 
+                            ELSE 3 
+                        END ASC
+                    ")
+                    ->orderBy('start_time', 'asc')
                     ->get();
             });
 
@@ -222,7 +229,9 @@ class MentorAuthController extends Controller
             }
 
             // Ambil peserta dalam kelompok
-            $participants = \App\Models\Attendance::where('group_id', $mentor->group_id)->get();
+            $participants = \App\Models\Attendance::with('assessment')
+                ->where('group_id', $mentor->group_id)
+                ->get();
 
             return view('mentor.participants', compact('mentor', 'participants'));
         } catch (\Exception $e) {
@@ -234,7 +243,7 @@ class MentorAuthController extends Controller
     /**
      * Generate sertifikat masal untuk peserta di kelompok
      */
-    public function generateCertificates()
+    public function generateCertificates(Request $request)
     {
         try {
             $mentorId = session('mentor_id');
@@ -242,9 +251,27 @@ class MentorAuthController extends Controller
                 return redirect('/mentor/login')->with('error', 'Sesi tidak valid.');
             }
 
+            $request->validate([
+                'selected_students' => 'required|string',
+                'mentor_nim' => 'required|string',
+                'mentor_password' => 'required|string',
+            ]);
+
+            // Decode the JSON string from the hidden input
+            $selectedIds = json_decode($request->input('selected_students'), true);
+
+            if (!is_array($selectedIds) || empty($selectedIds)) {
+                return redirect()->back()->with('error', 'Tidak ada peserta yang dipilih.');
+            }
+
             $mentor = Mentor::find($mentorId);
             if (!$mentor || !$mentor->group_id) {
                 return redirect()->route('mentor.dashboard')->with('error', 'Anda tidak memiliki kelompok yang ditugaskan.');
+            }
+
+            // Otorisasi NIM dan Password
+            if ($mentor->student_id !== $request->input('mentor_nim') || !\Hash::check($request->input('mentor_password'), $mentor->password)) {
+                return redirect()->back()->with('error', 'Otorisasi gagal! NIM atau Password yang Anda masukkan tidak sesuai.');
             }
 
             // Ambil template aktif
@@ -253,19 +280,19 @@ class MentorAuthController extends Controller
                 return redirect()->back()->with('error', 'Template sertifikat lulus belum diatur atau belum aktif.');
             }
 
-            // Ambil peserta lulus
-            $lulusParticipants = \App\Models\Attendance::where('group_id', $mentor->group_id)
-                ->where('status', 'lulus')
+            // Ambil peserta yang dipilih
+            $participants = \App\Models\Attendance::where('group_id', $mentor->group_id)
+                ->whereIn('id', $selectedIds)
                 ->get();
 
-            if ($lulusParticipants->isEmpty()) {
-                return redirect()->back()->with('error', 'Belum ada peserta yang lulus di kelompok Anda.');
+            if ($participants->isEmpty()) {
+                return redirect()->back()->with('error', 'Peserta yang Anda pilih tidak valid atau belum ada peserta di kelompok Anda.');
             }
 
             $service = app(\App\Services\WordCertificateService::class);
             $generatedCount = 0;
 
-            foreach ($lulusParticipants as $participant) {
+            foreach ($participants as $participant) {
                 $service->generate($participant, $template);
                 $generatedCount++;
             }
@@ -273,7 +300,15 @@ class MentorAuthController extends Controller
             return redirect()->back()->with('success', "Berhasil men-generate {$generatedCount} sertifikat untuk peserta yang lulus.");
         } catch (\Exception $e) {
             Log::error('Error generate sertifikat mentor: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat men-generate sertifikat: ' . $e->getMessage());
+            
+            $errorMessage = $e->getMessage();
+            
+            // Tangkap error khusus jika file template fisik tidak ditemukan di storage
+            if (str_contains($errorMessage, 'File template Word tidak ditemukan')) {
+                return redirect()->back()->with('error', 'Mohon maaf, file master (template) sertifikat kelulusan belum tersedia di server. Silakan hubungi tim Kesekretariatan untuk segera mengunggah file template tersebut.');
+            }
+            
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat men-generate sertifikat: ' . $errorMessage);
         }
     }
 }

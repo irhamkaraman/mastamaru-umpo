@@ -45,17 +45,9 @@
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Data Raw QR Code:</label>
                     <div class="bg-gray-50 dark:bg-gray-700 p-3 border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
                         @php
-                            $raw = $getRecord()->raw_barcode;
+                            $raw = $getRecord()->unique_code;
                             if (!$raw) {
-                                $raw = json_encode([
-                                    'nama' => $getRecord()->name,
-                                    'student_id' => $getRecord()->student_id,
-                                    'fakultas' => $getRecord()->faculty,
-                                    'prodi' => $getRecord()->study_program,
-                                    'kelompok' => optional($getRecord()->group)->name ?? '-',
-                                    'pendamping' => optional($getRecord()->mentor)->name ?? '-',
-                                    'kode_unik' => $getRecord()->unique_code ?? '-'
-                                ]);
+                                $raw = 'No Data';
                             }
                         @endphp
                         <div class="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words overflow-wrap-break-word word-break-break-all max-w-full">{{ $raw }}</div>
@@ -71,7 +63,7 @@
 </div>
 
 <!-- Include QRCode library -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.2.2/build/qrcode.min.js"></script>
+<script src="{{ asset('vendor/qrcode.min.js') }}?v=1.0"></script>
 
 <script>
     // Dark mode toggle
@@ -89,17 +81,9 @@
         @if($getRecord())
             // Generate QR Code
             @php
-                $raw = $getRecord()->raw_barcode;
+                $raw = $getRecord()->unique_code;
                 if (!$raw) {
-                    $raw = json_encode([
-                        'nama' => $getRecord()->name,
-                        'student_id' => $getRecord()->student_id,
-                        'fakultas' => $getRecord()->faculty,
-                        'prodi' => $getRecord()->study_program,
-                        'kelompok' => optional($getRecord()->group)->name ?? '-',
-                        'pendamping' => optional($getRecord()->mentor)->name ?? '-',
-                        'kode_unik' => $getRecord()->unique_code ?? '-'
-                    ]);
+                    $raw = 'No Data';
                 }
             @endphp
             const qrData = @json($raw);

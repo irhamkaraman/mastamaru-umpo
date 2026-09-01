@@ -14,6 +14,49 @@ class EditAttendance extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('upload_sertifikat')
+                ->label('Upload Sertifikat')
+                ->icon('heroicon-o-arrow-up-tray')
+                ->color('success')
+                ->form([
+                    \Filament\Forms\Components\FileUpload::make('certificate_file')
+                        ->label('File Sertifikat PDF')
+                        ->acceptedFileTypes(['application/pdf'])
+                        ->required(),
+                ])
+                ->action(function (array $data, \App\Models\Attendance $record) {
+                    $file = $data['certificate_file'];
+                    $certDir = storage_path('app/public/certificates');
+                    if (!is_dir($certDir)) {
+                        mkdir($certDir, 0755, true);
+                    }
+                    
+                    // The file is a temporary uploaded file path in Filament. We need to move it.
+                    $tempPath = storage_path('app/public/' . $file);
+                    
+                    // Generate exact target filename matching the old system format
+                    $slugName = \Illuminate\Support\Str::slug($record->name, '_');
+                    $timestamp = time();
+                    $targetFilename = $record->student_id . '_sertifikat_' . $timestamp . '.pdf';
+                    $targetPath = $certDir . '/' . $targetFilename;
+                    
+                    // Delete old certificates if exist
+                    $oldFiles = glob($certDir . '/' . $record->student_id . '_sertifikat_*.pdf');
+                    if (is_array($oldFiles)) {
+                        foreach ($oldFiles as $oldFile) {
+                            @unlink($oldFile);
+                        }
+                    }
+                    
+                    if (file_exists($tempPath)) {
+                        rename($tempPath, $targetPath);
+                    }
+                    
+                    \Filament\Notifications\Notification::make()
+                        ->title('Sertifikat Berhasil Diupload')
+                        ->success()
+                        ->send();
+                }),
             Actions\Action::make('cetak_sertifikat')
                 ->label('Cetak Sertifikat')
                 ->icon('heroicon-o-document-arrow-down')

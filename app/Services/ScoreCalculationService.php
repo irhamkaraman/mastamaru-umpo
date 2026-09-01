@@ -103,13 +103,8 @@ class ScoreCalculationService
         $assessment->attendance_score = $attendanceScore;
         $assessment->final_score = $finalScore;
         $assessment->grade = $gradeInfo['grade'];
-        $assessment->status = $gradeInfo['is_passed'] ? 'lulus' : 'gagal';
+        $assessment->status = $student->status ?? 'proses'; 
         $assessment->save();
-
-        // Update status di tabel attendances
-        $student->update([
-            'status' => $assessment->status
-        ]);
 
         return $assessment;
     }
@@ -134,8 +129,8 @@ class ScoreCalculationService
         // Group sesi per hari
         $groupedByDay = $sessions->groupBy('day_number');
 
-        // Pastikan minimal mencakup Hari 1 sampai 5
-        $maxDay = max(5, $groupedByDay->keys()->max() ?? 5);
+        // Sesuaikan dengan hari yang benar-benar ada
+        $maxDay = $groupedByDay->keys()->max() ?? 0;
 
         for ($day = 1; $day <= $maxDay; $day++) {
             $daySessions = $groupedByDay->get($day, collect());

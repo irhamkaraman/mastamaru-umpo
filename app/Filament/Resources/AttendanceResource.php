@@ -159,23 +159,15 @@ class AttendanceResource extends Resource
                             ->schema([
                                 Forms\Components\TextInput::make('total_presence_points')
                                     ->label('Poin Kehadiran')
-                                    ->disabled()
-                                    ->dehydrated(false)
                                     ->numeric(),
                                 Forms\Components\TextInput::make('attendance_score')
                                     ->label('Skor Kehadiran')
-                                    ->disabled()
-                                    ->dehydrated(false)
                                     ->numeric(),
                                 Forms\Components\TextInput::make('final_score')
                                     ->label('Nilai Akhir')
-                                    ->disabled()
-                                    ->dehydrated(false)
                                     ->numeric(),
                                 Forms\Components\TextInput::make('grade')
-                                    ->label('Grade')
-                                    ->disabled()
-                                    ->dehydrated(false),
+                                    ->label('Grade'),
                             ])
                             ->columns(4)
                             ->hiddenOn('create'),
@@ -184,12 +176,14 @@ class AttendanceResource extends Resource
             ]);
     }
 
-    
+    /**
+     * @return Table
+     */
     public static function table(Table $table): Table
     {
-        return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('name')
+        /** @var array<int, \Filament\Tables\Columns\Column> $columns */
+        $columns = [
+            Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable()
                     ->label('Nama Peserta'),
@@ -249,7 +243,10 @@ class AttendanceResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->label('Diperbarui Pada'),
-            ])
+            ];
+
+        return $table
+            ->columns($columns)
             ->filters([
                 Tables\Filters\SelectFilter::make('group_id')
                     ->options(function () {

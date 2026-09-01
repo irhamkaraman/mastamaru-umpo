@@ -50,6 +50,16 @@ class Attendance extends Model
     }
 
     /**
+     * Cek apakah sertifikat sudah pernah diterbitkan.
+     */
+    public function hasCertificate(): bool
+    {
+        $slugName = \Illuminate\Support\Str::slug($this->name, '_');
+        $pdfFileName = "{$this->student_id}_sertifikat_{$slugName}.pdf";
+        return file_exists(storage_path('app/public/certificates/' . $pdfFileName));
+    }
+
+    /**
      * Get the mentor that owns the attendance.
      */
     public function mentor(): BelongsTo

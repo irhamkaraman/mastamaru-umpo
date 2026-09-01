@@ -438,5 +438,5 @@
     </script>
 
     <!-- QR Code Library -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.2.2/build/qrcode.min.js"></script>
+    <script src="{{ asset('vendor/qrcode.min.js') }}?v=1.0"></script>
 @endsection
