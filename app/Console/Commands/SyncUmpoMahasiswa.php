@@ -15,14 +15,14 @@ class SyncUmpoMahasiswa extends Command
      *
      * @var string
      */
-    protected $signature = 'umpo:sync-mahasiswa {--debug}';
+    protected $signature = 'umpo:sync-mahasiswa {--debug} {--rebalance : Ratakan jumlah anggota antar kelompok yang timpang tanpa mengacak ulang}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Sync active students from UMPO API and translate their majors.';
+    protected $description = 'Sync active students from UMPO API, translate majors, and manage group distributions.';
 
     /**
      * Filter sinkronisasi berdasarkan Jenis Kelas (reguler/transfer).
@@ -196,30 +196,86 @@ class SyncUmpoMahasiswa extends Command
         } else {
             $this->info('Selesai! Berhasil memproses dan menyinkronkan '.$countProcessed.' data peserta tahun 2026.');
             
-            $this->info('Mengecek dan membagikan peserta yang belum punya kelompok secara acak...');
             $unassignedPeserta = Attendance::whereNull('group_id')
                 ->orWhereNull('mentor_id')
-                ->inRandomOrder()
                 ->get();
             
-            if ($unassignedPeserta->isEmpty()) {
-                $this->info('Semua peserta saat ini sudah memiliki kelompok & pendamping!');
-            } else {
-                $mentors = \App\Models\Mentor::with('group')->get();
-                if ($mentors->isEmpty()) {
-                    $this->warn('Belum ada data Pendamping! Lewati proses bagi kelompok otomatis.');
-                } else {
-                    $mentorCount = $mentors->count();
-                    $index = 0;
+            if ($unassignedPeserta->isNotEmpty()) {
+                $this->info('Ditemukan ' . $unassignedPeserta->count() . ' peserta baru tanpa kelompok. Memasukkan ke kelompok terkecil...');
+                $mentors = \App\Models\Mentor::withCount('attendances')->with('group')->get();
+                if ($mentors->isNotEmpty()) {
                     foreach ($unassignedPeserta as $peserta) {
-                        $mentor = $mentors[$index % $mentorCount];
+                        $targetMentor = $mentors->sortBy('attendances_count')->first();
                         $peserta->update([
-                            'group_id' => $mentor->group_id,
-                            'mentor_id' => $mentor->id,
+                            'group_id' => $targetMentor->group_id,
+                            'mentor_id' => $targetMentor->id,
                         ]);
-                        $index++;
+                        $targetMentor->attendances_count++;
                     }
-                    $this->info('Berhasil membagikan ' . $unassignedPeserta->count() . ' peserta ke kelompok secara merata dan acak.');
+                    $this->info('✅ Berhasil memasukkan peserta baru ke kelompok secara proporsional.');
+                }
+            } else {
+                $this->info('Semua peserta sudah memiliki kelompok. Tidak ada perubahan kelompok peserta lama.');
+            }
+
+            if ($this->option('rebalance')) {
+                $this->newLine();
+                $this->info('⚖️ Menjalankan REBALANCE KELOMPOK (Meratakan kelompok tanpa acak ulang)...');
+                
+                $mentors = \App\Models\Mentor::withCount('attendances')->with('group')->get();
+                if ($mentors->isEmpty()) {
+                    $this->warn('Belum ada data mentor untuk di-rebalance.');
+                } else {
+                    $totalAssigned = Attendance::whereNotNull('mentor_id')->count();
+                    $mentorCount = $mentors->count();
+                    $targetFloor = (int) floor($totalAssigned / $mentorCount);
+                    $targetCeil = (int) ceil($totalAssigned / $mentorCount);
+
+                    $this->line("    -> Total Peserta: {$totalAssigned} | Total Mentor: {$mentorCount}");
+                    $this->line("    -> Target seimbang per kelompok: {$targetFloor} s/d {$targetCeil} peserta.");
+
+                    $movedCount = 0;
+                    
+                    while (true) {
+                        $mentors = \App\Models\Mentor::withCount('attendances')->with('group')->get();
+                        $maxMentor = $mentors->sortByDesc('attendances_count')->first();
+                        $minMentor = $mentors->sortBy('attendances_count')->first();
+
+                        if (($maxMentor->attendances_count - $minMentor->attendances_count) <= 1) {
+                            break;
+                        }
+
+                        $studentToMove = Attendance::where('mentor_id', $maxMentor->id)
+                            ->orderBy('id', 'desc')
+                            ->first();
+
+                        if (! $studentToMove) {
+                            break;
+                        }
+
+                        $studentToMove->update([
+                            'group_id' => $minMentor->group_id,
+                            'mentor_id' => $minMentor->id,
+                        ]);
+
+                        $movedCount++;
+                    }
+
+                    if ($movedCount > 0) {
+                        $this->info("✅ Berhasil memindahkan {$movedCount} peserta paling akhir dari kelompok berlebih ke kelompok yang kekurangan sehingga rata.");
+                    } else {
+                        $this->info("✅ Semua kelompok sudah dalam kondisi rata dan seimbang. Tidak ada peserta yang perlu dipindahkan.");
+                    }
+
+                    $finalMentors = \App\Models\Mentor::withCount('attendances')->with('group')->get();
+                    $summaryRows = $finalMentors->map(function ($m) {
+                        return [
+                            'Kelompok' => $m->group?->name ?? '-',
+                            'Pendamping' => $m->name,
+                            'Jumlah Peserta' => $m->attendances_count,
+                        ];
+                    })->toArray();
+                    $this->table(['Kelompok', 'Pendamping', 'Jumlah Peserta'], $summaryRows);
                 }
             }
         }
