@@ -49,14 +49,7 @@ class SyncPermissions extends Command
             $this->warn('    ⚠️ Peringatan saat reset cache: ' . $e->getMessage());
         }
 
-        // 2. Coba Generate via Filament Shield bawaan
-        $this->info('2️⃣  Menjalankan generator resmi Filament Shield...');
-        try {
-            Artisan::call('shield:generate', ['--all' => true]);
-            $this->line('    ✅ Shield generator selesai dijalankan.');
-        } catch (Exception $e) {
-            $this->warn('    ⚠️ Shield artisan dilewati: ' . $e->getMessage() . ' (Melanjutkan ke Pure DB Generation)');
-        }
+
 
         // 3. GENERATOR MANDIRI (Pure DB Fallback - 100% Dijamin Lengkap)
         $this->info('3️⃣  Men-generate seluruh hak akses (Resource, Custom Action, Page, Widget)...');
