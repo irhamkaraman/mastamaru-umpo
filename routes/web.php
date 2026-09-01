@@ -269,7 +269,7 @@ Route::middleware(['throttle:1000,1'])->prefix('performance-test')->group(functi
     $validToken = 'k6-test-token-2025-mastaumpo';
     Route::group([], function () use ($validToken) {
         Route::get('/light', function (Request $request) use ($validToken) {
-            $token = $request->header('X-Performance-Token') ?? $request->get('token');
+            $token = $request->header('X-Performance-Token') ?? $request->input('token');
             if ($token !== $validToken) {
                 return response()->json([
                     'error' => 'Invalid or missing performance test token',
@@ -285,7 +285,7 @@ Route::middleware(['throttle:1000,1'])->prefix('performance-test')->group(functi
             ]);
         })->name('perf.light');
         Route::get('/medium', function (Request $request) use ($validToken) {
-            $token = $request->header('X-Performance-Token') ?? $request->get('token');
+            $token = $request->header('X-Performance-Token') ?? $request->input('token');
             if ($token !== $validToken) {
                 return response()->json([
                     'error' => 'Invalid or missing performance test token',
@@ -314,7 +314,7 @@ Route::middleware(['throttle:1000,1'])->prefix('performance-test')->group(functi
             ]);
         })->name('perf.medium');
         Route::get('/heavy', function (Request $request) use ($validToken) {
-            $token = $request->header('X-Performance-Token') ?? $request->get('token');
+            $token = $request->header('X-Performance-Token') ?? $request->input('token');
             if ($token !== $validToken) {
                 return response()->json([
                     'error' => 'Invalid or missing performance test token',
@@ -371,7 +371,7 @@ Route::middleware(['throttle:1000,1'])->prefix('performance-test')->group(functi
             ]);
         })->name('perf.post');
         Route::get('/delay/{seconds}', function (Request $request, $seconds) use ($validToken) {
-            $token = $request->header('X-Performance-Token') ?? $request->get('token');
+            $token = $request->header('X-Performance-Token') ?? $request->input('token');
             if ($token !== $validToken) {
                 return response()->json([
                     'error' => 'Invalid or missing performance test token',
@@ -389,7 +389,7 @@ Route::middleware(['throttle:1000,1'])->prefix('performance-test')->group(functi
             ]);
         })->name('perf.delay');
         Route::get('/system-info', function (Request $request) use ($validToken) {
-            $token = $request->header('X-Performance-Token') ?? $request->get('token');
+            $token = $request->header('X-Performance-Token') ?? $request->input('token');
             if ($token !== $validToken) {
                 return response()->json([
                     'error' => 'Invalid or missing performance test token',
@@ -411,7 +411,7 @@ Route::middleware(['throttle:1000,1'])->prefix('performance-test')->group(functi
             ]);
         })->name('perf.system');
         Route::get('/error-test/{code}', function (Request $request, $code) use ($validToken) {
-            $token = $request->header('X-Performance-Token') ?? $request->get('token');
+            $token = $request->header('X-Performance-Token') ?? $request->input('token');
             if ($token !== $validToken) {
                 return response()->json([
                     'error' => 'Invalid or missing performance test token',
@@ -438,7 +438,7 @@ Route::middleware(['throttle:1000,1'])->prefix('performance-test')->group(functi
             ], $code);
         })->name('perf.error');
         Route::get('/endpoints', function (Request $request) use ($validToken) {
-            $token = $request->header('X-Performance-Token') ?? $request->get('token');
+            $token = $request->header('X-Performance-Token') ?? $request->input('token');
             if ($token !== $validToken) {
                 return response()->json([
                     'error' => 'Invalid or missing performance test token',
