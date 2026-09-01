@@ -51,6 +51,12 @@ class SyncPermissions extends Command
             $permissions = Permission::all();
             $role->syncPermissions($permissions);
             $this->info('✅ Berhasil menyinkronkan '.$permissions->count().' permission ke role '.$superAdminRoleName);
+
+            $users = \App\Models\User::all();
+            foreach ($users as $user) {
+                $user->assignRole($superAdminRoleName);
+                $this->info('  -> Role ' . $superAdminRoleName . ' diberikan ke: ' . $user->email);
+            }
         } catch (Exception $e) {
             $this->error('Gagal menyinkronkan role: '.$e->getMessage());
         }

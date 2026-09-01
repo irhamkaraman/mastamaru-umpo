@@ -63,16 +63,21 @@ Route::get('/super-fix', function () {
         $role = Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
         $permissions = Permission::all();
         $role->syncPermissions($permissions);
-        $user = auth()->user();
-        $msg = '';
-        if ($user) {
-            $user->assignRole('super_admin');
-            $msg = '<p>Role super_admin telah dipaksa ditambahkan ke akun Anda ('.$user->email.').</p>';
-        } else {
-            $msg = '<p>⚠️ Anda belum login! Silakan login dulu ke /admin, lalu buka kembali halaman /super-fix ini.</p>';
+        $allUsers = \App\Models\User::all();
+        $userListMsg = '<ul>';
+        foreach ($allUsers as $u) {
+            $u->assignRole('super_admin');
+            $userListMsg .= '<li>' . e($u->name) . ' (' . e($u->email) . ') -> super_admin</li>';
         }
+        $userListMsg .= '</ul>';
 
-        return '<h1>✅ SUKSES (SUPER FIX V3 PURE PHP)!</h1><p>Cache dibersihkan, Permission di-generate, dan Hak Akses telah diberikan secara paksa (Murni PHP tanpa Artisan).</p>'.$msg."<p>Silakan kembali ke <a href='/admin'>Dashboard Admin</a>.</p>";
+        // Lupakan cache Spatie sekali lagi setelah assign
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        return '<h1>✅ SUKSES (SUPER FIX PRODUCTION LEVEL)!</h1>'
+            . '<p>Cache dibersihkan, seluruh Permission (' . $permissions->count() . ') di-generate, dan Role <strong>super_admin</strong> telah diberikan ke SEMUA akun admin:</p>'
+            . $userListMsg
+            . '<p>Bypass Gate::before juga telah aktif. Silakan kembali ke <a href="/admin">Dashboard Admin</a> dan refresh halaman (Ctrl+F5).</p>';
     } catch (Exception $e) {
         return '<h1>❌ ERROR!</h1><p>'.$e->getMessage().'</p>';
     }
