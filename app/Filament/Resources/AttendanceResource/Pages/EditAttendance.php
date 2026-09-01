@@ -54,6 +54,11 @@ class EditAttendance extends EditRecord
                 ->icon('heroicon-o-trash')
                 ->color('danger')
                 ->requiresConfirmation()
+                ->visible(function (\App\Models\Attendance $record) {
+                    $certDir = storage_path('app/public/certificates');
+                    $files = glob($certDir . '/' . $record->student_id . '_sertifikat_*.pdf');
+                    return is_array($files) && count($files) > 0;
+                })
                 ->action(function (\App\Models\Attendance $record) {
                     $certDir = storage_path('app/public/certificates');
                     $files = glob($certDir . '/' . $record->student_id . '_sertifikat_*.pdf');
