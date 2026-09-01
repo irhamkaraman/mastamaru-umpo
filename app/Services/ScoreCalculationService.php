@@ -129,37 +129,56 @@ class ScoreCalculationService
             $materiSession = $daySessions->where('session_type', 'materi')->first(function ($session) use ($submissions) {
                 return $submissions->has($session->id);
             }) ?? $daySessions->firstWhere('session_type', 'materi');
-            $datangSub = $datangSession ? ($submissions->get($datangSession->id)) : null;
-            $pulangSub = $pulangSession ? ($submissions->get($pulangSession->id)) : null;
-            $materiSub = $materiSession ? ($submissions->get($materiSession->id)) : null;
-            $datangPoints = $datangSub ? $datangSub->score_points : 0;
-            $pulangPoints = $pulangSub ? $pulangSub->score_points : 0;
-            $materiPoints = $materiSub ? $materiSub->score_points : 0;
-            $dayTotal = $datangPoints + $pulangPoints + $materiPoints;
+            $formatSessionSlot = function (?PresenceSession $session, ?AttendanceSubmission $sub) {
+                if ($sub) {
+                    return [
+                        'session' => $session,
+                        'submission' => $sub,
+                        'status' => ucfirst($sub->status),
+                        'status_type' => strtolower($sub->status),
+                        'points' => (int) $sub->score_points,
+                        'time' => $sub->submitted_at ? $sub->submitted_at->format('H:i:s') : null,
+                        'is_closed' => true,
+                    ];
+                }
+
+                if (! $session) {
+                    return [
+                        'session' => null,
+                        'submission' => null,
+                        'status' => '-',
+                        'status_type' => 'empty',
+                        'points' => 0,
+                        'time' => null,
+                        'is_closed' => false,
+                    ];
+                }
+
+                $isClosed = (! $session->is_active || ($session->end_time && $session->end_time < now()));
+
+                return [
+                    'session' => $session,
+                    'submission' => null,
+                    'status' => $isClosed ? 'Alpha' : 'Belum Presensi',
+                    'status_type' => $isClosed ? 'alpha' : 'pending',
+                    'points' => 0,
+                    'time' => null,
+                    'is_closed' => $isClosed,
+                ];
+            };
+
+            $datangData = $formatSessionSlot($datangSession, $datangSub);
+            $pulangData = $formatSessionSlot($pulangSession, $pulangSub);
+            $materiData = $formatSessionSlot($materiSession, $materiSub);
+
+            $dayTotal = $datangData['points'] + $pulangData['points'] + $materiData['points'];
             $totalEarned += $dayTotal;
+
             $days[$day] = [
                 'day' => $day,
-                'datang' => [
-                    'session' => $datangSession,
-                    'submission' => $datangSub,
-                    'status' => $datangSub ? ucfirst($datangSub->status) : '-',
-                    'points' => $datangPoints,
-                    'time' => $datangSub && $datangSub->submitted_at ? $datangSub->submitted_at->format('H:i:s') : null,
-                ],
-                'pulang' => [
-                    'session' => $pulangSession,
-                    'submission' => $pulangSub,
-                    'status' => $pulangSub ? ucfirst($pulangSub->status) : '-',
-                    'points' => $pulangPoints,
-                    'time' => $pulangSub && $pulangSub->submitted_at ? $pulangSub->submitted_at->format('H:i:s') : null,
-                ],
-                'materi' => [
-                    'session' => $materiSession,
-                    'submission' => $materiSub,
-                    'status' => $materiSub ? ucfirst($materiSub->status) : '-',
-                    'points' => $materiPoints,
-                    'time' => $materiSub && $materiSub->submitted_at ? $materiSub->submitted_at->format('H:i:s') : null,
-                ],
+                'datang' => $datangData,
+                'pulang' => $pulangData,
+                'materi' => $materiData,
                 'total' => $dayTotal,
             ];
         }

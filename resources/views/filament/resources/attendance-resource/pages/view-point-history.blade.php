@@ -241,6 +241,10 @@
         .dark .ph-tag-izin { background: rgba(14, 165, 233, 0.2); color: #38bdf8; }
         .ph-tag-sakit { background: #ffedd5; color: #9a3412; }
         .dark .ph-tag-sakit { background: rgba(249, 115, 22, 0.2); color: #fb923c; }
+        .ph-tag-alpha { background: #fee2e2; color: #b91c1c; }
+        .dark .ph-tag-alpha { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .ph-tag-pending { background: #fef3c7; color: #b45309; }
+        .dark .ph-tag-pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
         .ph-tag-empty { color: #94a3b8; font-style: italic; font-size: 0.8rem; }
         .dark .ph-tag-empty { color: #71717a; }
 
@@ -373,10 +377,11 @@
                 <table class="ph-table">
                     <thead>
                         <tr>
-                            <th style="width:15%;">Hari Ke-</th>
-                            <th style="width:35%;">Sesi Datang (Bobot Maks: 10)</th>
-                            <th style="width:35%;">Sesi Pulang (Bobot Maks: 10)</th>
-                            <th style="width:15%;text-align:right;">Total Poin Hari Ini</th>
+                            <th style="width:12%;">Hari Ke-</th>
+                            <th style="width:26%;">Sesi Datang</th>
+                            <th style="width:26%;">Sesi Materi</th>
+                            <th style="width:26%;">Sesi Pulang</th>
+                            <th style="width:10%;text-align:right;">Total Poin</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -384,27 +389,59 @@
                             <tr>
                                 <td style="font-weight:800;">Hari {{ $dayNum }}</td>
                                 <td>
-                                    @if($d['datang']['submission'])
-                                        <span class="ph-status-tag {{ $d['datang']['status'] === 'terlambat' ? 'ph-tag-terlambat' : ($d['datang']['status'] === 'izin' ? 'ph-tag-izin' : ($d['datang']['status'] === 'sakit' ? 'ph-tag-sakit' : 'ph-tag-hadir')) }}">
-                                            {{ ucfirst($d['datang']['status']) }} (+{{ $d['datang']['points'] }} Poin)
-                                        </span>
-                                        @if($d['datang']['time'])
-                                            <span style="font-size:0.75rem;color:#94a3b8;margin-left:0.35rem;">({{ $d['datang']['time'] }})</span>
-                                        @endif
+                                    @if($d['datang']['status_type'] === 'hadir')
+                                        <span class="ph-status-tag ph-tag-hadir">Hadir (+{{ $d['datang']['points'] }}p)</span>
+                                    @elseif($d['datang']['status_type'] === 'terlambat')
+                                        <span class="ph-status-tag ph-tag-terlambat">Terlambat (+{{ $d['datang']['points'] }}p)</span>
+                                    @elseif($d['datang']['status_type'] === 'sakit')
+                                        <span class="ph-status-tag ph-tag-sakit">Sakit (+{{ $d['datang']['points'] }}p)</span>
+                                    @elseif($d['datang']['status_type'] === 'izin')
+                                        <span class="ph-status-tag ph-tag-izin">Izin (+{{ $d['datang']['points'] }}p)</span>
+                                    @elseif($d['datang']['status_type'] === 'alpha')
+                                        <span class="ph-status-tag ph-tag-alpha">Alpha (0p)</span>
+                                    @elseif($d['datang']['status_type'] === 'pending')
+                                        <span class="ph-status-tag ph-tag-pending">Belum Presensi</span>
                                     @else
-                                        <span class="ph-tag-empty">Belum Hadir / Sesi Belum Ada</span>
+                                        <span class="ph-tag-empty">-</span>
+                                    @endif
+                                    @if($d['datang']['time'])
+                                        <span style="font-size:0.75rem;color:#94a3b8;margin-left:0.25rem;">({{ $d['datang']['time'] }})</span>
                                     @endif
                                 </td>
                                 <td>
-                                    @if($d['pulang']['submission'])
-                                        <span class="ph-status-tag {{ $d['pulang']['status'] === 'izin' ? 'ph-tag-izin' : ($d['pulang']['status'] === 'sakit' ? 'ph-tag-sakit' : 'ph-tag-hadir') }}">
-                                            {{ ucfirst($d['pulang']['status']) }} (+{{ $d['pulang']['points'] }} Poin)
-                                        </span>
-                                        @if($d['pulang']['time'])
-                                            <span style="font-size:0.75rem;color:#94a3b8;margin-left:0.35rem;">({{ $d['pulang']['time'] }})</span>
-                                        @endif
+                                    @if($d['materi']['status_type'] === 'hadir')
+                                        <span class="ph-status-tag ph-tag-hadir">Hadir (+{{ $d['materi']['points'] }}p)</span>
+                                    @elseif($d['materi']['status_type'] === 'sakit')
+                                        <span class="ph-status-tag ph-tag-sakit">Sakit (+{{ $d['materi']['points'] }}p)</span>
+                                    @elseif($d['materi']['status_type'] === 'izin')
+                                        <span class="ph-status-tag ph-tag-izin">Izin (+{{ $d['materi']['points'] }}p)</span>
+                                    @elseif($d['materi']['status_type'] === 'alpha')
+                                        <span class="ph-status-tag ph-tag-alpha">Alpha (0p)</span>
+                                    @elseif($d['materi']['status_type'] === 'pending')
+                                        <span class="ph-status-tag ph-tag-pending">Belum Presensi</span>
                                     @else
-                                        <span class="ph-tag-empty">Belum Hadir / Sesi Belum Ada</span>
+                                        <span class="ph-tag-empty">-</span>
+                                    @endif
+                                    @if($d['materi']['time'])
+                                        <span style="font-size:0.75rem;color:#94a3b8;margin-left:0.25rem;">({{ $d['materi']['time'] }})</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($d['pulang']['status_type'] === 'hadir')
+                                        <span class="ph-status-tag ph-tag-hadir">Hadir (+{{ $d['pulang']['points'] }}p)</span>
+                                    @elseif($d['pulang']['status_type'] === 'sakit')
+                                        <span class="ph-status-tag ph-tag-sakit">Sakit (+{{ $d['pulang']['points'] }}p)</span>
+                                    @elseif($d['pulang']['status_type'] === 'izin')
+                                        <span class="ph-status-tag ph-tag-izin">Izin (+{{ $d['pulang']['points'] }}p)</span>
+                                    @elseif($d['pulang']['status_type'] === 'alpha')
+                                        <span class="ph-status-tag ph-tag-alpha">Alpha (0p)</span>
+                                    @elseif($d['pulang']['status_type'] === 'pending')
+                                        <span class="ph-status-tag ph-tag-pending">Belum Presensi</span>
+                                    @else
+                                        <span class="ph-tag-empty">-</span>
+                                    @endif
+                                    @if($d['pulang']['time'])
+                                        <span style="font-size:0.75rem;color:#94a3b8;margin-left:0.25rem;">({{ $d['pulang']['time'] }})</span>
                                     @endif
                                 </td>
                                 <td style="text-align:right;font-weight:800;font-size:1rem;color:#6366f1;">

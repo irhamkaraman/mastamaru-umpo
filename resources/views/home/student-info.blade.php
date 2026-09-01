@@ -188,48 +188,107 @@
                         <tbody class="divide-y divide-gray-100 bg-white">
                             @php
                                 $participantDays = collect($matrix['days'])->filter(function($d) {
-                                    return $d['datang']['submission'] !== null || $d['materi']['submission'] !== null || $d['pulang']['submission'] !== null;
+                                    return $d['datang']['session'] !== null || $d['materi']['session'] !== null || $d['pulang']['session'] !== null;
                                 });
                             @endphp
                             
                             @forelse($participantDays as $dayNum => $d)
                                 <tr class="hover:bg-gray-50/80 transition">
                                     <td class="px-4 py-3 font-bold text-gray-900">Hari {{ $dayNum }}</td>
+                                    
+                                    <!-- Sesi Datang -->
                                     <td class="px-4 py-3">
-                                        @if($d['datang']['submission'])
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-800">
-                                                {{ $d['datang']['status'] }} ({{ $d['datang']['points'] }}p)
+                                        @if($d['datang']['status_type'] === 'hadir')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                                                Hadir (+{{ $d['datang']['points'] }}p)
+                                            </span>
+                                        @elseif($d['datang']['status_type'] === 'terlambat')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+                                                Terlambat (+{{ $d['datang']['points'] }}p)
+                                            </span>
+                                        @elseif($d['datang']['status_type'] === 'sakit')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">
+                                                Sakit (+{{ $d['datang']['points'] }}p)
+                                            </span>
+                                        @elseif($d['datang']['status_type'] === 'izin')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                                                Izin (+{{ $d['datang']['points'] }}p)
+                                            </span>
+                                        @elseif($d['datang']['status_type'] === 'alpha')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                                                Alpha (0p)
+                                            </span>
+                                        @elseif($d['datang']['status_type'] === 'pending')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-200">
+                                                Belum Presensi
                                             </span>
                                         @else
-                                            <span class="text-xs text-gray-400 italic">Belum Hadir</span>
+                                            <span class="text-xs text-gray-400 italic">-</span>
                                         @endif
                                     </td>
+
+                                    <!-- Sesi Materi -->
                                     <td class="px-4 py-3">
-                                        @if($d['materi']['submission'])
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-800">
-                                                {{ $d['materi']['status'] }} ({{ $d['materi']['points'] }}p)
+                                        @if($d['materi']['status_type'] === 'hadir')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800">
+                                                Hadir (+{{ $d['materi']['points'] }}p)
+                                            </span>
+                                        @elseif($d['materi']['status_type'] === 'sakit')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">
+                                                Sakit (+{{ $d['materi']['points'] }}p)
+                                            </span>
+                                        @elseif($d['materi']['status_type'] === 'izin')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                                                Izin (+{{ $d['materi']['points'] }}p)
+                                            </span>
+                                        @elseif($d['materi']['status_type'] === 'alpha')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                                                Alpha (0p)
+                                            </span>
+                                        @elseif($d['materi']['status_type'] === 'pending')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-200">
+                                                Belum Presensi
                                             </span>
                                         @else
-                                            <span class="text-xs text-gray-400 italic">Belum Hadir</span>
+                                            <span class="text-xs text-gray-400 italic">-</span>
                                         @endif
                                     </td>
+
+                                    <!-- Sesi Pulang -->
                                     <td class="px-4 py-3">
-                                        @if($d['pulang']['submission'])
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">
-                                                {{ $d['pulang']['status'] }} ({{ $d['pulang']['points'] }}p)
+                                        @if($d['pulang']['status_type'] === 'hadir')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                                                Hadir (+{{ $d['pulang']['points'] }}p)
+                                            </span>
+                                        @elseif($d['pulang']['status_type'] === 'sakit')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">
+                                                Sakit (+{{ $d['pulang']['points'] }}p)
+                                            </span>
+                                        @elseif($d['pulang']['status_type'] === 'izin')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                                                Izin (+{{ $d['pulang']['points'] }}p)
+                                            </span>
+                                        @elseif($d['pulang']['status_type'] === 'alpha')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                                                Alpha (0p)
+                                            </span>
+                                        @elseif($d['pulang']['status_type'] === 'pending')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-200">
+                                                Belum Presensi
                                             </span>
                                         @else
-                                            <span class="text-xs text-gray-400 italic">Belum Hadir</span>
+                                            <span class="text-xs text-gray-400 italic">-</span>
                                         @endif
                                     </td>
+
                                     <td class="px-4 py-3 text-right font-bold text-indigo-600">
                                         {{ $d['total'] }} Poin
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="px-4 py-6 text-center text-gray-500 text-sm">
-                                        Belum ada riwayat presensi yang tercatat.
+                                    <td colspan="5" class="px-4 py-6 text-center text-gray-500 text-sm">
+                                        Belum ada jadwal sesi presensi yang dibuka.
                                     </td>
                                 </tr>
                             @endforelse
