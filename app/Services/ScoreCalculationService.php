@@ -30,7 +30,7 @@ class ScoreCalculationService
         $status = strtolower(trim($status));
         $sessionType = strtolower(trim($sessionType));
 
-        if ($sessionType === 'pulang') {
+        if ($sessionType === 'pulang' || $sessionType === 'materi') {
             return match ($status) {
                 'hadir' => 10,
                 'sakit' => 7,
@@ -143,12 +143,18 @@ class ScoreCalculationService
                 return $submissions->has($session->id);
             }) ?? $daySessions->firstWhere('session_type', 'pulang');
 
+            $materiSession = $daySessions->where('session_type', 'materi')->first(function($session) use ($submissions) {
+                return $submissions->has($session->id);
+            }) ?? $daySessions->firstWhere('session_type', 'materi');
+
             $datangSub = $datangSession ? ($submissions->get($datangSession->id)) : null;
             $pulangSub = $pulangSession ? ($submissions->get($pulangSession->id)) : null;
+            $materiSub = $materiSession ? ($submissions->get($materiSession->id)) : null;
 
             $datangPoints = $datangSub ? $datangSub->score_points : 0;
             $pulangPoints = $pulangSub ? $pulangSub->score_points : 0;
-            $dayTotal = $datangPoints + $pulangPoints;
+            $materiPoints = $materiSub ? $materiSub->score_points : 0;
+            $dayTotal = $datangPoints + $pulangPoints + $materiPoints;
             $totalEarned += $dayTotal;
 
             $days[$day] = [
@@ -166,6 +172,13 @@ class ScoreCalculationService
                     'status' => $pulangSub ? ucfirst($pulangSub->status) : '-',
                     'points' => $pulangPoints,
                     'time' => $pulangSub && $pulangSub->submitted_at ? $pulangSub->submitted_at->format('H:i:s') : null,
+                ],
+                'materi' => [
+                    'session' => $materiSession,
+                    'submission' => $materiSub,
+                    'status' => $materiSub ? ucfirst($materiSub->status) : '-',
+                    'points' => $materiPoints,
+                    'time' => $materiSub && $materiSub->submitted_at ? $materiSub->submitted_at->format('H:i:s') : null,
                 ],
                 'total' => $dayTotal
             ];

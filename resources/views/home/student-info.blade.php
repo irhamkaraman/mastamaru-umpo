@@ -180,6 +180,7 @@
                             <tr>
                                 <th class="px-4 py-3">Hari</th>
                                 <th class="px-4 py-3">Sesi Datang</th>
+                                <th class="px-4 py-3">Sesi Materi</th>
                                 <th class="px-4 py-3">Sesi Pulang</th>
                                 <th class="px-4 py-3 text-right">Total Poin</th>
                             </tr>
@@ -187,7 +188,7 @@
                         <tbody class="divide-y divide-gray-100 bg-white">
                             @php
                                 $participantDays = collect($matrix['days'])->filter(function($d) {
-                                    return $d['datang']['submission'] !== null || $d['pulang']['submission'] !== null;
+                                    return $d['datang']['submission'] !== null || $d['materi']['submission'] !== null || $d['pulang']['submission'] !== null;
                                 });
                             @endphp
                             
@@ -198,6 +199,15 @@
                                         @if($d['datang']['submission'])
                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-800">
                                                 {{ $d['datang']['status'] }} ({{ $d['datang']['points'] }}p)
+                                            </span>
+                                        @else
+                                            <span class="text-xs text-gray-400 italic">Belum Hadir</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        @if($d['materi']['submission'])
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-800">
+                                                {{ $d['materi']['status'] }} ({{ $d['materi']['points'] }}p)
                                             </span>
                                         @else
                                             <span class="text-xs text-gray-400 italic">Belum Hadir</span>

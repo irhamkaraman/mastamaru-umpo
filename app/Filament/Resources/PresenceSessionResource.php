@@ -49,6 +49,7 @@ class PresenceSessionResource extends Resource
                     ->options([
                         'datang' => 'Sesi Datang / Kehadiran (Hadir: 10, Terlambat: 8, Sakit: 6, Izin: 5)',
                         'pulang' => 'Sesi Pulang (Hadir: 10, Sakit: 7, Izin: 5)',
+                        'materi' => 'Sesi Materi (Hadir: 10, Sakit: 7, Izin: 5)',
                     ])
                     ->default('datang')
                     ->disabled(fn (string $operation): bool => $operation === 'edit')
