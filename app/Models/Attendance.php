@@ -56,7 +56,8 @@ class Attendance extends Model
     {
         $slugName = \Illuminate\Support\Str::slug($this->name, '_');
         $pdfFileName = "{$this->student_id}_sertifikat_{$slugName}.pdf";
-        return file_exists(storage_path('app/public/certificates/' . $pdfFileName));
+
+        return file_exists(storage_path('app/public/certificates/'.$pdfFileName));
     }
 
     /**
@@ -97,11 +98,9 @@ class Attendance extends Model
     public static function generateUniqueCode(): string
     {
         do {
-            // Generate kode dengan kombinasi huruf besar dan angka (8 karakter)
             $letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
             $numbers = '0123456789';
-            $characters = $letters . $numbers;
-            
+            $characters = $letters.$numbers;
             $code = '';
             for ($i = 0; $i < 8; $i++) {
                 $code .= $characters[rand(0, strlen($characters) - 1)];

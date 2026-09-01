@@ -3,23 +3,18 @@
 namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromArray;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithTitle;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Font;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class GroupTemplateExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths, WithTitle
+class GroupTemplateExport implements FromArray, WithColumnWidths, WithHeadings, WithStyles, WithTitle
 {
-    /**
-     * @return array
-     */
     public function array(): array
     {
-        // Data contoh untuk template
         return [
             ['Kelompok A', 1],
             ['Kelompok B', 2],
@@ -27,9 +22,6 @@ class GroupTemplateExport implements FromArray, WithHeadings, WithStyles, WithCo
         ];
     }
 
-    /**
-     * @return array
-     */
     public function headings(): array
     {
         return [
@@ -39,13 +31,11 @@ class GroupTemplateExport implements FromArray, WithHeadings, WithStyles, WithCo
     }
 
     /**
-     * @param Worksheet $sheet
      * @return array
      */
     public function styles(Worksheet $sheet)
     {
         return [
-            // Style untuk header
             1 => [
                 'font' => [
                     'bold' => true,
@@ -60,14 +50,12 @@ class GroupTemplateExport implements FromArray, WithHeadings, WithStyles, WithCo
                     'vertical' => Alignment::VERTICAL_CENTER,
                 ],
             ],
-            // Style untuk data
             'A2:B100' => [
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_LEFT,
                     'vertical' => Alignment::VERTICAL_CENTER,
                 ],
             ],
-            // Style untuk kolom urutan
             'B:B' => [
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
@@ -76,20 +64,14 @@ class GroupTemplateExport implements FromArray, WithHeadings, WithStyles, WithCo
         ];
     }
 
-    /**
-     * @return array
-     */
     public function columnWidths(): array
     {
         return [
-            'A' => 30, // Nama Kelompok
-            'B' => 15, // Urutan
+            'A' => 30,
+            'B' => 15,
         ];
     }
 
-    /**
-     * @return string
-     */
     public function title(): string
     {
         return 'Template Import Kelompok';

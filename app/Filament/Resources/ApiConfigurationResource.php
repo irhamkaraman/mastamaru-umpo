@@ -3,9 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ApiConfigurationResource\Pages;
-use App\Filament\Resources\ApiConfigurationResource\RelationManagers;
 use App\Models\ApiConfiguration;
-use Filament\Forms;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -14,24 +12,21 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ApiConfigurationResource extends Resource
 {
     protected static ?string $model = ApiConfiguration::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-cog';
-    
+
     protected static ?string $navigationGroup = 'Integrasi API';
-    
+
     protected static ?string $navigationLabel = 'Konfigurasi API';
 
     public static function form(Form $form): Form
@@ -67,7 +62,6 @@ class ApiConfigurationResource extends Resource
                             ->helperText('Matikan jika konfigurasi ini tidak digunakan lagi.')
                             ->default(true),
                     ])->columns(2),
-
                 Section::make('Parameter & Headers')
                     ->description('Konfigurasi tambahan untuk otentikasi dan parameter pencarian.')
                     ->schema([
@@ -88,7 +82,6 @@ class ApiConfigurationResource extends Resource
                             ->helperText('Kosongkan jika menggunakan metode GET. Isi dengan format JSON murni untuk POST/PUT.')
                             ->columnSpanFull(),
                     ]),
-
                 Section::make('Pemetaan & Dokumentasi')
                     ->description('Simpan contoh dan aturan pemetaan dari respons API ini.')
                     ->schema([
@@ -104,14 +97,13 @@ class ApiConfigurationResource extends Resource
     {
         return $table
             ->columns([
-                    TextColumn::make('name')->searchable(),
-                    TextColumn::make('endpoint')->searchable(),
-                    TextColumn::make('method'),
-                    IconColumn::make('is_active')->boolean(),
-                    TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('name')->searchable(),
+                TextColumn::make('endpoint')->searchable(),
+                TextColumn::make('method'),
+                IconColumn::make('is_active')->boolean(),
+                TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
             ])
             ->actions([
                 EditAction::make(),
@@ -126,7 +118,6 @@ class ApiConfigurationResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
         ];
     }
 

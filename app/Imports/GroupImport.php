@@ -4,63 +4,49 @@ namespace App\Imports;
 
 use App\Models\Group;
 use Illuminate\Support\Str;
-use Maatwebsite\Excel\Concerns\ToModel;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\SkipsErrors;
-use Maatwebsite\Excel\Concerns\SkipsOnError;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
+use Maatwebsite\Excel\Concerns\SkipsOnError;
 use Maatwebsite\Excel\Concerns\SkipsOnFailure;
+use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithValidation;
 
-class GroupImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnError, SkipsOnFailure, WithBatchInserts, WithChunkReading
+class GroupImport implements SkipsOnError, SkipsOnFailure, ToModel, WithBatchInserts, WithChunkReading, WithHeadingRow, WithValidation
 {
     use Importable, SkipsErrors, SkipsFailures;
 
     /**
-     * @param array $row
-     *
      * @return \Illuminate\Database\Eloquent\Model|null
      */
     public function model(array $row)
     {
-        // Cek apakah baris kosong (nama_kelompok kosong atau null)
         if (empty($row['nama_kelompok']) || is_null($row['nama_kelompok'])) {
             return null;
         }
-
-        // Cek apakah nama kelompok sudah ada
         $existingGroup = Group::where('name', $row['nama_kelompok'])->first();
         if ($existingGroup) {
-            // Jika sudah ada, update data yang ada
             $existingGroup->update([
                 'order' => $row['urutan'] ?? $existingGroup->order,
             ]);
-            return null; // Tidak membuat record baru
-        }
 
-        // Generate slug dari nama kelompok dengan tetap mempertahankan angka
+            return null;
+        }
         $slug = Str::slug($row['nama_kelompok']);
-        
-        // Pastikan slug tidak kosong
         if (empty($slug)) {
             $slug = 'kelompok';
         }
-
-        // Pastikan slug unik dengan kombinasi huruf acak jika diperlukan
         $originalSlug = $slug;
         $counter = 1;
         while (Group::where('slug', $slug)->exists()) {
-            // Jika sudah ada, tambahkan 3 huruf acak
             $randomString = strtolower(Str::random(3));
-            $slug = $originalSlug . '-' . $randomString;
+            $slug = $originalSlug.'-'.$randomString;
             $counter++;
-            
-            // Fallback jika masih konflik setelah beberapa kali percobaan
             if ($counter > 10) {
-                $slug = $originalSlug . '-' . time() . '-' . $randomString;
+                $slug = $originalSlug.'-'.time().'-'.$randomString;
                 break;
             }
         }
@@ -72,9 +58,6 @@ class GroupImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnErr
         ]);
     }
 
-    /**
-     * @return array
-     */
     public function rules(): array
     {
         return [
@@ -98,17 +81,11 @@ class GroupImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnErr
         ];
     }
 
-    /**
-     * @return int
-     */
     public function batchSize(): int
     {
         return 100;
     }
 
-    /**
-     * @return int
-     */
     public function chunkSize(): int
     {
         return 100;

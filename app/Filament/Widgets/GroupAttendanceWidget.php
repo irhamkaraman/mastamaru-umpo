@@ -3,23 +3,22 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Group;
-use App\Models\Attendance;
-use App\Models\AttendanceSubmission;
 use App\Models\PresenceSession;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
-use Filament\Tables\Table;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
 
 class GroupAttendanceWidget extends BaseWidget
 {
     protected static ?string $heading = 'Ringkasan Kehadiran per Kelompok';
+
     protected static ?int $sort = 6;
-    protected int | string | array $columnSpan = 'full';
-    
+
+    protected int|string|array $columnSpan = 'full';
+
     public ?int $selectedSessionId = null;
 
     public function table(Table $table): Table
@@ -31,12 +30,12 @@ class GroupAttendanceWidget extends BaseWidget
                         'attendances',
                         'attendances as present_count' => function (Builder $query) {
                             $query->whereHas('attendanceSubmissions', function (Builder $subQuery) {
-                                $subQuery->whereHas('presenceSession'); // Pastikan presence_session ada
+                                $subQuery->whereHas('presenceSession');
                                 if ($this->selectedSessionId) {
                                     $subQuery->where('presence_session_id', $this->selectedSessionId);
                                 }
                             });
-                        }
+                        },
                     ])
                     ->orderBy('present_count', 'desc')
             )
@@ -50,21 +49,23 @@ class GroupAttendanceWidget extends BaseWidget
                             ->toArray();
                     })
                     ->query(function (Builder $query, array $data): Builder {
-                        if (!empty($data['value'])) {
+                        if (! empty($data['value'])) {
                             $this->selectedSessionId = $data['value'];
+
                             return $query->withCount([
                                 'attendances',
                                 'attendances as present_count' => function (Builder $subQuery) use ($data) {
                                     $subQuery->whereHas('attendanceSubmissions', function (Builder $attendanceQuery) use ($data) {
-                                        $attendanceQuery->whereHas('presenceSession'); // Pastikan presence_session ada
+                                        $attendanceQuery->whereHas('presenceSession');
                                         $attendanceQuery->where('presence_session_id', $data['value']);
                                     });
-                                }
+                                },
                             ]);
                         }
                         $this->selectedSessionId = null;
+
                         return $query;
-                    })
+                    }),
             ])
             ->columns([
                 TextColumn::make('name')
@@ -73,19 +74,16 @@ class GroupAttendanceWidget extends BaseWidget
                     ->sortable()
                     ->weight('bold')
                     ->default('Tidak ada nama'),
-
                 TextColumn::make('attendances_count')
                     ->label('Total Peserta')
                     ->badge()
                     ->color('primary')
                     ->sortable(),
-
                 TextColumn::make('present_count')
                     ->label('Hadir')
                     ->badge()
                     ->color('success')
                     ->sortable(),
-
                 TextColumn::make('absent_count')
                     ->label('Tidak Hadir')
                     ->getStateUsing(function (Group $record): int {
@@ -93,19 +91,19 @@ class GroupAttendanceWidget extends BaseWidget
                     })
                     ->badge()
                     ->color('danger'),
-                    
                 TextColumn::make('session_info')
                     ->label('Sesi Aktif')
                     ->getStateUsing(function (Group $record): string {
                         if ($this->selectedSessionId) {
                             $session = PresenceSession::find($this->selectedSessionId);
+
                             return $session ? $session->session_name : 'Sesi tidak ditemukan';
                         }
+
                         return 'Semua Sesi';
                     })
                     ->badge()
                     ->color('info'),
-
                 TextColumn::make('attendance_percentage')
                     ->label('Persentase Kehadiran')
                     ->getStateUsing(function (Group $record): string {
@@ -113,7 +111,8 @@ class GroupAttendanceWidget extends BaseWidget
                             return '0%';
                         }
                         $percentage = ($record->present_count / $record->attendances_count) * 100;
-                        return number_format($percentage, 1) . '%';
+
+                        return number_format($percentage, 1).'%';
                     })
                     ->badge()
                     ->color(function (Group $record): string {
@@ -129,7 +128,6 @@ class GroupAttendanceWidget extends BaseWidget
                             return 'danger';
                         }
                     }),
-
                 BadgeColumn::make('status')
                     ->label('Status Kelompok')
                     ->getStateUsing(function (Group $record): string {
@@ -156,7 +154,7 @@ class GroupAttendanceWidget extends BaseWidget
                     ]),
             ])
             ->defaultPaginationPageOption(10)
-            ->poll('60s'); // Refresh setiap 1 menit
+            ->poll('60s');
     }
 
     protected function getTableRecordsPerPageSelectOptions(): array

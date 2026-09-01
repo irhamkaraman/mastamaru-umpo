@@ -3,16 +3,16 @@
 namespace App\Exports;
 
 use App\Models\Group;
+use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromQuery;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Maatwebsite\Excel\Concerns\Exportable;
 
-class GroupDataExport implements FromQuery, WithHeadings, ShouldAutoSize, WithMapping, WithChunkReading, WithStyles
+class GroupDataExport implements FromQuery, ShouldAutoSize, WithChunkReading, WithHeadings, WithMapping, WithStyles
 {
     use Exportable;
 
@@ -28,16 +28,14 @@ class GroupDataExport implements FromQuery, WithHeadings, ShouldAutoSize, WithMa
         $query = Group::query()
             ->with(['mentors'])
             ->withCount('attendances');
-
-        if (!empty($this->filters['has_mentors']['value'])) {
+        if (! empty($this->filters['has_mentors']['value'])) {
             if ($this->filters['has_mentors']['value'] === 'with') {
                 $query->has('mentors');
             } elseif ($this->filters['has_mentors']['value'] === 'without') {
                 $query->doesntHave('mentors');
             }
         }
-
-        if (!empty($this->filters['has_students']['value'])) {
+        if (! empty($this->filters['has_students']['value'])) {
             if ($this->filters['has_students']['value'] === 'with') {
                 $query->has('attendances');
             } elseif ($this->filters['has_students']['value'] === 'without') {
@@ -50,9 +48,10 @@ class GroupDataExport implements FromQuery, WithHeadings, ShouldAutoSize, WithMa
 
     public function map($group): array
     {
-        $mentors = $group->mentors->map(function($m) {
-            $phone = $m->phone_number ? ' (' . $m->phone_number . ')' : '';
-            return $m->name . $phone;
+        $mentors = $group->mentors->map(function ($m) {
+            $phone = $m->phone_number ? ' ('.$m->phone_number.')' : '';
+
+            return $m->name.$phone;
         })->implode(', ');
 
         return [
@@ -71,7 +70,7 @@ class GroupDataExport implements FromQuery, WithHeadings, ShouldAutoSize, WithMa
             'Nama Kelompok',
             'Slug URL',
             'Nama Pendamping (No. WA)',
-            'Jumlah Peserta'
+            'Jumlah Peserta',
         ];
     }
 

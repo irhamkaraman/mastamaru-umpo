@@ -4,6 +4,7 @@ namespace App\Filament\Resources\AttendanceResource\Pages;
 
 use App\Filament\Resources\AttendanceResource;
 use App\Models\Mentor;
+use Exception;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -27,31 +28,23 @@ class EditAttendance extends EditRecord
                 ->action(function (array $data, \App\Models\Attendance $record) {
                     $file = $data['certificate_file'];
                     $certDir = storage_path('app/public/certificates');
-                    if (!is_dir($certDir)) {
+                    if (! is_dir($certDir)) {
                         mkdir($certDir, 0755, true);
                     }
-                    
-                    // The file is a temporary uploaded file path in Filament. We need to move it.
-                    $tempPath = storage_path('app/public/' . $file);
-                    
-                    // Generate exact target filename matching the old system format
+                    $tempPath = storage_path('app/public/'.$file);
                     $slugName = \Illuminate\Support\Str::slug($record->name, '_');
                     $timestamp = time();
-                    $targetFilename = $record->student_id . '_sertifikat_' . $timestamp . '.pdf';
-                    $targetPath = $certDir . '/' . $targetFilename;
-                    
-                    // Delete old certificates if exist
-                    $oldFiles = glob($certDir . '/' . $record->student_id . '_sertifikat_*.pdf');
+                    $targetFilename = $record->student_id.'_sertifikat_'.$timestamp.'.pdf';
+                    $targetPath = $certDir.'/'.$targetFilename;
+                    $oldFiles = glob($certDir.'/'.$record->student_id.'_sertifikat_*.pdf');
                     if (is_array($oldFiles)) {
                         foreach ($oldFiles as $oldFile) {
                             @unlink($oldFile);
                         }
                     }
-                    
                     if (file_exists($tempPath)) {
                         rename($tempPath, $targetPath);
                     }
-                    
                     \Filament\Notifications\Notification::make()
                         ->title('Sertifikat Berhasil Diupload')
                         ->success()
@@ -65,26 +58,25 @@ class EditAttendance extends EditRecord
                     try {
                         $status = $record->status ?? 'gagal';
                         $template = \App\Models\CertificateTemplate::getActiveFor($status);
-
-                        if (!$template) {
+                        if (! $template) {
                             \Filament\Notifications\Notification::make()
                                 ->title('Template Tidak Ditemukan')
-                                ->body('Tidak ada template sertifikat aktif untuk status "' . strtoupper($status) . '".')
+                                ->body('Tidak ada template sertifikat aktif untuk status "'.strtoupper($status).'".')
                                 ->warning()
                                 ->send();
+
                             return;
                         }
-
                         $service = app(\App\Services\WordCertificateService::class);
                         $filePath = $service->generate($record, $template);
-
                         $slugName = \Illuminate\Support\Str::slug($record->name, '_');
+
                         return response()->download(
                             $filePath,
                             "sertifikat_{$record->student_id}_{$slugName}.pdf",
                             ['Content-Type' => 'application/pdf']
                         );
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         \Filament\Notifications\Notification::make()
                             ->title('Gagal Mencetak Sertifikat')
                             ->body($e->getMessage())
@@ -99,12 +91,13 @@ class EditAttendance extends EditRecord
                 ->requiresConfirmation()
                 ->visible(function (\App\Models\Attendance $record) {
                     $certDir = storage_path('app/public/certificates');
-                    $files = glob($certDir . '/' . $record->student_id . '_sertifikat_*.pdf');
+                    $files = glob($certDir.'/'.$record->student_id.'_sertifikat_*.pdf');
+
                     return is_array($files) && count($files) > 0;
                 })
                 ->action(function (\App\Models\Attendance $record) {
                     $certDir = storage_path('app/public/certificates');
-                    $files = glob($certDir . '/' . $record->student_id . '_sertifikat_*.pdf');
+                    $files = glob($certDir.'/'.$record->student_id.'_sertifikat_*.pdf');
                     if (is_array($files) && count($files) > 0) {
                         foreach ($files as $file) {
                             @unlink($file);
@@ -126,16 +119,14 @@ class EditAttendance extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        // Update raw barcode JSON saat edit
         $mentor = Mentor::find($data['mentor_id']);
         $rawBarcode = json_encode([
             'nama' => $data['name'],
             'student_id' => $data['student_id'],
-            'mentor' => $mentor ? $mentor->name : ''
+            'mentor' => $mentor ? $mentor->name : '',
         ]);
-        
         $data['raw_barcode'] = $rawBarcode;
-        
+
         return $data;
     }
 }

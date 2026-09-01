@@ -4,11 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\Group;
-use App\Models\Mentor;
+use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class HomeController extends Controller
 {
@@ -26,42 +25,28 @@ class HomeController extends Controller
     public function checkStudent(Request $request)
     {
         $request->validate([
-            'student_id' => 'required|string|max:20'
+            'student_id' => 'required|string|max:20',
         ]);
-
         $studentId = $request->input('student_id');
-
-        // Cari peserta berdasarkan student_id dengan cache (5 menit)
-        $student = Cache::remember('student_data_' . $studentId, 300, function () use ($studentId) {
+        $student = Cache::remember('student_data_'.$studentId, 300, function () use ($studentId) {
             return Attendance::with(['group', 'mentor'])
                 ->where('student_id', $studentId)
                 ->first();
         });
-
-        if (!$student) {
+        if (! $student) {
             return back()->with('error', 'Peserta dengan NIM tersebut tidak terdaftar dalam sistem.');
         }
-
-        // Generate kode unik baru (8 karakter kombinasi huruf besar dan angka)
         $uniqueCode = $this->generateUniqueCode();
-
-        // Update kode unik di database
         $student->update([
-            'unique_code' => $uniqueCode
+            'unique_code' => $uniqueCode,
         ]);
-
-        // Invalidate cache untuk student yang di-update
-            Cache::forget('student_data_' . $student->student_id);
-
-        // Buat rawBarcode dalam format JSON
+        Cache::forget('student_data_'.$student->student_id);
         $rawBarcode = json_encode([
             'nama' => $student->name,
             'student_id' => $student->student_id,
             'fakultas' => $student->faculty,
-            'mentor' => $student->mentor ? $student->mentor->name : 'Belum ditentukan'
+            'mentor' => $student->mentor ? $student->mentor->name : 'Belum ditentukan',
         ], JSON_UNESCAPED_UNICODE);
-
-        // Ambil assessment saat ini tanpa recalculate ulang (agar manual override admin tidak kerestore)
         $assessment = \App\Models\StudentAssessment::firstOrCreate(
             ['student_id' => $student->id],
             [
@@ -70,7 +55,7 @@ class HomeController extends Controller
                 'attendance_score' => 0,
                 'final_score' => 0,
                 'grade' => 'D',
-                'status' => 'proses'
+                'status' => 'proses',
             ]
         );
         $matrix = \App\Services\ScoreCalculationService::getStudentPresenceMatrix($student->id);
@@ -78,17 +63,13 @@ class HomeController extends Controller
             ->with(['presenceSession', 'mentor'])
             ->orderBy('submitted_at', 'desc')
             ->get();
-
-        // Refresh status student
         $student->refresh();
-
-        // Cek Sertifikat (Format PDF)
         $certDir = storage_path('app/public/certificates');
         $certificateFile = null;
         if (is_dir($certDir)) {
-            $files = glob($certDir . '/' . $student->student_id . '_sertifikat_*.pdf');
+            $files = glob($certDir.'/'.$student->student_id.'_sertifikat_*.pdf');
             if (count($files) > 0) {
-                $certificateFile = asset('storage/certificates/' . basename($files[0]));
+                $certificateFile = asset('storage/certificates/'.basename($files[0]));
             }
         }
 
@@ -110,17 +91,12 @@ class HomeController extends Controller
     private function generateUniqueCode(): string
     {
         do {
-            // Generate 8 karakter random (huruf besar A-Z dan angka 0-9)
             $code = '';
             $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-
             for ($i = 0; $i < 8; $i++) {
                 $code .= $characters[rand(0, strlen($characters) - 1)];
             }
-
-            // Cek apakah kode sudah ada di database
             $exists = Attendance::where('unique_code', $code)->exists();
-
         } while ($exists);
 
         return $code;
@@ -132,43 +108,33 @@ class HomeController extends Controller
     public function refreshCode(Request $request)
     {
         $request->validate([
-            'student_id' => 'required|string|exists:attendances,student_id'
+            'student_id' => 'required|string|exists:attendances,student_id',
         ]);
-
         $student = Attendance::with(['group', 'mentor'])
             ->where('student_id', $request->student_id)
             ->first();
-
-        if (!$student) {
+        if (! $student) {
             return response()->json([
                 'success' => false,
-                'message' => 'Peserta tidak ditemukan'
+                'message' => 'Peserta tidak ditemukan',
             ]);
         }
-
-        // Generate kode unik baru
         $uniqueCode = $this->generateUniqueCode();
-
-        // Update kode unik di database
         $student->update([
-            'unique_code' => $uniqueCode
+            'unique_code' => $uniqueCode,
         ]);
-
-        // Invalidate cache untuk student yang di-update
-        Cache::forget('student_data_' . $student->student_id);
-
-        // Buat rawBarcode dalam format JSON
+        Cache::forget('student_data_'.$student->student_id);
         $rawBarcode = json_encode([
             'nama' => $student->name,
             'student_id' => $student->student_id,
             'fakultas' => $student->faculty,
-            'mentor' => $student->mentor ? $student->mentor->name : 'Belum ditentukan'
+            'mentor' => $student->mentor ? $student->mentor->name : 'Belum ditentukan',
         ], JSON_UNESCAPED_UNICODE);
 
         return response()->json([
             'success' => true,
             'uniqueCode' => $uniqueCode,
-            'rawBarcode' => $rawBarcode
+            'rawBarcode' => $rawBarcode,
         ]);
     }
 
@@ -177,8 +143,6 @@ class HomeController extends Controller
      */
     public function groups()
     {
-        // Ambil data groups dengan relasi langsung tanpa caching
-        // Caching sudah dihandle di view level
         $groups = Group::with(['mentors', 'attendances'])
             ->orderBy('order')
             ->get();
@@ -191,7 +155,6 @@ class HomeController extends Controller
      */
     public function remake()
     {
-        // Ambil data fakultas dan prodi yang unik dari tabel attendance dengan cache
         $faculties = Cache::remember('faculties_list', 3600, function () {
             return Attendance::whereNotNull('faculty')
                 ->distinct()
@@ -199,7 +162,6 @@ class HomeController extends Controller
                 ->sort()
                 ->values();
         });
-
         $studyPrograms = Cache::remember('study_programs_list', 3600, function () {
             return Attendance::whereNotNull('study_program')
                 ->distinct()
@@ -216,12 +178,11 @@ class HomeController extends Controller
      */
     public function storeParticipant(Request $request)
     {
-        // Validasi dasar
         $request->validate([
             'name' => 'required|string|max:255',
             'student_id' => 'required|numeric|digits_between:1,20|unique:attendances,student_id',
             'faculty' => 'required|string|max:255',
-            'study_program' => 'required|string|max:255'
+            'study_program' => 'required|string|max:255',
         ], [
             'name.required' => 'Nama wajib diisi',
             'student_id.required' => 'NIM wajib diisi',
@@ -229,51 +190,36 @@ class HomeController extends Controller
             'student_id.digits_between' => 'NIM harus terdiri dari 1-20 digit angka',
             'student_id.unique' => 'NIM sudah terdaftar dalam sistem',
             'faculty.required' => 'Fakultas wajib dipilih',
-            'study_program.required' => 'Program studi wajib dipilih'
+            'study_program.required' => 'Program studi wajib dipilih',
         ]);
-
-        // Validasi nama: Cek apakah nama lengkap yang persis sama sudah ada di sistem
         $trimmedName = trim($request->name);
         $existingName = Attendance::whereRaw('LOWER(TRIM(name)) = ?', [strtolower($trimmedName)])->first();
-
         if ($existingName) {
             return back()->withErrors([
-                'name' => 'Peserta dengan nama "' . $existingName->name . '" sudah terdaftar dalam sistem (NIM: ' . $existingName->student_id . ').'
+                'name' => 'Peserta dengan nama "'.$existingName->name.'" sudah terdaftar dalam sistem (NIM: '.$existingName->student_id.').',
             ])->withInput();
         }
-
-        // Validasi fakultas dan program studi valid dari data yang tersedia
         $availableFaculties = $this->getFaculties();
         $availablePrograms = $this->getStudyPrograms();
-
-        if (!in_array($request->faculty, $availableFaculties)) {
+        if (! in_array($request->faculty, $availableFaculties)) {
             return back()->withErrors([
-                'faculty' => 'Fakultas yang dipilih tidak valid.'
+                'faculty' => 'Fakultas yang dipilih tidak valid.',
             ])->withInput();
         }
-
-        if (!in_array($request->study_program, $availablePrograms)) {
+        if (! in_array($request->study_program, $availablePrograms)) {
             return back()->withErrors([
-                'study_program' => 'Program studi yang dipilih tidak valid.'
+                'study_program' => 'Program studi yang dipilih tidak valid.',
             ])->withInput();
         }
-
         try {
-            // Auto-assign kelompok berdasarkan distribusi yang merata
             $assignedGroup = $this->autoAssignGroup();
-
-            // Generate kode unik untuk peserta baru
             $uniqueCode = $this->generateUniqueCode();
-
-            // Generate raw barcode dalam format JSON
             $rawBarcode = json_encode([
                 'nama' => $request->name,
                 'student_id' => $request->student_id,
                 'fakultas' => $request->faculty,
-                'mentor' => 'Akan ditentukan' // Mentor akan di-update setelah assignment
+                'mentor' => 'Akan ditentukan',
             ], JSON_UNESCAPED_UNICODE);
-
-            // Simpan data peserta baru
             $newParticipant = Attendance::create([
                 'group_id' => $assignedGroup['group_id'],
                 'mentor_id' => $assignedGroup['mentor_id'],
@@ -282,32 +228,23 @@ class HomeController extends Controller
                 'faculty' => $request->faculty,
                 'study_program' => $request->study_program,
                 'raw_barcode' => $rawBarcode,
-                'unique_code' => $uniqueCode
+                'unique_code' => $uniqueCode,
             ]);
-
-            // Load relasi untuk mendapatkan nama kelompok dan mentor
             $newParticipant->load(['group', 'mentor']);
-
-            // Update rawBarcode dengan informasi mentor yang sebenarnya
             $updatedRawBarcode = json_encode([
                 'nama' => $newParticipant->name,
                 'student_id' => $newParticipant->student_id,
                 'fakultas' => $newParticipant->faculty,
-                'mentor' => $newParticipant->mentor ? $newParticipant->mentor->name : 'Belum ditentukan'
+                'mentor' => $newParticipant->mentor ? $newParticipant->mentor->name : 'Belum ditentukan',
             ], JSON_UNESCAPED_UNICODE);
-
             $newParticipant->update(['raw_barcode' => $updatedRawBarcode]);
-
-            // Invalidate cache setelah data baru ditambahkan
             Cache::forget('faculties_list');
             Cache::forget('faculties_validation');
             Cache::forget('study_programs_list');
             Cache::forget('study_programs_validation');
             Cache::forget('groups_with_participants');
             Cache::forget('groups_for_assignment');
-            Cache::forget('student_data_' . $newParticipant->student_id);
-
-            // Simpan data ke session untuk ditampilkan di cache browser
+            Cache::forget('student_data_'.$newParticipant->student_id);
             session([
                 'new_participant' => [
                     'name' => $newParticipant->name,
@@ -317,21 +254,19 @@ class HomeController extends Controller
                     'group_name' => $newParticipant->group->name,
                     'mentor_name' => $newParticipant->mentor->name,
                     'unique_code' => $newParticipant->unique_code,
-                    'saved_to_database' => true
-                ]
+                    'saved_to_database' => true,
+                ],
             ]);
 
             return back()->with('success', 'Peserta berhasil ditambahkan ke sistem!');
-
-        } catch (\Exception $e) {
-            // Log error untuk debugging
-            Log::error('Error saat menyimpan peserta: ' . $e->getMessage(), [
+        } catch (Exception $e) {
+            Log::error('Error saat menyimpan peserta: '.$e->getMessage(), [
                 'request_data' => $request->all(),
-                'stack_trace' => $e->getTraceAsString()
+                'stack_trace' => $e->getTraceAsString(),
             ]);
 
             return back()->withErrors([
-                'general' => 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi atau hubungi administrator.'
+                'general' => 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi atau hubungi administrator.',
             ])->withInput();
         }
     }
@@ -342,7 +277,6 @@ class HomeController extends Controller
      */
     private function autoAssignGroup(): array
     {
-        // Ambil semua kelompok dengan jumlah peserta saat ini (cache 2 menit karena data berubah)
         $groups = Cache::remember('groups_for_assignment', 120, function () {
             return Group::withCount('attendances')
                 ->with('mentors')
@@ -350,26 +284,19 @@ class HomeController extends Controller
                 ->orderBy('order', 'asc')
                 ->get();
         });
-
         if ($groups->isEmpty()) {
-            throw new \Exception('Tidak ada kelompok yang tersedia dalam sistem.');
+            throw new Exception('Tidak ada kelompok yang tersedia dalam sistem.');
         }
-
-        // Pilih kelompok dengan peserta paling sedikit
         $selectedGroup = $groups->first();
-
-        // Pilih mentor dari kelompok tersebut
         $mentors = $selectedGroup->mentors;
         if ($mentors->isEmpty()) {
-            throw new \Exception('Kelompok ' . $selectedGroup->name . ' tidak memiliki mentor.');
+            throw new Exception('Kelompok '.$selectedGroup->name.' tidak memiliki mentor.');
         }
-
-        // Pilih mentor pertama (bisa dikembangkan untuk distribusi yang lebih kompleks)
         $selectedMentor = $mentors->first();
 
         return [
             'group_id' => $selectedGroup->id,
-            'mentor_id' => $selectedMentor->id
+            'mentor_id' => $selectedMentor->id,
         ];
     }
 

@@ -4,11 +4,11 @@ namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class EmptyPresenceSessionExport implements FromArray, WithHeadings, WithTitle, WithStyles
+class EmptyPresenceSessionExport implements FromArray, WithHeadings, WithStyles, WithTitle
 {
     /**
      * Data kosong untuk sheet
@@ -16,7 +16,7 @@ class EmptyPresenceSessionExport implements FromArray, WithHeadings, WithTitle, 
     public function array(): array
     {
         return [
-            ['Tidak ada data sesi presensi yang tersedia.']
+            ['Tidak ada data sesi presensi yang tersedia.'],
         ];
     }
 
@@ -26,7 +26,7 @@ class EmptyPresenceSessionExport implements FromArray, WithHeadings, WithTitle, 
     public function headings(): array
     {
         return [
-            'Informasi'
+            'Informasi',
         ];
     }
 
@@ -48,16 +48,16 @@ class EmptyPresenceSessionExport implements FromArray, WithHeadings, WithTitle, 
                 'font' => ['bold' => true, 'size' => 12],
                 'fill' => [
                     'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => 'FF6B6B']
+                    'startColor' => ['rgb' => 'FF6B6B'],
                 ],
-                'font' => ['color' => ['rgb' => 'FFFFFF'], 'bold' => true]
+                'font' => ['color' => ['rgb' => 'FFFFFF'], 'bold' => true],
             ],
             2 => [
                 'font' => ['italic' => true],
                 'alignment' => [
-                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER
-                ]
-            ]
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                ],
+            ],
         ];
     }
 }

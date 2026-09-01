@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('api_data_records', function (Blueprint $table) {
             $table->id();
             $table->foreignId('api_configuration_id')->constrained()->cascadeOnDelete();
-            $table->string('external_id')->nullable()->index(); 
-            $table->json('payload_data'); 
+            $table->string('external_id')->nullable()->index();
+            $table->json('payload_data');
             $table->timestamps();
         });
     }

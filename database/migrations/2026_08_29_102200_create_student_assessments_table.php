@@ -11,16 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('student_assessments')) {
+        if (! Schema::hasTable('student_assessments')) {
             Schema::create('student_assessments', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('student_id')->constrained('attendances')->cascadeOnDelete();
                 $table->unsignedSmallInteger('total_presence_points')->default(0);
-                $table->decimal('attendance_score', 5, 2)->default(0.00); // 0 - 100
-                $table->decimal('activity_score', 4, 2)->nullable(); // 1 - 10
-                $table->decimal('final_score', 5, 2)->default(0.00); // 0 - 100
-                $table->string('grade', 5)->default('D'); // A, B, C, D
-                $table->string('status', 20)->default('proses'); // lulus, gagal, proses
+                $table->decimal('attendance_score', 5, 2)->default(0.00);
+                $table->decimal('activity_score', 4, 2)->nullable();
+                $table->decimal('final_score', 5, 2)->default(0.00);
+                $table->string('grade', 5)->default('D');
+                $table->string('status', 20)->default('proses');
                 $table->text('notes')->nullable();
                 $table->timestamps();
             });

@@ -13,13 +13,13 @@ return new class extends Migration
     {
         Schema::create('presence_sessions', function (Blueprint $table) {
             $table->id();
-            $table->string('session_name'); // Nama sesi presensi
-            $table->string('slug')->unique(); // Slug untuk URL yang ramah
-            $table->text('description')->nullable(); // Deskripsi sesi
-            $table->datetime('start_time'); // Waktu mulai presensi
-            $table->datetime('end_time'); // Waktu selesai presensi
-            $table->boolean('is_active')->default(true); // Status aktif sesi
-            $table->string('session_code')->unique(); // Kode unik sesi untuk submit
+            $table->string('session_name');
+            $table->string('slug')->unique();
+            $table->text('description')->nullable();
+            $table->datetime('start_time');
+            $table->datetime('end_time');
+            $table->boolean('is_active')->default(true);
+            $table->string('session_code')->unique();
             $table->timestamps();
         });
     }

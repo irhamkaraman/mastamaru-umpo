@@ -3,23 +3,23 @@
 namespace App\Filament\Widgets;
 
 use App\Models\AttendanceSubmission;
-use Filament\Widgets\ChartWidget;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Filament\Widgets\ChartWidget;
 
 class PresenceTrendWidget extends ChartWidget
 {
     protected static ?string $heading = 'Tren Presensi 7 Hari Terakhir';
+
     protected static ?int $sort = 4;
+
     protected static ?string $maxHeight = '300px';
 
     protected function getData(): array
     {
-        // Ambil data presensi 7 hari terakhir
         $last7Days = collect(range(6, 0))->map(function ($daysAgo) {
             $date = Carbon::now()->subDays($daysAgo);
             $count = AttendanceSubmission::whereDate('created_at', $date->toDateString())->count();
-            
+
             return [
                 'date' => $date->format('d/m'),
                 'count' => $count,

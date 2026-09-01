@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('attendance_submissions', function (Blueprint $table) {
-            if (!Schema::hasColumn('attendance_submissions', 'score_points')) {
+            if (! Schema::hasColumn('attendance_submissions', 'score_points')) {
                 $table->unsignedSmallInteger('score_points')->default(0)->after('status');
             }
         });

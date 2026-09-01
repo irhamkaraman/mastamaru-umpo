@@ -2,24 +2,26 @@
 
 namespace App\Jobs;
 
+use App\Models\AttendanceSubmission;
+use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use App\Models\AttendanceSubmission;
-use App\Models\Attendance;
 use Illuminate\Support\Facades\Log;
-use Exception;
 
 class ProcessAttendanceSubmission implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $attendanceData;
-    public $tries = 3; // Retry 3 kali jika gagal
-    public $timeout = 60; // Timeout 60 detik
-    public $backoff = [10, 30, 60]; // Delay retry dalam detik
+
+    public $tries = 3;
+
+    public $timeout = 60;
+
+    public $backoff = [10, 30, 60];
 
     /**
      * Create a new job instance.
@@ -27,7 +29,7 @@ class ProcessAttendanceSubmission implements ShouldQueue
     public function __construct($attendanceData)
     {
         $this->attendanceData = $attendanceData;
-        $this->onQueue('attendance'); // Queue khusus untuk presensi
+        $this->onQueue('attendance');
     }
 
     /**
@@ -36,26 +38,20 @@ class ProcessAttendanceSubmission implements ShouldQueue
     public function handle(): void
     {
         try {
-            // Gunakan student_id atau user_id tergantung mana yang tersedia
             $studentId = $this->attendanceData['student_id'] ?? $this->attendanceData['user_id'];
-            
             Log::info('Processing attendance submission', [
                 'student_id' => $studentId,
                 'session_id' => $this->attendanceData['presence_session_id'],
-                'attempt' => $this->attempts()
+                'attempt' => $this->attempts(),
             ]);
-
-            // Cek apakah sudah ada presensi untuk student dan session ini
             $existingSubmission = AttendanceSubmission::where('student_id', $studentId)
                 ->where('presence_session_id', $this->attendanceData['presence_session_id'])
                 ->first();
-
             if ($existingSubmission) {
                 Log::warning('Attendance already exists, skipping', $this->attendanceData);
+
                 return;
             }
-
-            // Proses penyimpanan presensi ke database
             $submission = AttendanceSubmission::create([
                 'presence_session_id' => $this->attendanceData['presence_session_id'],
                 'group_id' => $this->attendanceData['group_id'],
@@ -66,21 +62,18 @@ class ProcessAttendanceSubmission implements ShouldQueue
                 'submission_method' => $this->attendanceData['submission_method'] ?? 'qr_code',
                 'notes' => $this->attendanceData['notes'] ?? null,
             ]);
-
             Log::info('Attendance processed successfully', [
                 'submission_id' => $submission->id,
                 'student_id' => $submission->student_id,
-                'session_id' => $submission->presence_session_id
+                'session_id' => $submission->presence_session_id,
             ]);
-
         } catch (Exception $e) {
-            Log::error('Failed to process attendance: ' . $e->getMessage(), [
+            Log::error('Failed to process attendance: '.$e->getMessage(), [
                 'attendance_data' => $this->attendanceData,
                 'attempt' => $this->attempts(),
-                'error' => $e->getTraceAsString()
+                'error' => $e->getTraceAsString(),
             ]);
-            
-            throw $e; // Re-throw untuk retry mechanism
+            throw $e;
         }
     }
 
@@ -92,10 +85,8 @@ class ProcessAttendanceSubmission implements ShouldQueue
         Log::error('Attendance job failed permanently', [
             'attendance_data' => $this->attendanceData,
             'error' => $exception->getMessage(),
-            'attempts' => $this->attempts()
+            'attempts' => $this->attempts(),
         ]);
-
-        // Bisa tambahkan notifikasi ke admin atau email alert
     }
 
     /**
@@ -104,10 +95,11 @@ class ProcessAttendanceSubmission implements ShouldQueue
     public function tags(): array
     {
         $studentId = $this->attendanceData['student_id'] ?? $this->attendanceData['user_id'];
+
         return [
             'attendance',
-            'student:' . $studentId,
-            'session:' . $this->attendanceData['presence_session_id']
+            'student:'.$studentId,
+            'session:'.$this->attendanceData['presence_session_id'],
         ];
     }
 }

@@ -3,16 +3,15 @@
 namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromArray;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class AttendanceTemplateExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
+class AttendanceTemplateExport implements FromArray, WithColumnWidths, WithHeadings, WithStyles
 {
     public function array(): array
     {
-        // Data contoh untuk template import peserta
         return [
             ['Khansa Salma Nabilah', '26442187', '089666087221', 'Ekonomi', 'Akuntansi'],
             ['Nafisah Khoirunnisa', '26340699', '085746676786', 'Keguruan dan Ilmu Pendidikan', 'Pendidikan Guru Pendidikan Anak Usia Dini'],
@@ -29,7 +28,7 @@ class AttendanceTemplateExport implements FromArray, WithHeadings, WithStyles, W
             'nim_peserta',
             'no_telp_wa',
             'fakultas',
-            'program_studi'
+            'program_studi',
         ];
     }
 
@@ -39,12 +38,12 @@ class AttendanceTemplateExport implements FromArray, WithHeadings, WithStyles, W
             1 => [
                 'font' => [
                     'bold' => true,
-                    'color' => ['argb' => 'FFFFFF']
+                    'color' => ['argb' => 'FFFFFF'],
                 ],
                 'fill' => [
                     'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                    'startColor' => ['argb' => '2563EB']
-                ]
+                    'startColor' => ['argb' => '2563EB'],
+                ],
             ],
         ];
     }
@@ -52,11 +51,11 @@ class AttendanceTemplateExport implements FromArray, WithHeadings, WithStyles, W
     public function columnWidths(): array
     {
         return [
-            'A' => 30, // Nama
-            'B' => 18, // NIM
-            'C' => 20, // No. WA / Telp
-            'D' => 35, // Fakultas
-            'E' => 35, // Program Studi
+            'A' => 30,
+            'B' => 18,
+            'C' => 20,
+            'D' => 35,
+            'E' => 35,
         ];
     }
 }

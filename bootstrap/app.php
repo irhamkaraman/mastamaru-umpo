@@ -13,12 +13,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'mentor.auth' => \App\Http\Middleware\MentorAuth::class,
+            'mentor.auth' => App\Http\Middleware\MentorAuth::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Handle 419 CSRF Token Mismatch Error
-        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, $request) {
+        $exceptions->render(function (Symfony\Component\HttpKernel\Exception\HttpException $e, $request) {
             if ($e->getStatusCode() === 419) {
                 return response()->view('errors.419', [], 419);
             }

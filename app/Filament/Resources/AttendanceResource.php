@@ -2,18 +2,19 @@
 
 namespace App\Filament\Resources;
 
+use App\Exports\AttendanceDataExport;
+use App\Exports\AttendanceTemplateExport;
 use App\Filament\Resources\AttendanceResource\Pages;
-use App\Filament\Resources\AttendanceResource\RelationManagers;
+use App\Imports\AttendanceImport;
 use App\Models\Attendance;
+use App\Models\CertificateTemplate;
 use App\Models\Group;
 use App\Models\Mentor;
-use App\Models\CertificateTemplate;
-use App\Imports\AttendanceImport;
-use App\Exports\AttendanceTemplateExport;
-use App\Exports\AttendanceDataExport;
 use App\Services\WordCertificateService;
+use Exception;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\BulkActionGroup;
@@ -21,12 +22,7 @@ use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Table;
-use Filament\Notifications\Notification;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Maatwebsite\Excel\Facades\Excel;
 
 class AttendanceResource extends Resource
@@ -55,12 +51,13 @@ class AttendanceResource extends Resource
                     ->label('Kelompok')
                     ->searchable()
                     ->reactive()
-                    ->afterStateUpdated(fn(callable $set) => $set('mentor_id', null))
+                    ->afterStateUpdated(fn (callable $set) => $set('mentor_id', null))
                     ->options(function () {
                         $groups = Group::all();
                         if ($groups->isEmpty()) {
-                            throw new \Exception('Tidak ada kelompok yang tersedia. Silakan buat kelompok terlebih dahulu.');
+                            throw new Exception('Tidak ada kelompok yang tersedia. Silakan buat kelompok terlebih dahulu.');
                         }
+
                         return $groups->pluck('name', 'id');
                     }),
                 Forms\Components\Select::make('mentor_id')
@@ -76,10 +73,10 @@ class AttendanceResource extends Resource
                         } else {
                             $mentors = Mentor::all();
                         }
-
                         if ($mentors->isEmpty()) {
                             return [];
                         }
+
                         return $mentors->pluck('name', 'id');
                     }),
                 Forms\Components\TextInput::make('name')
@@ -109,7 +106,7 @@ class AttendanceResource extends Resource
                             ->label('Nama Fakultas')
                             ->required()
                             ->maxLength(255)
-                            ->placeholder('Masukkan nama fakultas baru')
+                            ->placeholder('Masukkan nama fakultas baru'),
                     ])
                     ->createOptionAction(function (Forms\Components\Actions\Action $action) {
                         return $action
@@ -176,76 +173,73 @@ class AttendanceResource extends Resource
             ]);
     }
 
-    /**
-     * @return Table
-     */
     public static function table(Table $table): Table
     {
-        /** @var array<int, \Filament\Tables\Columns\Column> $columns */
+        /** @var array<int, Tables\Columns\Column> $columns */
         $columns = [
             Tables\Columns\TextColumn::make('name')
-                    ->searchable()
-                    ->sortable()
-                    ->label('Nama Peserta'),
-                Tables\Columns\TextColumn::make('student_id')
-                    ->searchable()
-                    ->sortable()
-                    ->label('NIM'),
-                Tables\Columns\TextColumn::make('faculty')
-                    ->searchable()
-                    ->sortable()
-                    ->label('Fakultas')
-                    ->placeholder('Tidak ada fakultas'),
-                Tables\Columns\TextColumn::make('study_program')
-                    ->searchable()
-                    ->sortable()
-                    ->label('Program Studi')
-                    ->placeholder('Tidak ada program studi'),
-                Tables\Columns\TextColumn::make('phone_number')
-                    ->searchable()
-                    ->label('No. WA / Telp')
-                    ->placeholder('-'),
-                Tables\Columns\TextColumn::make('group.name')
-                    ->sortable()
-                    ->searchable()
-                    ->label('Nama Kelompok'),
-                Tables\Columns\TextColumn::make('mentor.name')
-                    ->sortable()
-                    ->searchable()
-                    ->label('Nama Pendamping'),
-                Tables\Columns\TextColumn::make('status')
-                    ->label('Status')
-                    ->badge()
-                    ->color(fn (?string $state): ?string => match ($state) {
-                        'lulus' => 'success',
-                        'gagal' => 'danger',
-                        default => null,
-                    })
-                    ->formatStateUsing(fn (?string $state): ?string => match ($state) {
-                        'lulus' => 'LULUS',
-                        'gagal' => 'GAGAL',
-                        default => null,
-                    })
-                    ->icon(fn (Attendance $record) => (!empty($record->certificate_file) && $record->hasCertificate()) ? 'heroicon-s-document' : null)
-                    ->iconPosition('after')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('unique_code')
-                    ->searchable()
-                    ->sortable()
-                    ->label('Kode Unik')
-                    ->placeholder('Tidak ada kode unik'),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->label('Dibuat Pada'),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->label('Diperbarui Pada'),
-            ];
+                ->searchable()
+                ->sortable()
+                ->label('Nama Peserta'),
+            Tables\Columns\TextColumn::make('student_id')
+                ->searchable()
+                ->sortable()
+                ->label('NIM'),
+            Tables\Columns\TextColumn::make('faculty')
+                ->searchable()
+                ->sortable()
+                ->label('Fakultas')
+                ->placeholder('Tidak ada fakultas'),
+            Tables\Columns\TextColumn::make('study_program')
+                ->searchable()
+                ->sortable()
+                ->label('Program Studi')
+                ->placeholder('Tidak ada program studi'),
+            Tables\Columns\TextColumn::make('phone_number')
+                ->searchable()
+                ->label('No. WA / Telp')
+                ->placeholder('-'),
+            Tables\Columns\TextColumn::make('group.name')
+                ->sortable()
+                ->searchable()
+                ->label('Nama Kelompok'),
+            Tables\Columns\TextColumn::make('mentor.name')
+                ->sortable()
+                ->searchable()
+                ->label('Nama Pendamping'),
+            Tables\Columns\TextColumn::make('status')
+                ->label('Status')
+                ->badge()
+                ->color(fn (?string $state): ?string => match ($state) {
+                    'lulus' => 'success',
+                    'gagal' => 'danger',
+                    default => null,
+                })
+                ->formatStateUsing(fn (?string $state): ?string => match ($state) {
+                    'lulus' => 'LULUS',
+                    'gagal' => 'GAGAL',
+                    default => null,
+                })
+                ->icon(fn (Attendance $record) => (! empty($record->certificate_file) && $record->hasCertificate()) ? 'heroicon-s-document' : null)
+                ->iconPosition('after')
+                ->searchable()
+                ->sortable(),
+            Tables\Columns\TextColumn::make('unique_code')
+                ->searchable()
+                ->sortable()
+                ->label('Kode Unik')
+                ->placeholder('Tidak ada kode unik'),
+            Tables\Columns\TextColumn::make('created_at')
+                ->dateTime()
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true)
+                ->label('Dibuat Pada'),
+            Tables\Columns\TextColumn::make('updated_at')
+                ->dateTime()
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true)
+                ->label('Diperbarui Pada'),
+        ];
 
         return $table
             ->columns($columns)
@@ -298,37 +292,30 @@ class AttendanceResource extends Resource
                             ->orWhereNull('mentor_id')
                             ->inRandomOrder()
                             ->get();
-                        
                         if ($unassignedPeserta->isEmpty()) {
                             Notification::make()->title('Info')->body('Semua peserta saat ini sudah memiliki kelompok & pendamping!')->warning()->send();
+
                             return;
                         }
-
                         $mentors = Mentor::with('group')->get();
-                        
                         if ($mentors->isEmpty()) {
                             Notification::make()->title('Gagal')->body('Belum ada data Pendamping! Buat pendamping terlebih dahulu.')->danger()->send();
+
                             return;
                         }
-
                         $mentorCount = $mentors->count();
                         $index = 0;
-
                         foreach ($unassignedPeserta as $peserta) {
                             $mentor = $mentors[$index % $mentorCount];
-                            
                             $peserta->update([
                                 'group_id' => $mentor->group_id,
                                 'mentor_id' => $mentor->id,
                             ]);
-                            
                             $index++;
                         }
-                        
-                        Notification::make()->title('Sukses!')->body('Berhasil membagikan ' . $unassignedPeserta->count() . ' peserta ke kelompok secara merata dan acak.')->success()->send();
+                        Notification::make()->title('Sukses!')->body('Berhasil membagikan '.$unassignedPeserta->count().' peserta ke kelompok secara merata dan acak.')->success()->send();
                     })
                     ->tooltip('Bagikan peserta yang belum punya kelompok secara otomatis'),
-                    
                 Tables\Actions\Action::make('export_csv')
                     ->label('Export CSV')
                     ->icon('heroicon-o-document-arrow-down')
@@ -338,13 +325,13 @@ class AttendanceResource extends Resource
                         try {
                             ini_set('memory_limit', '2048M');
                             ini_set('max_execution_time', 600);
-
                             $filters = $livewire->tableFilters ?? [];
-                            return Excel::download(new AttendanceDataExport($filters), 'data-peserta-' . date('Y-m-d-H-i-s') . '.csv', \Maatwebsite\Excel\Excel::CSV);
-                        } catch (\Exception $e) {
+
+                            return Excel::download(new AttendanceDataExport($filters), 'data-peserta-'.date('Y-m-d-H-i-s').'.csv', \Maatwebsite\Excel\Excel::CSV);
+                        } catch (Exception $e) {
                             Notification::make()
                                 ->title('Export Gagal')
-                                ->body('Terjadi kesalahan saat export: ' . $e->getMessage())
+                                ->body('Terjadi kesalahan saat export: '.$e->getMessage())
                                 ->danger()
                                 ->send();
 
@@ -361,15 +348,14 @@ class AttendanceResource extends Resource
                         try {
                             ini_set('memory_limit', '2048M');
                             ini_set('max_execution_time', 600);
-
                             $filters = $livewire->tableFilters ?? [];
-                            $filename = 'data-peserta-' . date('Y-m-d-H-i-s') . '.xlsx';
+                            $filename = 'data-peserta-'.date('Y-m-d-H-i-s').'.xlsx';
 
                             return Excel::download(new AttendanceDataExport($filters), $filename);
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             Notification::make()
                                 ->title('Export Gagal')
-                                ->body('Terjadi kesalahan saat export: ' . $e->getMessage())
+                                ->body('Terjadi kesalahan saat export: '.$e->getMessage())
                                 ->danger()
                                 ->send();
 
@@ -397,20 +383,17 @@ class AttendanceResource extends Resource
                             ->required()
                             ->disk('public')
                             ->directory('imports')
-                            ->helperText('Upload file Excel dengan format .xlsx atau .xls.')
+                            ->helperText('Upload file Excel dengan format .xlsx atau .xls.'),
                     ])
                     ->action(function (array $data) {
                         try {
-                            $filePath = storage_path('app/public/' . $data['file']);
-                            $import = new AttendanceImport();
-
+                            $filePath = storage_path('app/public/'.$data['file']);
+                            $import = new AttendanceImport;
                             Excel::import($import, $filePath);
-
                             $importedCount = $import->getImportedCount();
                             $skippedCount = $import->getSkippedCount();
                             $failures = $import->failures();
                             $errors = $import->errors();
-
                             if ($importedCount > 0) {
                                 if ($skippedCount > 0) {
                                     Notification::make()
@@ -438,31 +421,29 @@ class AttendanceResource extends Resource
                                     ->danger()
                                     ->send();
                             }
-
-                            if (!empty($failures) || !empty($errors)) {
+                            if (! empty($failures) || ! empty($errors)) {
                                 $errorMessages = [];
                                 foreach ($failures as $failure) {
-                                    $errorMessages[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
+                                    $errorMessages[] = "Baris {$failure->row()}: ".implode(', ', $failure->errors());
                                 }
                                 foreach ($errors as $error) {
                                     $errorMessages[] = $error;
                                 }
-
                                 Notification::make()
                                     ->title('Detail Error')
                                     ->body(implode('\n', array_slice($errorMessages, 0, 5)))
                                     ->danger()
                                     ->send();
                             }
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             Notification::make()
                                 ->title('Import Gagal')
-                                ->body('Terjadi kesalahan: ' . $e->getMessage())
+                                ->body('Terjadi kesalahan: '.$e->getMessage())
                                 ->danger()
                                 ->send();
                         }
                     })
-                    ->modalWidth('md')
+                    ->modalWidth('md'),
             ])
             ->actions([
                 Tables\Actions\Action::make('point_history')
@@ -479,7 +460,7 @@ class AttendanceResource extends Resource
                     ->modalDescription('Peserta akan ditandai Lulus. Gunakan tombol "Cetak Sertifikat" untuk mengunduh sertifikatnya.')
                     ->action(function (Attendance $record) {
                         $record->update(['status' => 'lulus']);
-                        \Illuminate\Support\Facades\Cache::forget('student_data_' . $record->student_id);
+                        \Illuminate\Support\Facades\Cache::forget('student_data_'.$record->student_id);
                         Notification::make()
                             ->title('Peserta Ditandai Lulus')
                             ->body('Gunakan tombol Cetak Sertifikat untuk mengunduh sertifikat peserta.')
@@ -490,37 +471,35 @@ class AttendanceResource extends Resource
                     ->label('Cetak')
                     ->icon('heroicon-o-printer')
                     ->color('info')
-                    ->visible(fn (Attendance $record) => in_array($record->status, ['lulus', 'gagal']) && !( !empty($record->certificate_file) && $record->hasCertificate() ))
+                    ->visible(fn (Attendance $record) => in_array($record->status, ['lulus', 'gagal']) && ! (! empty($record->certificate_file) && $record->hasCertificate()))
                     ->action(function (Attendance $record) {
                         try {
                             $status = $record->status ?? 'gagal';
                             $template = CertificateTemplate::getActiveFor($status) ?? CertificateTemplate::getActiveFor('semua');
-
-                            if (!$template) {
+                            if (! $template) {
                                 Notification::make()
                                     ->title('Template Tidak Ditemukan')
                                     ->body("Tidak ada template sertifikat aktif untuk status '{$status}'.")
                                     ->warning()
                                     ->send();
+
                                 return;
                             }
-
                             $service = app(WordCertificateService::class);
                             $filePath = $service->generate($record, $template);
-
                             Notification::make()
                                 ->title('Sertifikat Berhasil Dibuat')
-                                ->body('File sertifikat untuk ' . $record->name . ' sedang diunduh.')
+                                ->body('File sertifikat untuk '.$record->name.' sedang diunduh.')
                                 ->success()
                                 ->send();
-
                             $slugName = Str::slug($record->name, '_');
+
                             return response()->download(
                                 $filePath,
                                 "sertifikat_{$record->student_id}_{$slugName}.pdf",
                                 ['Content-Type' => 'application/pdf']
                             );
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             Notification::make()
                                 ->title('Gagal Membuat Sertifikat')
                                 ->body($e->getMessage())
@@ -532,10 +511,11 @@ class AttendanceResource extends Resource
                     ->label('Unduh Sertifikat')
                     ->icon('heroicon-o-arrow-down-on-square')
                     ->color('success')
-                    ->visible(fn (Attendance $record) => in_array($record->status, ['lulus', 'gagal']) && !empty($record->certificate_file) && $record->hasCertificate())
+                    ->visible(fn (Attendance $record) => in_array($record->status, ['lulus', 'gagal']) && ! empty($record->certificate_file) && $record->hasCertificate())
                     ->action(function (Attendance $record) {
-                        $filePath = storage_path('app/public/' . $record->certificate_file);
+                        $filePath = storage_path('app/public/'.$record->certificate_file);
                         $slugName = Str::slug($record->name, '_');
+
                         return response()->download(
                             $filePath,
                             "sertifikat_{$record->student_id}_{$slugName}.pdf",
@@ -550,7 +530,7 @@ class AttendanceResource extends Resource
                     ->modalHeading('Tandai Tidak Lulus')
                     ->action(function (Attendance $record) {
                         $record->update(['status' => 'gagal']);
-                        \Illuminate\Support\Facades\Cache::forget('student_data_' . $record->student_id);
+                        \Illuminate\Support\Facades\Cache::forget('student_data_'.$record->student_id);
                         Notification::make()
                             ->title('Peserta Ditandai Tidak Lulus')
                             ->success()
@@ -572,7 +552,7 @@ class AttendanceResource extends Resource
                             $count = $records->count();
                             foreach ($records as $record) {
                                 $record->update(['status' => 'lulus']);
-                                \Illuminate\Support\Facades\Cache::forget('student_data_' . $record->student_id);
+                                \Illuminate\Support\Facades\Cache::forget('student_data_'.$record->student_id);
                             }
                             Notification::make()
                                 ->title('Selesai')
@@ -591,20 +571,18 @@ class AttendanceResource extends Resource
                             try {
                                 $service = app(WordCertificateService::class);
                                 $zipPath = $service->generateBulk($records->load(['group', 'mentor', 'assessment']));
-
                                 Notification::make()
                                     ->title('ZIP Sertifikat Siap')
-                                    ->body($records->count() . ' sertifikat berhasil digenerate.')
+                                    ->body($records->count().' sertifikat berhasil digenerate.')
                                     ->success()
                                     ->send();
 
                                 return response()->download(
                                     $zipPath,
-                                    'sertifikat_bulk_' . date('Ymd_His') . '.zip',
+                                    'sertifikat_bulk_'.date('Ymd_His').'.zip',
                                     ['Content-Type' => 'application/zip']
                                 )->deleteFileAfterSend(true);
-
-                            } catch (\Exception $e) {
+                            } catch (Exception $e) {
                                 Notification::make()
                                     ->title('Gagal Generate ZIP Sertifikat')
                                     ->body($e->getMessage())
@@ -623,7 +601,7 @@ class AttendanceResource extends Resource
                             $count = $records->count();
                             foreach ($records as $record) {
                                 $record->update(['status' => 'gagal']);
-                                \Illuminate\Support\Facades\Cache::forget('student_data_' . $record->student_id);
+                                \Illuminate\Support\Facades\Cache::forget('student_data_'.$record->student_id);
                             }
                             Notification::make()
                                 ->title('Selesai')
@@ -642,7 +620,7 @@ class AttendanceResource extends Resource
                             $certDir = storage_path('app/public/certificates');
                             $deletedCount = 0;
                             foreach ($records as $record) {
-                                $files = glob($certDir . '/' . $record->student_id . '_sertifikat_*.pdf');
+                                $files = glob($certDir.'/'.$record->student_id.'_sertifikat_*.pdf');
                                 if (is_array($files) && count($files) > 0) {
                                     foreach ($files as $file) {
                                         @unlink($file);
@@ -668,7 +646,7 @@ class AttendanceResource extends Resource
                             foreach ($records as $record) {
                                 if ($record->status === 'gagal') {
                                     $record->update(['status' => 'proses']);
-                                    \Illuminate\Support\Facades\Cache::forget('student_data_' . $record->student_id);
+                                    \Illuminate\Support\Facades\Cache::forget('student_data_'.$record->student_id);
                                     $count++;
                                 }
                             }
@@ -686,7 +664,6 @@ class AttendanceResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
         ];
     }
 

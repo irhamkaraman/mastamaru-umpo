@@ -31,7 +31,6 @@ class EditRole extends EditRecord
             ->values()
             ->flatten()
             ->unique();
-
         if (Arr::has($data, Utils::getTenantModelForeignKey())) {
             return Arr::only($data, ['name', 'guard_name', Utils::getTenantModelForeignKey()]);
         }
@@ -48,7 +47,6 @@ class EditRole extends EditRecord
                 'guard_name' => $this->data['guard_name'],
             ]));
         });
-
         $this->record->syncPermissions($permissionModels);
     }
 }

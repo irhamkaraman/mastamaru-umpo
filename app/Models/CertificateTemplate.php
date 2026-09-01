@@ -31,7 +31,7 @@ class CertificateTemplate extends Model
         return static::where('is_active', true)
             ->where(function ($q) use ($status) {
                 $q->where('applies_to', 'semua')
-                  ->orWhere('applies_to', $status);
+                    ->orWhere('applies_to', $status);
             })
             ->latest()
             ->first();
@@ -44,6 +44,7 @@ class CertificateTemplate extends Model
     {
         $this->increment('current_sequence');
         $seq = str_pad($this->current_sequence, 4, '0', STR_PAD_LEFT);
+
         return str_replace('{seq}', $seq, $this->number_format);
     }
 }

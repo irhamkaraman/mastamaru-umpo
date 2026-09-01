@@ -2,23 +2,21 @@
 
 namespace App\Filament\Resources;
 
+use App\Exports\MentorDataExport;
+use App\Exports\MentorTemplateExport;
 use App\Filament\Resources\MentorResource\Pages;
 use App\Filament\Resources\MentorResource\RelationManagers;
-use App\Models\Mentor;
-use App\Models\Group;
 use App\Imports\MentorImport;
-use App\Exports\MentorTemplateExport;
-use App\Exports\MentorDataExport;
+use App\Models\Group;
+use App\Models\Mentor;
+use Exception;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Notifications\Notification;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
 class MentorResource extends Resource
@@ -49,8 +47,9 @@ class MentorResource extends Resource
                     ->options(function () {
                         $groups = Group::all();
                         if ($groups->isEmpty()) {
-                            throw new \Exception('Tidak ada kelompok yang tersedia. Silakan buat kelompok terlebih dahulu.');
+                            throw new Exception('Tidak ada kelompok yang tersedia. Silakan buat kelompok terlebih dahulu.');
                         }
+
                         return $groups->pluck('name', 'id');
                     }),
                 Forms\Components\TextInput::make('name')
@@ -76,6 +75,7 @@ class MentorResource extends Resource
                         if (filled($state)) {
                             $set('raw_password', $state);
                         }
+
                         return Hash::make($state);
                     })
                     ->dehydrated(fn ($state) => filled($state))
@@ -105,20 +105,19 @@ class MentorResource extends Resource
                     ->label('Export Excel')
                     ->icon('heroicon-o-document-arrow-down')
                     ->color('success')
-                    ->visible(fn () => (auth()->user()?->can('export', \App\Models\Mentor::class) ?? false) && Group::exists()) /** @phpstan-ignore-line */
+                    ->visible(fn () => (auth()->user()?->can('export', Mentor::class) ?? false) && Group::exists()) /** @phpstan-ignore-line */
                     ->action(function ($livewire) {
                         try {
                             ini_set('memory_limit', '2048M');
                             ini_set('max_execution_time', 600);
-
                             $filters = $livewire->tableFilters ?? [];
-                            $filename = 'data-pendamping-' . date('Y-m-d-H-i-s') . '.xlsx';
+                            $filename = 'data-pendamping-'.date('Y-m-d-H-i-s').'.xlsx';
 
                             return Excel::download(new MentorDataExport($filters), $filename);
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             Notification::make()
                                 ->title('Export Gagal')
-                                ->body('Terjadi kesalahan saat export: ' . $e->getMessage())
+                                ->body('Terjadi kesalahan saat export: '.$e->getMessage())
                                 ->danger()
                                 ->send();
 
@@ -130,7 +129,7 @@ class MentorResource extends Resource
                     ->label('Download Template')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->visible(fn () => (auth()->user()?->can('downloadTemplate', \App\Models\Mentor::class) ?? false) && Group::exists()) /** @phpstan-ignore-line */
+                    ->visible(fn () => (auth()->user()?->can('downloadTemplate', Mentor::class) ?? false) && Group::exists()) /** @phpstan-ignore-line */
                     ->action(function () {
                         return Excel::download(new MentorTemplateExport, 'template-pendamping.xlsx');
                     }),
@@ -138,7 +137,7 @@ class MentorResource extends Resource
                     ->label('Import Excel')
                     ->icon('heroicon-o-arrow-up-tray')
                     ->color('primary')
-                    ->visible(fn () => (auth()->user()?->can('import', \App\Models\Mentor::class) ?? false) && Group::exists()) /** @phpstan-ignore-line */
+                    ->visible(fn () => (auth()->user()?->can('import', Mentor::class) ?? false) && Group::exists()) /** @phpstan-ignore-line */
                     ->form([
                         Forms\Components\FileUpload::make('file')
                             ->label('File Excel')
@@ -146,25 +145,22 @@ class MentorResource extends Resource
                             ->required()
                             ->disk('public')
                             ->directory('imports')
-                            ->helperText('Upload file Excel dengan format: Nama Kelompok, Nama Pendamping, NIM, Nomor WhatsApp / Telp, Kata Sandi')
+                            ->helperText('Upload file Excel dengan format: Nama Kelompok, Nama Pendamping, NIM, Nomor WhatsApp / Telp, Kata Sandi'),
                     ])
                     ->action(function (array $data) {
                         try {
-                            $import = new MentorImport();
-                            Excel::import($import, storage_path('app/public/' . $data['file']));
-
+                            $import = new MentorImport;
+                            Excel::import($import, storage_path('app/public/'.$data['file']));
                             $importedCount = $import->getImportedCount();
                             $skippedCount = $import->getSkippedCount();
                             $failures = $import->failures();
                             $errors = $import->errors();
-
                             if ($importedCount > 0) {
                                 $message = "Berhasil mengimpor {$importedCount} pendamping.";
                                 if ($skippedCount > 0) {
                                     $message .= " {$skippedCount} data dilewati.";
                                 }
-
-                                if (!empty($failures) || !empty($errors)) {
+                                if (! empty($failures) || ! empty($errors)) {
                                     Notification::make()
                                         ->title('Import Selesai dengan Peringatan')
                                         ->body($message)
@@ -184,14 +180,14 @@ class MentorResource extends Resource
                                     ->danger()
                                     ->send();
                             }
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             Notification::make()
                                 ->title('Import Gagal')
-                                ->body('Terjadi kesalahan: ' . $e->getMessage())
+                                ->body('Terjadi kesalahan: '.$e->getMessage())
                                 ->danger()
                                 ->send();
                         }
-                    })
+                    }),
             ])
             ->columns([
                 Tables\Columns\TextColumn::make('name')
@@ -229,14 +225,13 @@ class MentorResource extends Resource
                     ->label('Diperbarui Pada'),
             ])
             ->filters([
-                // 
             ])
             ->actions([
                 Tables\Actions\Action::make('presence_log')
                     ->label('Log Presensi & Poin')
                     ->icon('heroicon-o-clipboard-document-list')
                     ->color('info')
-                    ->modalHeading(fn (Mentor $record) => 'Log Presensi yang Dicatat oleh Mentor: ' . $record->name . ' (' . $record->student_id . ')')
+                    ->modalHeading(fn (Mentor $record) => 'Log Presensi yang Dicatat oleh Mentor: '.$record->name.' ('.$record->student_id.')')
                     ->modalWidth('4xl')
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup')

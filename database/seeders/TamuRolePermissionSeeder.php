@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -16,16 +15,17 @@ class TamuRolePermissionSeeder extends Seeder
     {
         // Cari role tamu
         $tamuRole = Role::where('name', 'tamu')->first();
-        
-        if (!$tamuRole) {
+
+        if (! $tamuRole) {
             $this->command->error('Role tamu tidak ditemukan!');
+
             return;
         }
 
         // Permission yang TIDAK boleh dimiliki role tamu
         $forbiddenPermissions = [
             'create_attendance',
-            'update_attendance', 
+            'update_attendance',
             'delete_attendance',
             'delete_any_attendance',
             'export_attendance',

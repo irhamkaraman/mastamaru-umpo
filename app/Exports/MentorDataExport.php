@@ -3,16 +3,16 @@
 namespace App\Exports;
 
 use App\Models\Mentor;
+use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromQuery;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Maatwebsite\Excel\Concerns\Exportable;
 
-class MentorDataExport implements FromQuery, WithHeadings, ShouldAutoSize, WithMapping, WithChunkReading, WithStyles
+class MentorDataExport implements FromQuery, ShouldAutoSize, WithChunkReading, WithHeadings, WithMapping, WithStyles
 {
     use Exportable;
 
@@ -35,10 +35,9 @@ class MentorDataExport implements FromQuery, WithHeadings, ShouldAutoSize, WithM
                 'phone_number',
                 'group_id',
                 'raw_password',
-                'created_at'
+                'created_at',
             ]);
-
-        if (!empty($this->filters['group_id']['value'])) {
+        if (! empty($this->filters['group_id']['value'])) {
             $query->where('group_id', $this->filters['group_id']['value']);
         }
 
@@ -65,7 +64,7 @@ class MentorDataExport implements FromQuery, WithHeadings, ShouldAutoSize, WithM
             'No. WhatsApp / Telp',
             'Kelompok',
             'Jumlah Peserta Binaan',
-            'Kata Sandi Akun'
+            'Kata Sandi Akun',
         ];
     }
 

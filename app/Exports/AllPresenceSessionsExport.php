@@ -2,16 +2,15 @@
 
 namespace App\Exports;
 
-use App\Models\PresenceSession;
-use App\Models\AttendanceSubmission;
 use App\Models\Attendance;
+use App\Models\AttendanceSubmission;
+use App\Models\PresenceSession;
+use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\Exportable;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Illuminate\Support\Collection;
 
 class AllPresenceSessionsExport implements FromCollection, WithHeadings, WithMapping, WithStyles
 {
@@ -23,28 +22,21 @@ class AllPresenceSessionsExport implements FromCollection, WithHeadings, WithMap
     public function collection()
     {
         $allData = collect();
-        
-        // Ambil semua sesi presensi
         $sessions = PresenceSession::orderBy('created_at', 'desc')->get();
-        
         foreach ($sessions as $session) {
-            // Ambil semua peserta yang terdaftar
             $allStudents = Attendance::with(['group', 'mentor'])->get();
-            
             foreach ($allStudents as $student) {
-                // Cek apakah peserta sudah presensi di sesi ini
                 $submission = AttendanceSubmission::where('presence_session_id', $session->id)
                     ->where('student_id', $student->id)
                     ->first();
-                
                 $allData->push([
                     'session' => $session,
                     'student' => $student,
-                    'submission' => $submission
+                    'submission' => $submission,
                 ]);
             }
         }
-        
+
         return $allData;
     }
 
@@ -67,7 +59,7 @@ class AllPresenceSessionsExport implements FromCollection, WithHeadings, WithMap
             'Status Kehadiran',
             'Waktu Presensi',
             'Metode Presensi',
-            'Catatan'
+            'Catatan',
         ];
     }
 
@@ -79,7 +71,7 @@ class AllPresenceSessionsExport implements FromCollection, WithHeadings, WithMap
         $session = $row['session'];
         $student = $row['student'];
         $submission = $row['submission'];
-        
+
         return [
             $session->session_name,
             $session->session_code,
@@ -94,7 +86,7 @@ class AllPresenceSessionsExport implements FromCollection, WithHeadings, WithMap
             $submission ? $this->getStatusLabel($submission->status) : 'Tidak Hadir',
             $submission ? \Carbon\Carbon::parse($submission->submitted_at)->format('d/m/Y H:i:s') : '-',
             $submission ? $this->getMethodLabel($submission->submission_method) : '-',
-            $submission->notes ?? '-'
+            $submission->notes ?? '-',
         ];
     }
 
@@ -104,13 +96,12 @@ class AllPresenceSessionsExport implements FromCollection, WithHeadings, WithMap
     public function styles(Worksheet $sheet)
     {
         return [
-            // Style untuk header
             1 => [
                 'font' => ['bold' => true],
                 'fill' => [
                     'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => 'E3F2FD']
-                ]
+                    'startColor' => ['rgb' => 'E3F2FD'],
+                ],
             ],
         ];
     }

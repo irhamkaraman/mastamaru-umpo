@@ -2,27 +2,22 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
      */
-    public function register(): void
-    {
-        //
-    }
+    public function register(): void {}
 
     /**
      * Bootstrap any application services.
      */
     public function boot(): void
     {
-        // Fix for MySQL key length issue on older versions
         Schema::defaultStringLength(191);
-        
         \App\Models\AttendanceSubmission::observe(\App\Observers\AttendanceSubmissionObserver::class);
     }
 }

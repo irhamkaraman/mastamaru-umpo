@@ -3,9 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
-use BezhanSalleh\FilamentShield\Support\Utils;
+use Spatie\Permission\Models\Role;
 
 class FilamentShieldSeeder extends Seeder
 {
@@ -17,30 +16,30 @@ class FilamentShieldSeeder extends Seeder
         // Buat role super_admin jika belum ada
         $superAdminRole = Role::firstOrCreate([
             'name' => 'super_admin',
-            'guard_name' => 'web'
+            'guard_name' => 'web',
         ]);
 
         // Buat role tamu jika belum ada
         $tamuRole = Role::firstOrCreate([
             'name' => 'tamu',
-            'guard_name' => 'web'
+            'guard_name' => 'web',
         ]);
 
         // Generate permissions untuk semua resources yang ada
         $resourcePermissions = [
             'attendance',
-            'group', 
+            'group',
             'mentor',
             'user',
             'role',
-            'permission'
+            'permission',
         ];
 
         foreach ($resourcePermissions as $resource) {
             // Buat permissions untuk setiap resource
             $permissions = [
                 "view_any_{$resource}",
-                "view_{$resource}", 
+                "view_{$resource}",
                 "create_{$resource}",
                 "update_{$resource}",
                 "delete_{$resource}",
@@ -52,13 +51,13 @@ class FilamentShieldSeeder extends Seeder
                 "replicate_{$resource}",
                 "reorder_{$resource}",
                 "export_{$resource}",
-                "import_{$resource}"
+                "import_{$resource}",
             ];
 
             foreach ($permissions as $permission) {
                 Permission::firstOrCreate([
                     'name' => $permission,
-                    'guard_name' => 'web'
+                    'guard_name' => 'web',
                 ]);
             }
         }
@@ -74,13 +73,13 @@ class FilamentShieldSeeder extends Seeder
             'view_any_group',
             'view_group',
             'view_any_mentor',
-            'view_mentor'
+            'view_mentor',
         ];
 
         $tamuRole->syncPermissions($tamuPermissions);
 
         $this->command->info('Filament Shield roles dan permissions berhasil dibuat!');
-        $this->command->info('Role super_admin: ' . $superAdminRole->permissions->count() . ' permissions');
-        $this->command->info('Role tamu: ' . $tamuRole->permissions->count() . ' permissions');
+        $this->command->info('Role super_admin: '.$superAdminRole->permissions->count().' permissions');
+        $this->command->info('Role tamu: '.$tamuRole->permissions->count().' permissions');
     }
 }

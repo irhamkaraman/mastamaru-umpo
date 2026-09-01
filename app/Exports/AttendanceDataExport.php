@@ -3,16 +3,16 @@
 namespace App\Exports;
 
 use App\Models\Attendance;
+use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromQuery;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Maatwebsite\Excel\Concerns\Exportable;
 
-class AttendanceDataExport implements FromQuery, WithHeadings, ShouldAutoSize, WithMapping, WithChunkReading, WithStyles
+class AttendanceDataExport implements FromQuery, ShouldAutoSize, WithChunkReading, WithHeadings, WithMapping, WithStyles
 {
     use Exportable;
 
@@ -39,23 +39,18 @@ class AttendanceDataExport implements FromQuery, WithHeadings, ShouldAutoSize, W
                 'phone_number',
                 'status',
                 'group_id',
-                'mentor_id'
+                'mentor_id',
             ]);
-
-        // Terapkan filter jika ada
-        if (!empty($this->filters['group_id']['value'])) {
+        if (! empty($this->filters['group_id']['value'])) {
             $query->where('group_id', $this->filters['group_id']['value']);
         }
-
-        if (!empty($this->filters['mentor_id']['value'])) {
+        if (! empty($this->filters['mentor_id']['value'])) {
             $query->where('mentor_id', $this->filters['mentor_id']['value']);
         }
-
-        if (!empty($this->filters['faculty']['value'])) {
+        if (! empty($this->filters['faculty']['value'])) {
             $query->where('faculty', $this->filters['faculty']['value']);
         }
-
-        if (!empty($this->filters['study_program']['value'])) {
+        if (! empty($this->filters['study_program']['value'])) {
             $query->where('study_program', $this->filters['study_program']['value']);
         }
 
@@ -81,7 +76,7 @@ class AttendanceDataExport implements FromQuery, WithHeadings, ShouldAutoSize, W
             $attendance->group ? $attendance->group->name : 'Belum Ada Kelompok',
             $attendance->mentor ? $attendance->mentor->name : 'Belum Ada Pendamping',
             $totalPoints,
-            $attendanceScore . '%',
+            $attendanceScore.'%',
             $grade,
             $statusKelulusan,
         ];
@@ -103,7 +98,7 @@ class AttendanceDataExport implements FromQuery, WithHeadings, ShouldAutoSize, W
             'Total Poin Presensi (Maks 100)',
             'Nilai Kehadiran (%)',
             'Predikat (Grade)',
-            'Status Kelulusan'
+            'Status Kelulusan',
         ];
     }
 

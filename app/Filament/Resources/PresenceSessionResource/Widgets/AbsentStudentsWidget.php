@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\PresenceSessionResource\Widgets;
 
 use App\Models\Attendance;
-use App\Models\AttendanceSubmission;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -16,18 +15,16 @@ class AbsentStudentsWidget extends BaseWidget
 {
     protected static ?string $heading = 'Peserta yang Tidak Melakukan Presensi';
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public ?Model $record = null;
 
     protected function getTableQuery(): Builder
     {
         $presenceSessionId = $this->getPresenceSessionId();
-        
-        if (!$presenceSessionId) {
-            return Attendance::query()->whereRaw('1 = 0'); // Return empty result
+        if (! $presenceSessionId) {
+            return Attendance::query()->whereRaw('1 = 0');
         }
-        
         $submittedStudentIds = DB::table('attendance_submissions')
             ->where('presence_session_id', $presenceSessionId)
             ->pluck('student_id');
@@ -107,7 +104,7 @@ class AbsentStudentsWidget extends BaseWidget
             ->emptyStateHeading('Semua peserta sudah melakukan presensi')
             ->emptyStateDescription('Tidak ada peserta yang belum melakukan presensi untuk sesi ini.')
             ->emptyStateIcon('heroicon-o-check-circle');
-     }
+    }
 
     protected function getPresenceSessionId(): ?int
     {

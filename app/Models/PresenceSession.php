@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 class PresenceSession extends Model
 {
@@ -31,30 +31,25 @@ class PresenceSession extends Model
     protected static function boot()
     {
         parent::boot();
-        
         static::creating(function ($model) {
             if (empty($model->session_code)) {
-                // Generate 4 digit huruf besar tanpa angka
                 do {
                     $model->session_code = '';
                     for ($i = 0; $i < 4; $i++) {
-                        $model->session_code .= chr(rand(65, 90)); // A-Z
+                        $model->session_code .= chr(rand(65, 90));
                     }
                 } while (self::where('session_code', $model->session_code)->exists());
             }
             if (empty($model->slug)) {
-                $model->slug = Str::slug($model->session_name) . '-' . strtolower(Str::random(6));
+                $model->slug = Str::slug($model->session_name).'-'.strtolower(Str::random(6));
             }
         });
-        
         static::updating(function ($model) {
-            if ($model->isDirty('session_name') && !empty($model->session_name)) {
-                $model->slug = Str::slug($model->session_name) . '-' . strtolower(Str::random(6));
+            if ($model->isDirty('session_name') && ! empty($model->session_name)) {
+                $model->slug = Str::slug($model->session_name).'-'.strtolower(Str::random(6));
             }
         });
     }
-
-
 
     public function attendanceSubmissions(): HasMany
     {
@@ -66,7 +61,7 @@ class PresenceSession extends Model
         $now = Carbon::now();
         $startTime = Carbon::parse($this->start_time);
         $endTime = Carbon::parse($this->end_time);
-        
+
         return $this->is_active && $now->between($startTime, $endTime);
     }
 }

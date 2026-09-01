@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\CertificateTemplateResource\Pages;
 use App\Models\CertificateTemplate;
 use App\Services\WordCertificateService;
+use Exception;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -39,28 +40,24 @@ class CertificateTemplateResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->placeholder('Contoh: Sertifikat MASTAMARU 2026'),
-
                         Forms\Components\Textarea::make('description')
                             ->label('Keterangan')
                             ->rows(2)
                             ->placeholder('Deskripsi singkat template ini'),
-
                         Forms\Components\Select::make('applies_to')
                             ->label('Berlaku Untuk')
                             ->options([
-                                'lulus'  => 'Peserta Lulus',
-                                'gagal'  => 'Peserta Tidak Lulus',
-                                'semua'  => 'Semua Peserta',
+                                'lulus' => 'Peserta Lulus',
+                                'gagal' => 'Peserta Tidak Lulus',
+                                'semua' => 'Semua Peserta',
                             ])
                             ->default('lulus')
                             ->required(),
-
                         Forms\Components\Toggle::make('is_active')
                             ->label('Aktif')
                             ->helperText('Hanya satu template yang akan digunakan saat cetak. Template aktif dengan tanggal terbaru yang dipilih.')
                             ->default(false),
                     ])->columns(2),
-
                 Forms\Components\Section::make('File & Penomoran')
                     ->schema([
                         Forms\Components\FileUpload::make('word_file')
@@ -74,21 +71,18 @@ class CertificateTemplateResource extends Resource
                             ->directory('certificate_templates')
                             ->maxSize(10240)
                             ->helperText('Upload file .docx yang berisi placeholder seperti ${nama}, ${nim}, ${nomor_sertifikat}, dll.'),
-
                         Forms\Components\TextInput::make('number_format')
                             ->label('Format Nomor Sertifikat')
                             ->default('CERT/{seq}/MASTAMARU/2026')
                             ->required()
                             ->helperText('Gunakan {seq} sebagai pengganti nomor urut. Contoh: CERT/{seq}/UMPO/2026')
                             ->placeholder('CERT/{seq}/MASTAMARU/2026'),
-
                         Forms\Components\TextInput::make('current_sequence')
                             ->label('Nomor Urut Terakhir')
                             ->numeric()
                             ->default(0)
                             ->helperText('Reset ke 0 untuk memulai penomoran dari awal.'),
                     ])->columns(3),
-
                 Forms\Components\Section::make('Panduan Placeholder')
                     ->schema([
                         Forms\Components\Placeholder::make('placeholder_guide')
@@ -103,6 +97,7 @@ class CertificateTemplateResource extends Resource
                                         <td style='padding:6px 12px;color:#444;'>{$desc}</td>
                                     </tr>";
                                 }
+
                                 return new \Illuminate\Support\HtmlString("
                                     <div style='font-size:13px;'>
                                         <p style='margin-bottom:8px;color:#555;'>Gunakan placeholder berikut di dalam file Word Anda. PhpWord menggunakan format <code style='background:#f3f4f6;padding:2px 6px;border-radius:4px;font-weight:700;'>\${nama}</code> (kurung kurawal tunggal tanpa spasi):</p>
@@ -137,16 +132,16 @@ class CertificateTemplateResource extends Resource
                     ->label('Berlaku Untuk')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'lulus'  => 'success',
-                        'gagal'  => 'danger',
-                        'semua'  => 'info',
-                        default  => 'gray',
+                        'lulus' => 'success',
+                        'gagal' => 'danger',
+                        'semua' => 'info',
+                        default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'lulus'  => 'Peserta Lulus',
-                        'gagal'  => 'Peserta Tidak Lulus',
-                        'semua'  => 'Semua Peserta',
-                        default  => $state,
+                        'lulus' => 'Peserta Lulus',
+                        'gagal' => 'Peserta Tidak Lulus',
+                        'semua' => 'Semua Peserta',
+                        default => $state,
                     }),
                 Tables\Columns\TextColumn::make('number_format')
                     ->label('Format Nomor')
@@ -172,7 +167,7 @@ class CertificateTemplateResource extends Resource
                             return response()->download($path, 'template-sertifikat-mastamaru-2026.docx', [
                                 'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                             ]);
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             Notification::make()
                                 ->title('Gagal membuat template')
                                 ->body($e->getMessage())
@@ -188,7 +183,7 @@ class CertificateTemplateResource extends Resource
                     ->icon(fn (CertificateTemplate $record) => $record->is_active ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')
                     ->color(fn (CertificateTemplate $record) => $record->is_active ? 'warning' : 'success')
                     ->action(function (CertificateTemplate $record) {
-                        $record->update(['is_active' => !$record->is_active]);
+                        $record->update(['is_active' => ! $record->is_active]);
                         Notification::make()
                             ->title($record->is_active ? 'Template Diaktifkan' : 'Template Dinonaktifkan')
                             ->success()
@@ -203,16 +198,14 @@ class CertificateTemplateResource extends Resource
                     ->modalCancelActionLabel('Tutup')
                     ->modalContent(function (CertificateTemplate $record) {
                         $service = app(WordCertificateService::class);
-                        $path = storage_path('app/public/' . $record->word_file);
+                        $path = storage_path('app/public/'.$record->word_file);
                         $found = $service->detectPlaceholders($path);
                         $supported = WordCertificateService::getSupportedPlaceholders();
-
                         if (empty($found)) {
                             return new \Illuminate\Support\HtmlString(
                                 '<div style="padding:16px;color:#888;">Tidak ada placeholder yang terdeteksi, atau file belum dapat dibaca.</div>'
                             );
                         }
-
                         $rows = '';
                         foreach ($found as $ph) {
                             $desc = $supported[$ph] ?? 'Placeholder kustom';
@@ -242,9 +235,10 @@ class CertificateTemplateResource extends Resource
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
                     ->before(function (CertificateTemplate $record) {
-                        // Hapus file word saat template dihapus
-                        $path = storage_path('app/public/' . $record->word_file);
-                        if (file_exists($path)) @unlink($path);
+                        $path = storage_path('app/public/'.$record->word_file);
+                        if (file_exists($path)) {
+                            @unlink($path);
+                        }
                     }),
             ])
             ->bulkActions([
@@ -262,9 +256,9 @@ class CertificateTemplateResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListCertificateTemplates::route('/'),
+            'index' => Pages\ListCertificateTemplates::route('/'),
             'create' => Pages\CreateCertificateTemplate::route('/create'),
-            'edit'   => Pages\EditCertificateTemplate::route('/{record}/edit'),
+            'edit' => Pages\EditCertificateTemplate::route('/{record}/edit'),
         ];
     }
 }

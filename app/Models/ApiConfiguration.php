@@ -29,7 +29,7 @@ class ApiConfiguration extends Model
             'is_active' => 'boolean',
         ];
     }
-    
+
     public function dataRecords()
     {
         return $this->hasMany(ApiDataRecord::class);

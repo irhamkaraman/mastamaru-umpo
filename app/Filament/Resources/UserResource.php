@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\UserResource\Pages;
-use App\Filament\Resources\UserResource\RelationManagers;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -11,10 +10,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Hash;
-
-use Spatie\Permission\Models\Role;
 
 class UserResource extends Resource
 {
@@ -49,7 +45,6 @@ class UserResource extends Resource
                             ->nullable(),
                     ])
                     ->columns(2),
-
                 Forms\Components\Section::make('Security')
                     ->schema([
                         Forms\Components\TextInput::make('password')
@@ -61,7 +56,6 @@ class UserResource extends Resource
                             ->label('Password')
                             ->helperText('Leave blank to keep current password when editing'),
                     ]),
-
                 Forms\Components\Section::make('Roles & Permissions')
                     ->schema([
                         Forms\Components\Select::make('roles')
@@ -144,8 +138,6 @@ class UserResource extends Resource
     public static function getRelations(): array
     {
         return [
-            // Uncomment if you want to manage roles via relation manager
-            // RelationManagers\RolesRelationManager::class,
         ];
     }
 

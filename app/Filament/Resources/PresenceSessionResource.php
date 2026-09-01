@@ -2,21 +2,20 @@
 
 namespace App\Filament\Resources;
 
+use App\Exports\AllPresenceSessionsExport;
+use App\Exports\PresenceSessionExport;
 use App\Filament\Resources\PresenceSessionResource\Pages;
 use App\Filament\Resources\PresenceSessionResource\RelationManagers;
 use App\Models\PresenceSession;
-use App\Exports\PresenceSessionExport;
-use App\Exports\AllPresenceSessionsExport;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Maatwebsite\Excel\Facades\Excel;
-use Filament\Notifications\Notification;
 
 class PresenceSessionResource extends Resource
 {
@@ -100,11 +99,11 @@ class PresenceSessionResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => $query->withCount('attendanceSubmissions'))
+            ->modifyQueryUsing(fn (Builder $query) => $query->withCount('attendanceSubmissions'))
             ->columns([
                 Tables\Columns\TextColumn::make('day_number')
                     ->label('Hari')
-                    ->formatStateUsing(fn ($state) => 'Hari ' . $state)
+                    ->formatStateUsing(fn ($state) => 'Hari '.$state)
                     ->badge()
                     ->color('info')
                     ->sortable(),
@@ -159,7 +158,6 @@ class PresenceSessionResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
             ])
             ->headerActions([
                 Tables\Actions\Action::make('export_all')
@@ -168,15 +166,14 @@ class PresenceSessionResource extends Resource
                     ->color('primary')
                     ->visible(fn () => auth()->user()?->can('export', PresenceSession::class) ?? false) /** @phpstan-ignore-line */
                     ->action(function () {
-                        $fileName = 'semua-data-presensi-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
-
+                        $fileName = 'semua-data-presensi-'.now()->format('Y-m-d-H-i-s').'.xlsx';
                         Notification::make()
                             ->title('Export Semua Data Berhasil')
                             ->body('Semua data presensi dari semua sesi berhasil diexport dalam satu file Excel.')
                             ->success()
                             ->send();
 
-                        return Excel::download(new AllPresenceSessionsExport(), $fileName);
+                        return Excel::download(new AllPresenceSessionsExport, $fileName);
                     })
                     ->tooltip('Download semua data presensi dari semua sesi dalam satu file Excel'),
             ])
@@ -187,11 +184,10 @@ class PresenceSessionResource extends Resource
                     ->color('success')
                     ->visible(fn () => auth()->user()?->can('export', PresenceSession::class) ?? false) /** @phpstan-ignore-line */
                     ->action(function (PresenceSession $record) {
-                        $fileName = 'data-presensi-' . \Illuminate\Support\Str::slug($record->session_name) . '-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
-
+                        $fileName = 'data-presensi-'.\Illuminate\Support\Str::slug($record->session_name).'-'.now()->format('Y-m-d-H-i-s').'.xlsx';
                         Notification::make()
                             ->title('Export Berhasil')
-                            ->body('Data presensi untuk sesi "' . $record->session_name . '" berhasil diexport.')
+                            ->body('Data presensi untuk sesi "'.$record->session_name.'" berhasil diexport.')
                             ->success()
                             ->send();
 

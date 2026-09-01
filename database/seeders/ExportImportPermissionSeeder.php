@@ -53,7 +53,7 @@ class ExportImportPermissionSeeder extends Seeder
         foreach ($allPermissions as $permission) {
             Permission::firstOrCreate([
                 'name' => $permission,
-                'guard_name' => 'web'
+                'guard_name' => 'web',
             ]);
         }
 

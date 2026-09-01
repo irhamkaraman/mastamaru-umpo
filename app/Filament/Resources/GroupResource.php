@@ -2,22 +2,21 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\GroupResource\Pages;
-use App\Filament\Resources\GroupResource\RelationManagers;
-use App\Models\Group;
-use App\Imports\GroupImport;
-use App\Exports\GroupTemplateExport;
 use App\Exports\GroupDataExport;
+use App\Exports\GroupTemplateExport;
+use App\Filament\Resources\GroupResource\Pages;
+use App\Imports\GroupImport;
+use App\Models\Group;
+use Exception;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Notifications\Notification;
-use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 
 class GroupResource extends Resource
 {
@@ -45,12 +44,10 @@ class GroupResource extends Resource
                     ->maxLength(255)
                     ->live(onBlur: true)
                     ->afterStateUpdated(function (string $operation, $state, Forms\Set $set) {
-                        // Otomatis generate slug baik saat create maupun edit jika diubah
                         $slug = Str::slug($state);
                         $slug = preg_replace('/[^a-zA-Z0-9\-]/', '', $slug);
                         $slug = preg_replace('/-+/', '-', $slug);
                         $slug = trim($slug, '-');
-
                         $set('slug', $slug);
                     }),
                 Forms\Components\TextInput::make('slug')
@@ -119,6 +116,7 @@ class GroupResource extends Resource
                         } elseif ($data['value'] === 'without') {
                             return $query->doesntHave('mentors');
                         }
+
                         return $query;
                     }),
                 Tables\Filters\SelectFilter::make('has_students')
@@ -133,6 +131,7 @@ class GroupResource extends Resource
                         } elseif ($data['value'] === 'without') {
                             return $query->doesntHave('attendances');
                         }
+
                         return $query;
                     }),
             ])
@@ -155,15 +154,14 @@ class GroupResource extends Resource
                         try {
                             ini_set('memory_limit', '2048M');
                             ini_set('max_execution_time', 600);
-
                             $filters = $livewire->tableFilters ?? [];
-                            $filename = 'data-kelompok-' . date('Y-m-d-H-i-s') . '.xlsx';
+                            $filename = 'data-kelompok-'.date('Y-m-d-H-i-s').'.xlsx';
 
                             return Excel::download(new GroupDataExport($filters), $filename);
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             Notification::make()
                                 ->title('Export Gagal')
-                                ->body('Terjadi kesalahan: ' . $e->getMessage())
+                                ->body('Terjadi kesalahan: '.$e->getMessage())
                                 ->danger()
                                 ->send();
 
@@ -189,33 +187,28 @@ class GroupResource extends Resource
                             ->label('File Excel')
                             ->required()
                             ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'])
-                            ->maxSize(5120) // 5MB
+                            ->maxSize(5120)
                             ->helperText('Format file: .xlsx atau .xls (maksimal 5MB)')
                             ->disk('public')
                             ->directory('imports'),
                     ])
                     ->action(function (array $data) {
                         try {
-                            $import = new GroupImport();
-                            Excel::import($import, storage_path('app/public/' . $data['file']));
-                            
+                            $import = new GroupImport;
+                            Excel::import($import, storage_path('app/public/'.$data['file']));
                             $failures = $import->failures();
                             $errors = $import->errors();
-                            
                             if ($failures->isNotEmpty() || $errors->isNotEmpty()) {
                                 $errorMessages = [];
-                                
                                 foreach ($failures as $failure) {
-                                    $errorMessages[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
+                                    $errorMessages[] = "Baris {$failure->row()}: ".implode(', ', $failure->errors());
                                 }
-                                
                                 foreach ($errors as $error) {
                                     $errorMessages[] = $error;
                                 }
-                                
                                 Notification::make()
                                     ->title('Import Berhasil dengan Peringatan')
-                                    ->body('Beberapa data tidak dapat diimport: ' . implode('; ', array_slice($errorMessages, 0, 3)) . (count($errorMessages) > 3 ? '...' : ''))
+                                    ->body('Beberapa data tidak dapat diimport: '.implode('; ', array_slice($errorMessages, 0, 3)).(count($errorMessages) > 3 ? '...' : ''))
                                     ->warning()
                                     ->persistent()
                                     ->send();
@@ -226,10 +219,10 @@ class GroupResource extends Resource
                                     ->success()
                                     ->send();
                             }
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             Notification::make()
                                 ->title('Import Gagal')
-                                ->body('Terjadi kesalahan: ' . $e->getMessage())
+                                ->body('Terjadi kesalahan: '.$e->getMessage())
                                 ->danger()
                                 ->persistent()
                                 ->send();
@@ -245,7 +238,6 @@ class GroupResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
         ];
     }
 

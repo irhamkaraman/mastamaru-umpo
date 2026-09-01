@@ -2,13 +2,10 @@
 
 namespace App\Filament\Resources\MentorResource\RelationManagers;
 
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class AttendancesRelationManager extends RelationManager
 {
@@ -20,7 +17,6 @@ class AttendancesRelationManager extends RelationManager
     {
         return $form
             ->schema([
-                // Form tidak digunakan karena hanya menampilkan data
             ]);
     }
 
@@ -70,13 +66,10 @@ class AttendancesRelationManager extends RelationManager
                     }),
             ])
             ->headerActions([
-                // Tidak ada aksi header karena hanya menampilkan data
             ])
             ->actions([
-                // Tidak ada aksi karena pengelolaan data dilakukan di AttendanceResource
             ])
             ->bulkActions([
-                // Tidak ada bulk action karena hanya menampilkan data
             ]);
     }
 }

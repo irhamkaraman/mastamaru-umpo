@@ -29,23 +29,21 @@ class ScoreCalculationService
     {
         $status = strtolower(trim($status));
         $sessionType = strtolower(trim($sessionType));
-
         if ($sessionType === 'pulang' || $sessionType === 'materi') {
             return match ($status) {
                 'hadir' => 10,
                 'sakit' => 7,
-                'izin'  => 5,
+                'izin' => 5,
                 default => 0,
             };
         }
 
-        // Default: Sesi Datang
         return match ($status) {
-            'hadir'     => 10,
+            'hadir' => 10,
             'terlambat' => 8,
-            'sakit'     => 6,
-            'izin'      => 5,
-            default     => 0,
+            'sakit' => 6,
+            'izin' => 5,
+            default => 0,
         };
     }
 
@@ -71,39 +69,34 @@ class ScoreCalculationService
     public static function recalculateForStudent(int $studentDbId): ?StudentAssessment
     {
         $student = Attendance::find($studentDbId);
-        if (!$student) return null;
-
+        if (! $student) {
+            return null;
+        }
         $submissions = AttendanceSubmission::where('student_id', $studentDbId)->get();
         $totalPoints = (int) $submissions->sum('score_points');
-
-        // Menghitung maksimal poin kegiatan (jumlah sesi aktif * 10, atau minimal 100 poin jika 5 hari)
         $totalSessionsCount = PresenceSession::count();
         $maxPossiblePoints = $totalSessionsCount > 0 ? ($totalSessionsCount * 10) : 100;
         if ($maxPossiblePoints < 100) {
-            $maxPossiblePoints = 100; // Asumsi default 5 hari x 20 poin = 100
+            $maxPossiblePoints = 100;
         }
-
         $attendanceScore = $maxPossiblePoints > 0 ? round(($totalPoints / $maxPossiblePoints) * 100, 2) : 0;
-        if ($attendanceScore > 100) $attendanceScore = 100;
-
+        if ($attendanceScore > 100) {
+            $attendanceScore = 100;
+        }
         $assessment = StudentAssessment::firstOrNew(['student_id' => $studentDbId]);
-        $activityScore = $assessment->activity_score; // 1-10
-
-        // Jika ada nilai keaktifan, kita bisa bobotkan: Kehadiran (misal 70%) + Keaktifan (misal 30%) atau full kehadiran
+        $activityScore = $assessment->activity_score;
         if ($activityScore !== null && $activityScore > 0) {
-            $normalizedActivity = $activityScore * 10; // Skala 100
+            $normalizedActivity = $activityScore * 10;
             $finalScore = round(($attendanceScore * 0.7) + ($normalizedActivity * 0.3), 2);
         } else {
             $finalScore = $attendanceScore;
         }
-
         $gradeInfo = self::getGradeAndDescription($finalScore);
-
         $assessment->total_presence_points = $totalPoints;
         $assessment->attendance_score = $attendanceScore;
         $assessment->final_score = $finalScore;
         $assessment->grade = $gradeInfo['grade'];
-        $assessment->status = $student->status ?? 'proses'; 
+        $assessment->status = $student->status ?? 'proses';
         $assessment->save();
 
         return $assessment;
@@ -117,46 +110,33 @@ class ScoreCalculationService
         $sessions = PresenceSession::orderBy('day_number', 'asc')
             ->orderBy('session_type', 'asc')
             ->get();
-
         $submissions = AttendanceSubmission::where('student_id', $studentDbId)
             ->with(['presenceSession', 'mentor'])
             ->get()
             ->keyBy('presence_session_id');
-
         $days = [];
         $totalEarned = 0;
-
-        // Group sesi per hari
         $groupedByDay = $sessions->groupBy('day_number');
-
-        // Sesuaikan dengan hari yang benar-benar ada
         $maxDay = $groupedByDay->keys()->max() ?? 0;
-
         for ($day = 1; $day <= $maxDay; $day++) {
             $daySessions = $groupedByDay->get($day, collect());
-            
-            $datangSession = $daySessions->where('session_type', 'datang')->first(function($session) use ($submissions) {
+            $datangSession = $daySessions->where('session_type', 'datang')->first(function ($session) use ($submissions) {
                 return $submissions->has($session->id);
             }) ?? $daySessions->firstWhere('session_type', 'datang');
-
-            $pulangSession = $daySessions->where('session_type', 'pulang')->first(function($session) use ($submissions) {
+            $pulangSession = $daySessions->where('session_type', 'pulang')->first(function ($session) use ($submissions) {
                 return $submissions->has($session->id);
             }) ?? $daySessions->firstWhere('session_type', 'pulang');
-
-            $materiSession = $daySessions->where('session_type', 'materi')->first(function($session) use ($submissions) {
+            $materiSession = $daySessions->where('session_type', 'materi')->first(function ($session) use ($submissions) {
                 return $submissions->has($session->id);
             }) ?? $daySessions->firstWhere('session_type', 'materi');
-
             $datangSub = $datangSession ? ($submissions->get($datangSession->id)) : null;
             $pulangSub = $pulangSession ? ($submissions->get($pulangSession->id)) : null;
             $materiSub = $materiSession ? ($submissions->get($materiSession->id)) : null;
-
             $datangPoints = $datangSub ? $datangSub->score_points : 0;
             $pulangPoints = $pulangSub ? $pulangSub->score_points : 0;
             $materiPoints = $materiSub ? $materiSub->score_points : 0;
             $dayTotal = $datangPoints + $pulangPoints + $materiPoints;
             $totalEarned += $dayTotal;
-
             $days[$day] = [
                 'day' => $day,
                 'datang' => [
@@ -180,7 +160,7 @@ class ScoreCalculationService
                     'points' => $materiPoints,
                     'time' => $materiSub && $materiSub->submitted_at ? $materiSub->submitted_at->format('H:i:s') : null,
                 ],
-                'total' => $dayTotal
+                'total' => $dayTotal,
             ];
         }
 

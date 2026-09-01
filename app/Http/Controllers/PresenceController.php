@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Models\AttendanceSubmission;
 use App\Models\PresenceSession;
-use App\Models\StudentAssessment;
 use App\Services\ScoreCalculationService;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -18,21 +18,13 @@ class PresenceController extends Controller
         $session = PresenceSession::where('slug', $slug)->firstOrFail();
         $mentorId = session('mentor_id');
         $groupId = session('mentor_group_id');
-
-        // Ambil semua peserta dalam kelompok
         $allStudents = Attendance::where('group_id', $groupId)->get();
-
-        // Ambil peserta yang sudah presensi
         $presentStudents = AttendanceSubmission::where('presence_session_id', $session->id)
             ->where('group_id', $groupId)
             ->with('student')
             ->latest('submitted_at')
             ->get();
-
-        // Ambil ID peserta yang sudah presensi
         $presentStudentIds = $presentStudents->pluck('student_id')->toArray();
-
-        // Ambil peserta yang belum presensi menggunakan query database
         $absentStudents = Attendance::where('group_id', $groupId)
             ->whereNotIn('id', $presentStudentIds)
             ->get();
@@ -45,7 +37,7 @@ class PresenceController extends Controller
             'totalPresent' => $presentStudents->count(),
             'totalAbsent' => $absentStudents->count(),
             'totalStudents' => $allStudents->count(),
-            'slug' => $slug
+            'slug' => $slug,
         ]);
     }
 
@@ -53,15 +45,11 @@ class PresenceController extends Controller
     {
         try {
             $request->validate([
-                'current_time' => 'required|string'
+                'current_time' => 'required|string',
             ]);
-
             $session = PresenceSession::where('slug', $slug)->firstOrFail();
-
-            // Parse waktu dari JavaScript (format MySQL datetime)
             $currentTime = Carbon::createFromFormat('Y-m-d H:i:s', $request->input('current_time'));
             $endTime = Carbon::parse($session->end_time);
-
             $isSessionActive = $currentTime->lte($endTime);
 
             return response()->json([
@@ -69,10 +57,9 @@ class PresenceController extends Controller
                 'session_active' => $isSessionActive,
                 'session_end_time' => $endTime->format('Y-m-d H:i:s'),
                 'current_time' => $currentTime->format('Y-m-d H:i:s'),
-                'redirect_url' => $isSessionActive ? null : route('mentor.dashboard')
+                'redirect_url' => $isSessionActive ? null : route('mentor.dashboard'),
             ]);
-        } catch (\Exception $e) {
-            // Jika terjadi error (data tidak valid, session tidak ditemukan, dll)
+        } catch (Exception $e) {
             return redirect()->route('home.index')->with('error', 'Terjadi kesalahan saat memproses permintaan. Silakan coba lagi.');
         }
     }
@@ -82,21 +69,13 @@ class PresenceController extends Controller
         $session = PresenceSession::where('slug', $slug)->firstOrFail();
         $mentorId = session('mentor_id');
         $groupId = session('mentor_group_id');
-
-        // Ambil semua peserta dalam kelompok
         $allStudents = Attendance::where('group_id', $groupId)->get();
-
-        // Ambil peserta yang sudah presensi
         $presentStudents = AttendanceSubmission::where('presence_session_id', $session->id)
             ->where('group_id', $groupId)
             ->with('student')
             ->latest('submitted_at')
             ->get();
-
-        // Ambil ID peserta yang sudah presensi
         $presentStudentIds = $presentStudents->pluck('student_id')->toArray();
-
-        // Ambil peserta yang belum presensi menggunakan query database
         $absentStudents = Attendance::where('group_id', $groupId)
             ->whereNotIn('id', $presentStudentIds)
             ->get();
@@ -115,7 +94,7 @@ class PresenceController extends Controller
                         'submitted_at' => $submission->submitted_at->format('H:i:s'),
                         'submission_method' => $submission->submission_method,
                         'status' => $submission->status,
-                        'score_points' => $submission->score_points ?? 0
+                        'score_points' => $submission->score_points ?? 0,
                     ];
                 }),
                 'absentStudents' => $absentStudents->map(function ($student) {
@@ -125,13 +104,13 @@ class PresenceController extends Controller
                         'student_id' => $student->student_id,
                         'faculty' => $student->faculty ?? 'Tidak tersedia',
                         'study_program' => $student->study_program ?? 'Tidak tersedia',
-                        'unique_code' => $student->unique_code
+                        'unique_code' => $student->unique_code,
                     ];
                 }),
                 'totalPresent' => $presentStudents->count(),
                 'totalAbsent' => $absentStudents->count(),
-                'totalStudents' => $allStudents->count()
-            ]
+                'totalStudents' => $allStudents->count(),
+            ],
         ]);
     }
 
@@ -142,15 +121,13 @@ class PresenceController extends Controller
             ->where('group_id', $groupId)
             ->with(['assessment'])
             ->firstOrFail();
-
         $matrix = ScoreCalculationService::getStudentPresenceMatrix($student->id);
         $assessment = ScoreCalculationService::recalculateForStudent($student->id);
-
         $submissions = AttendanceSubmission::where('student_id', $student->id)
             ->with(['presenceSession', 'mentor'])
             ->orderBy('submitted_at', 'desc')
             ->get()
-            ->map(function($sub) {
+            ->map(function ($sub) {
                 return [
                     'session_name' => $sub->presenceSession->session_name ?? 'Sesi Presensi',
                     'session_type' => ucfirst($sub->presenceSession->session_type ?? 'datang'),
@@ -158,7 +135,7 @@ class PresenceController extends Controller
                     'status' => ucfirst($sub->status),
                     'score_points' => $sub->score_points,
                     'time' => $sub->submitted_at ? $sub->submitted_at->format('d/m/Y H:i:s') : '-',
-                    'mentor_name' => $sub->mentor->name ?? '-'
+                    'mentor_name' => $sub->mentor->name ?? '-',
                 ];
             });
 
@@ -180,8 +157,8 @@ class PresenceController extends Controller
                     'status' => strtoupper($assessment->status),
                 ],
                 'matrix' => $matrix['days'],
-                'history' => $submissions
-            ]
+                'history' => $submissions,
+            ],
         ]);
     }
 
@@ -189,53 +166,41 @@ class PresenceController extends Controller
     {
         $request->validate([
             'code' => 'required|string',
-            'device_timestamp' => 'required|string'
+            'device_timestamp' => 'required|string',
         ]);
-
         $session = PresenceSession::where('slug', $slug)->firstOrFail();
         $mentorId = session('mentor_id');
         $groupId = session('mentor_group_id');
         $rawCode = $request->input('code');
-
-        // Parse JSON data dari QR code
         try {
             $qrData = json_decode($rawCode, true);
-            if (!$qrData || !isset($qrData['student_id'])) {
+            if (! $qrData || ! isset($qrData['student_id'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Format QR code tidak valid. Data harus berupa JSON dengan field student_id.'
+                    'message' => 'Format QR code tidak valid. Data harus berupa JSON dengan field student_id.',
                 ], 400);
             }
             $studentId = $qrData['student_id'];
-        } catch (\Exception $e) {
-            // Jika bukan JSON, gunakan sebagai kode biasa
+        } catch (Exception $e) {
             $studentId = $rawCode;
         }
-
-        // Validasi waktu sesi menggunakan waktu dari perangkat
-        // Timestamp sudah dalam format MySQL datetime dari JavaScript
         $deviceTime = Carbon::createFromFormat('Y-m-d H:i:s', $request->input('device_timestamp'));
         $startTime = Carbon::parse($session->start_time);
         $endTime = Carbon::parse($session->end_time);
-
         if ($deviceTime->lt($startTime)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Sesi presensi belum dimulai. Waktu mulai: ' . $startTime->format('d/m/Y H:i')
+                'message' => 'Sesi presensi belum dimulai. Waktu mulai: '.$startTime->format('d/m/Y H:i'),
             ], 400);
         }
-
         if ($deviceTime->gt($endTime)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Sesi presensi sudah berakhir. Waktu berakhir: ' . $endTime->format('d/m/Y H:i')
+                'message' => 'Sesi presensi sudah berakhir. Waktu berakhir: '.$endTime->format('d/m/Y H:i'),
             ], 400);
         }
-
         try {
             DB::beginTransaction();
-
-            // Cari peserta berdasarkan student_id, kode unik atau raw_barcode
             $student = Attendance::where('group_id', $groupId)
                 ->where(function ($query) use ($studentId, $rawCode) {
                     $query->where('student_id', $studentId)
@@ -245,30 +210,26 @@ class PresenceController extends Controller
                         ->orWhere('raw_barcode', $rawCode);
                 })
                 ->first();
-
-            if (!$student) {
+            if (! $student) {
                 DB::rollBack();
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Kode tidak valid atau peserta tidak ditemukan dalam kelompok Anda.'
+                    'message' => 'Kode tidak valid atau peserta tidak ditemukan dalam kelompok Anda.',
                 ], 404);
             }
-
-            // Cek apakah sudah presensi
             $existingSubmission = AttendanceSubmission::where('presence_session_id', $session->id)
                 ->where('student_id', $student->id)
                 ->first();
-
             if ($existingSubmission) {
                 DB::rollBack();
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Peserta ' . $student->name . ' sudah melakukan presensi sebelumnya.',
-                    'type' => 'warning'
+                    'message' => 'Peserta '.$student->name.' sudah melakukan presensi sebelumnya.',
+                    'type' => 'warning',
                 ], 409);
             }
-
-            // Simpan data presensi langsung ke database
             $points = ScoreCalculationService::calculatePoints($session->session_type ?? 'datang', 'hadir');
             AttendanceSubmission::create([
                 'presence_session_id' => $session->id,
@@ -279,24 +240,23 @@ class PresenceController extends Controller
                 'status' => 'hadir',
                 'score_points' => $points,
                 'submission_method' => 'qr_scan',
-                'notes' => 'Presensi melalui scan QR code'
+                'notes' => 'Presensi melalui scan QR code',
             ]);
-
             ScoreCalculationService::recalculateForStudent($student->id);
-
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Presensi untuk ' . $student->name . ' berhasil disimpan (+' . $points . ' poin).',
+                'message' => 'Presensi untuk '.$student->name.' berhasil disimpan (+'.$points.' poin).',
                 'student_name' => $student->name,
-                'points' => $points
+                'points' => $points,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -306,77 +266,64 @@ class PresenceController extends Controller
         try {
             $request->validate([
                 'manual_code' => 'required|string|size:8',
-                'device_timestamp' => 'required|string'
+                'device_timestamp' => 'required|string',
             ], [
                 'manual_code.required' => 'Kode unik wajib diisi.',
-                'manual_code.size' => 'Kode unik harus 8 karakter.'
+                'manual_code.size' => 'Kode unik harus 8 karakter.',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->validator->errors()->first()
+                'message' => $e->validator->errors()->first(),
             ], 422);
         }
-
         $session = PresenceSession::where('slug', $slug)->firstOrFail();
         $mentorId = session('mentor_id');
         $groupId = session('mentor_group_id');
         $code = $request->input('manual_code');
-
-        // Validasi waktu sesi menggunakan waktu dari perangkat
-        // Timestamp sudah dalam format MySQL datetime dari JavaScript
         $deviceTime = Carbon::createFromFormat('Y-m-d H:i:s', $request->input('device_timestamp'));
         $startTime = Carbon::parse($session->start_time);
         $endTime = Carbon::parse($session->end_time);
-
         if ($deviceTime->lt($startTime)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Sesi presensi belum dimulai. Waktu mulai: ' . $startTime->format('d/m/Y H:i')
+                'message' => 'Sesi presensi belum dimulai. Waktu mulai: '.$startTime->format('d/m/Y H:i'),
             ], 400);
         }
-
         if ($deviceTime->gt($endTime)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Sesi presensi sudah berakhir. Waktu berakhir: ' . $endTime->format('d/m/Y H:i')
+                'message' => 'Sesi presensi sudah berakhir. Waktu berakhir: '.$endTime->format('d/m/Y H:i'),
             ], 400);
         }
-
         try {
             DB::beginTransaction();
-
-            // Cari peserta berdasarkan kode unik atau raw_barcode
             $student = Attendance::where('group_id', $groupId)
                 ->where(function ($query) use ($code) {
                     $query->where('unique_code', $code)
                         ->orWhere('raw_barcode', $code);
                 })
                 ->first();
-
-            if (!$student) {
+            if (! $student) {
                 DB::rollBack();
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Kode tidak valid atau peserta tidak ditemukan dalam kelompok Anda.'
+                    'message' => 'Kode tidak valid atau peserta tidak ditemukan dalam kelompok Anda.',
                 ], 404);
             }
-
-            // Cek apakah sudah presensi
             $existingSubmission = AttendanceSubmission::where('presence_session_id', $session->id)
                 ->where('student_id', $student->id)
                 ->first();
-
             if ($existingSubmission) {
                 DB::rollBack();
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Peserta ' . $student->name . ' sudah melakukan presensi sebelumnya.',
-                    'type' => 'warning'
+                    'message' => 'Peserta '.$student->name.' sudah melakukan presensi sebelumnya.',
+                    'type' => 'warning',
                 ], 409);
             }
-
-            // Simpan data presensi langsung ke database
             $points = ScoreCalculationService::calculatePoints($session->session_type ?? 'datang', 'hadir');
             AttendanceSubmission::create([
                 'presence_session_id' => $session->id,
@@ -387,24 +334,23 @@ class PresenceController extends Controller
                 'status' => 'hadir',
                 'score_points' => $points,
                 'submission_method' => 'manual',
-                'notes' => 'Presensi melalui input manual'
+                'notes' => 'Presensi melalui input manual',
             ]);
-
             ScoreCalculationService::recalculateForStudent($student->id);
-
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Presensi untuk ' . $student->name . ' berhasil disimpan (+' . $points . ' poin).',
+                'message' => 'Presensi untuk '.$student->name.' berhasil disimpan (+'.$points.' poin).',
                 'student_name' => $student->name,
-                'points' => $points
+                'points' => $points,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -415,62 +361,49 @@ class PresenceController extends Controller
             $request->validate([
                 'student_id' => 'required|integer|exists:attendances,id',
                 'status' => 'required|string|in:hadir,terlambat,izin,sakit',
-                'device_timestamp' => 'required|string'
+                'device_timestamp' => 'required|string',
             ]);
-
             $session = PresenceSession::where('slug', $slug)->firstOrFail();
             $mentorId = session('mentor_id');
             $groupId = session('mentor_group_id');
-
-            // Validasi waktu sesi menggunakan waktu dari perangkat
-            // Timestamp sudah dalam format MySQL datetime dari JavaScript
             $deviceTime = Carbon::createFromFormat('Y-m-d H:i:s', $request->input('device_timestamp'));
             $startTime = Carbon::parse($session->start_time);
             $endTime = Carbon::parse($session->end_time);
-
             if ($deviceTime->lt($startTime)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Sesi presensi belum dimulai. Waktu mulai: ' . $startTime->format('d/m/Y H:i')
+                    'message' => 'Sesi presensi belum dimulai. Waktu mulai: '.$startTime->format('d/m/Y H:i'),
                 ], 400);
             }
-
             if ($deviceTime->gt($endTime)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Sesi presensi sudah berakhir. Waktu berakhir: ' . $endTime->format('d/m/Y H:i')
+                    'message' => 'Sesi presensi sudah berakhir. Waktu berakhir: '.$endTime->format('d/m/Y H:i'),
                 ], 400);
             }
-
             DB::beginTransaction();
-
-            // Cari student berdasarkan ID
             $student = Attendance::where('id', $request->student_id)
                 ->where('group_id', $groupId)
                 ->first();
-
-            if (!$student) {
+            if (! $student) {
                 DB::rollBack();
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Peserta tidak ditemukan dalam kelompok Anda.'
+                    'message' => 'Peserta tidak ditemukan dalam kelompok Anda.',
                 ], 404);
             }
-
-            // Cek apakah sudah ada record presensi
             $existingSubmission = AttendanceSubmission::where('presence_session_id', $session->id)
                 ->where('student_id', $student->id)
                 ->first();
-
             if ($existingSubmission) {
                 DB::rollBack();
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Peserta ' . $student->name . ' sudah memiliki record presensi.'
+                    'message' => 'Peserta '.$student->name.' sudah memiliki record presensi.',
                 ], 409);
             }
-
-            // Buat record presensi baru dengan perhitungan poin otomatis
             $points = ScoreCalculationService::calculatePoints($session->session_type ?? 'datang', $request->status);
             AttendanceSubmission::create([
                 'presence_session_id' => $session->id,
@@ -481,35 +414,33 @@ class PresenceController extends Controller
                 'status' => $request->status,
                 'score_points' => $points,
                 'submission_method' => 'manual_mentor',
-                'notes' => 'Presensi dibuat oleh mentor dengan status: ' . $request->status
+                'notes' => 'Presensi dibuat oleh mentor dengan status: '.$request->status,
             ]);
-
             ScoreCalculationService::recalculateForStudent($student->id);
-
             DB::commit();
-
             $statusText = [
                 'hadir' => 'Hadir',
                 'terlambat' => 'Terlambat',
                 'izin' => 'Izin',
-                'sakit' => 'Sakit'
+                'sakit' => 'Sakit',
             ];
 
             return response()->json([
                 'success' => true,
-                'message' => 'Record presensi untuk ' . $student->name . ' berhasil dibuat (' . $statusText[$request->status] . ', +' . $points . ' poin).',
-                'points' => $points
+                'message' => 'Record presensi untuk '.$student->name.' berhasil dibuat ('.$statusText[$request->status].', +'.$points.' poin).',
+                'points' => $points,
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->validator->errors()->first()
+                'message' => $e->validator->errors()->first(),
             ], 422);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: '.$e->getMessage(),
             ], 500);
         }
     }

@@ -2,18 +2,18 @@
 
 namespace App\Filament\Resources\PresenceSessionResource\RelationManagers;
 
+use App\Models\Attendance;
 use App\Models\AttendanceSubmission;
+use App\Models\Group;
+use App\Models\Mentor;
+use Closure;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Support\Exceptions\Halt;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Models\Group;
-use App\Models\Mentor;
-use App\Models\Attendance;
-use Filament\Support\Exceptions\Halt;
 
 class AttendanceSubmissionsRelationManager extends RelationManager
 {
@@ -37,22 +37,20 @@ class AttendanceSubmissionsRelationManager extends RelationManager
                     ->reactive()
                     ->rules([
                         function () {
-                            return function (string $attribute, $value, \Closure $fail) {
+                            return function (string $attribute, $value, Closure $fail) {
                                 $presenceSessionId = request()->route('record');
                                 $recordId = request()->route('attendance_submission');
-
                                 $exists = AttendanceSubmission::where('student_id', $value)
                                     ->where('presence_session_id', $presenceSessionId)
                                     ->when($recordId, function ($query) use ($recordId) {
                                         return $query->where('id', '!=', $recordId);
                                     })
                                     ->exists();
-
                                 if ($exists) {
                                     $fail('Peserta ini sudah memiliki data presensi pada sesi ini.');
                                 }
                             };
-                        }
+                        },
                     ])
                     ->afterStateUpdated(function (callable $set, $state) {
                         if ($state) {
@@ -194,17 +192,17 @@ class AttendanceSubmissionsRelationManager extends RelationManager
                     ->query(function (Builder $query, array $data): Builder {
                         return $query->when(
                             $data['value'],
-                            fn(Builder $query, $value): Builder => $query->whereHas('student', fn(Builder $query) => $query->where('faculty', $value))
+                            fn (Builder $query, $value): Builder => $query->whereHas('student', fn (Builder $query) => $query->where('faculty', $value))
                         );
                     }),
                 Tables\Filters\SelectFilter::make('student.study_program')
                     ->label('Program Studi')
                     ->searchable()
-                    ->options(fn() => Attendance::distinct()->pluck('study_program', 'study_program')->toArray())
+                    ->options(fn () => Attendance::distinct()->pluck('study_program', 'study_program')->toArray())
                     ->query(function (Builder $query, array $data): Builder {
                         return $query->when(
                             $data['value'],
-                            fn(Builder $query, $value): Builder => $query->whereHas('student', fn(Builder $query) => $query->where('study_program', $value))
+                            fn (Builder $query, $value): Builder => $query->whereHas('student', fn (Builder $query) => $query->where('study_program', $value))
                         );
                     }),
                 Tables\Filters\SelectFilter::make('status')
@@ -234,17 +232,12 @@ class AttendanceSubmissionsRelationManager extends RelationManager
                     ->modalDescription('Aksi ini akan membuatkan data presensi dengan status "Alpa" untuk semua peserta di kelompok ini yang BELUM memiliki data presensi di sesi ini.')
                     ->action(function (RelationManager $livewire) {
                         $session = $livewire->getOwnerRecord();
-                        
                         $existingStudentIds = AttendanceSubmission::where('presence_session_id', $session->id)
                             ->pluck('student_id')
                             ->toArray();
-                            
-                        // Get all students associated with this session's group (or all if not filtered, but we filter by mentor/group typically)
-                        // Wait, a presence session belongs to a group. Let's check PresenceSession model.
                         $missingStudents = Attendance::whereNotIn('id', $existingStudentIds)
                             ->where('group_id', $session->group_id)
                             ->get();
-                        
                         $count = 0;
                         foreach ($missingStudents as $student) {
                             AttendanceSubmission::create([
@@ -256,11 +249,10 @@ class AttendanceSubmissionsRelationManager extends RelationManager
                                 'submission_method' => 'manual',
                                 'submitted_at' => now(),
                                 'score_points' => 0,
-                                'notes' => 'Otomatis ditandai Alpa (Belum Hadir)'
+                                'notes' => 'Otomatis ditandai Alpa (Belum Hadir)',
                             ]);
                             $count++;
                         }
-                        
                         \Filament\Notifications\Notification::make()
                             ->title('Selesai')
                             ->body("$count peserta berhasil ditandai Alpa.")
@@ -271,7 +263,6 @@ class AttendanceSubmissionsRelationManager extends RelationManager
                     ->label('Tambah Presensi')
                     ->using(function (array $data, string $model): \Illuminate\Database\Eloquent\Model {
                         try {
-                            // Tambahkan presence_session_id dari owner record
                             $data['presence_session_id'] = $this->getOwnerRecord()->id;
 
                             return $model::create($data);
@@ -281,9 +272,7 @@ class AttendanceSubmissionsRelationManager extends RelationManager
                                 ->body('Peserta ini sudah memiliki data presensi pada sesi ini. Silakan pilih peserta lain atau edit data yang sudah ada.')
                                 ->danger()
                                 ->send();
-
-                            // Lempar exception untuk menghentikan proses
-                            throw new Halt();
+                            throw new Halt;
                         }
                     }),
             ])
