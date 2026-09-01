@@ -195,6 +195,33 @@ class SyncUmpoMahasiswa extends Command
             $this->info('DEBUG MODE: Menampilkan ' . count($allDebugData) . ' data siap simpan tanpa dimasukkan ke database.');
         } else {
             $this->info('Selesai! Berhasil memproses dan menyinkronkan '.$countProcessed.' data peserta tahun 2026.');
+            
+            $this->info('Mengecek dan membagikan peserta yang belum punya kelompok secara acak...');
+            $unassignedPeserta = Attendance::whereNull('group_id')
+                ->orWhereNull('mentor_id')
+                ->inRandomOrder()
+                ->get();
+            
+            if ($unassignedPeserta->isEmpty()) {
+                $this->info('Semua peserta saat ini sudah memiliki kelompok & pendamping!');
+            } else {
+                $mentors = \App\Models\Mentor::with('group')->get();
+                if ($mentors->isEmpty()) {
+                    $this->warn('Belum ada data Pendamping! Lewati proses bagi kelompok otomatis.');
+                } else {
+                    $mentorCount = $mentors->count();
+                    $index = 0;
+                    foreach ($unassignedPeserta as $peserta) {
+                        $mentor = $mentors[$index % $mentorCount];
+                        $peserta->update([
+                            'group_id' => $mentor->group_id,
+                            'mentor_id' => $mentor->id,
+                        ]);
+                        $index++;
+                    }
+                    $this->info('Berhasil membagikan ' . $unassignedPeserta->count() . ' peserta ke kelompok secara merata dan acak.');
+                }
+            }
         }
 
         return Command::SUCCESS;
