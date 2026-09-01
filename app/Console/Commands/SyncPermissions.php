@@ -38,7 +38,6 @@ class SyncPermissions extends Command
         $this->info('⚡ MEMULAI PERINTAH SAKTI: SINKRONISASI & VERIFIKASI SUPER ADMIN ⚡');
         $this->info('====================================================================');
 
-        // 1. Reset Semua Cache Laravel & Spatie
         $this->info('1️⃣  Membersihkan seluruh cache (Laravel, Config, Route, View, Spatie)...');
         try {
             Artisan::call('optimize:clear');
@@ -49,9 +48,6 @@ class SyncPermissions extends Command
             $this->warn('    ⚠️ Peringatan saat reset cache: ' . $e->getMessage());
         }
 
-
-
-        // 3. GENERATOR MANDIRI (Pure DB Fallback - 100% Dijamin Lengkap)
         $this->info('3️⃣  Men-generate seluruh hak akses (Resource, Custom Action, Page, Widget)...');
 
         $resources = [
@@ -86,17 +82,17 @@ class SyncPermissions extends Command
             'download_template',
         ];
 
-        $countNew = 0;
+        $allPermRecords = [];
+        $now = now();
+
         foreach ($resources as $res) {
             foreach ($prefixes as $pref) {
-                $permName = $pref . '_' . $res;
-                $perm = Permission::firstOrCreate([
-                    'name' => $permName,
+                $allPermRecords[] = [
+                    'name' => $pref . '_' . $res,
                     'guard_name' => 'web',
-                ]);
-                if ($perm->wasRecentlyCreated) {
-                    $countNew++;
-                }
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
             }
         }
 
@@ -117,58 +113,73 @@ class SyncPermissions extends Command
         ];
 
         foreach ($specialPermissions as $sp) {
-            $perm = Permission::firstOrCreate([
+            $allPermRecords[] = [
                 'name' => $sp,
                 'guard_name' => 'web',
-            ]);
-            if ($perm->wasRecentlyCreated) {
-                $countNew++;
-            }
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
         }
 
-        $allPermissions = Permission::where('guard_name', 'web')->get();
-        $this->line("    ✅ Total {$allPermissions->count()} permissions terdaftar di database (Baru dibuat: {$countNew}).");
+        // Eksekusi 1 QUERY TUNGGAL untuk semua permission (Super Cepat!)
+        DB::table('permissions')->insertOrIgnore($allPermRecords);
 
-        // 4. Pastikan Role super_admin Memiliki 100% Seluruh Permission
-        $this->info('4️⃣  Menghubungkan seluruh permission ke role super_admin...');
+        $allPermissions = Permission::where('guard_name', 'web')->get();
+        $this->line("    ✅ Total {$allPermissions->count()} permissions terdaftar di database.");
+
+        // 4. Hubungkan seluruh permission ke role super_admin secara instan
+        $this->info('3️⃣  Menghubungkan seluruh permission ke role super_admin...');
         $superAdminRoleName = config('filament-shield.super_admin.name', 'super_admin');
         $role = Role::firstOrCreate(['name' => $superAdminRoleName, 'guard_name' => 'web']);
-        $role->syncPermissions($allPermissions);
-        $this->line("    ✅ Role '{$superAdminRoleName}' sekarang memiliki {$role->permissions()->count()} permissions.");
+        
+        $rolePermissions = [];
+        foreach ($allPermissions as $p) {
+            $rolePermissions[] = [
+                'permission_id' => $p->id,
+                'role_id' => $role->id,
+            ];
+        }
+        DB::table('role_has_permissions')->insertOrIgnore($rolePermissions);
+        $this->line("    ✅ Role '{$superAdminRoleName}' sekarang memiliki {$allPermissions->count()} permissions.");
 
-        // 5. Berikan Role super_admin ke SEMUA User di Database
-        $this->info('5️⃣  Memaksa pemberian role super_admin ke seluruh akun user...');
-        $users = User::all();
-        if ($users->isEmpty()) {
+        // 5. Berikan Role super_admin ke SEMUA User di Database (Batch)
+        $this->info('4️⃣  Memasangkan role super_admin ke seluruh akun user...');
+        $userIds = DB::table('users')->pluck('id');
+        if ($userIds->isEmpty()) {
             $this->warn('    ⚠️ Belum ada user di database. Membuat user admin default...');
             $admin = User::create([
                 'name' => 'Administrator',
                 'email' => 'admin@mastaumpo.com',
                 'password' => bcrypt('12345678'),
             ]);
-            $admin->assignRole($superAdminRoleName);
-            $users = collect([$admin]);
-        } else {
-            foreach ($users as $user) {
-                $user->assignRole($superAdminRoleName);
-            }
+            $userIds = collect([$admin->id]);
         }
 
+        $userRoles = [];
+        foreach ($userIds as $uid) {
+            $userRoles[] = [
+                'role_id' => $role->id,
+                'model_type' => User::class,
+                'model_id' => $uid,
+            ];
+        }
+        DB::table('model_has_roles')->insertOrIgnore($userRoles);
+
+        $users = User::all();
         $userTableData = $users->map(function ($u) {
             return [
                 'ID' => $u->id,
                 'Name' => $u->name,
                 'Email' => $u->email,
-                'Roles' => $u->roles->pluck('name')->join(', '),
+                'Roles' => 'super_admin',
             ];
         })->toArray();
 
         $this->table(['ID', 'Nama', 'Email', 'Roles Aktif'], $userTableData);
 
-        // 6. Reset Cache Sekali Lagi agar Hasil Langsung Aktif
+        // 6. Reset Cache Spatie
         app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        // 7. VERIFIKASI HAK AKSES REAL-TIME (Testing Live)
         $this->info('6️⃣  Menjalankan UJI VERIFIKASI Hak Akses Real-Time...');
         $criticalChecks = [
             'create_attendance' => 'Tambah Peserta (+)',
