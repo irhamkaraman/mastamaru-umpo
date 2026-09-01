@@ -222,15 +222,15 @@ class AttendanceResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn (?string $state): ?string => match ($state) {
                         'lulus' => 'success',
                         'gagal' => 'danger',
-                        default => 'warning',
+                        default => null,
                     })
-                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                    ->formatStateUsing(fn (?string $state): ?string => match ($state) {
                         'lulus' => 'LULUS',
                         'gagal' => 'GAGAL',
-                        default => 'PROSES',
+                        default => null,
                     })
                     ->searchable()
                     ->sortable(),
