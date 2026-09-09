@@ -186,6 +186,8 @@ class WordCertificateService
         $assessment  = $attendance->assessment;
         $totalPoints = $assessment ? $assessment->total_presence_points : $submissions->sum('score_points');
         $grade       = $assessment ? strtoupper($assessment->grade) : 'D';
+
+        // ── Buat dokumen BARU untuk halaman histori saja ─────────────────────
         $phpWord = new \PhpOffice\PhpWord\PhpWord;
         $section = $phpWord->addSection([
             'orientation'  => 'landscape',
@@ -196,6 +198,7 @@ class WordCertificateService
             'headerHeight' => Converter::cmToTwip(0),
         ]);
 
+        // Background gambar (behind text) via header
         $bgPath = public_path('img/background_history_points_attendance_on_certificate.png');
         if (file_exists($bgPath)) {
             $header = $section->addHeader();
@@ -213,51 +216,55 @@ class WordCertificateService
 
         $titleFont  = ['bold' => true, 'size' => 14, 'name' => 'Times New Roman', 'color' => '6b0000'];
         $headerFont = ['bold' => true, 'size' => 10, 'name' => 'Times New Roman', 'color' => 'ffffff'];
-        $bodyFont   = ['size' => 9, 'name' => 'Times New Roman'];
+        $bodyFont   = ['size' => 9,  'name' => 'Times New Roman'];
         $boldFont   = ['bold' => true, 'size' => 9, 'name' => 'Times New Roman'];
         $centerPara = ['alignment' => Jc::CENTER, 'spaceAfter' => 60];
-        $leftPara   = ['alignment' => Jc::START, 'spaceAfter' => 0];
+        $leftPara   = ['alignment' => Jc::START,  'spaceAfter' => 0];
 
         $section->addText(
-            'REKAP HISTORI KEHADIRAN — '.$attendance->name,
+            'REKAP HISTORI KEHADIRAN - '.$attendance->name,
             $titleFont,
             $centerPara
         );
         $section->addText(
-            'NIM: '.$attendance->student_id.' | Kelompok: '.($attendance->group->name ?? '-').' | Pemandu: '.($attendance->mentor->name ?? '-'),
+            'NIM: '.$attendance->student_id.
+            ' | Kelompok: '.($attendance->group->name ?? '-').
+            ' | Pemandu: '.($attendance->mentor->name ?? '-'),
             $bodyFont,
             $centerPara
         );
 
-        $tableStyle = [
+        // Tabel histori
+        $headerBg  = ['bgColor' => '6b0000', 'borderSize' => 6, 'borderColor' => '6b0000'];
+        $colWidths = [
+            'No'      => Converter::cmToTwip(0.8),
+            'Hari'    => Converter::cmToTwip(1.5),
+            'Waktu'   => Converter::cmToTwip(4.5),
+            'Sesi'    => Converter::cmToTwip(8.5),
+            'Tipe'    => Converter::cmToTwip(2.5),
+            'Status'  => Converter::cmToTwip(2.5),
+            'Poin'    => Converter::cmToTwip(2),
+        ];
+        $labels = ['No', 'Hari', 'Tanggal dan Waktu', 'Nama Sesi', 'Tipe', 'Status', 'Poin'];
+
+        $table = $section->addTable([
             'borderSize'  => 6,
             'borderColor' => 'cccccc',
             'cellMargin'  => 60,
-        ];
-        $table = $section->addTable($tableStyle);
+        ]);
 
-        $headerBg = ['bgColor' => '6b0000', 'borderSize' => 6, 'borderColor' => '6b0000'];
-
-        $colWidths = [
-            'No'              => Converter::cmToTwip(0.8),
-            'Hari'            => Converter::cmToTwip(1.5),
-            'Tanggal & Waktu' => Converter::cmToTwip(4.5),
-            'Nama Sesi'       => Converter::cmToTwip(8.5),
-            'Tipe'            => Converter::cmToTwip(2.5),
-            'Status'          => Converter::cmToTwip(2.5),
-            'Poin'            => Converter::cmToTwip(2),
-        ];
-
+        // Header row
         $table->addRow(Converter::cmToTwip(0.7));
-        foreach ($colWidths as $label => $width) {
-            $cell = $table->addCell($width, $headerBg);
-            $cell->addText($label, $headerFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+        foreach (array_values($colWidths) as $i => $width) {
+            $table->addCell($width, $headerBg)
+                  ->addText($labels[$i], $headerFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
         }
 
+        // Data rows
         $rowIndex = 1;
         foreach ($submissions as $sub) {
-            $session  = $sub->presenceSession;
-            $rowBg    = ($rowIndex % 2 === 0)
+            $session = $sub->presenceSession;
+            $rowBg   = ($rowIndex % 2 === 0)
                 ? ['bgColor' => 'fdf2f2', 'borderSize' => 4, 'borderColor' => 'e5e7eb']
                 : ['bgColor' => 'ffffff', 'borderSize' => 4, 'borderColor' => 'e5e7eb'];
 
@@ -273,41 +280,178 @@ class WordCertificateService
                 ? $sub->submitted_at->locale('id')->isoFormat('D MMM YYYY, HH:mm')
                 : '-';
 
+            $colArr = array_values($colWidths);
             $table->addRow();
-            $table->addCell($colWidths['No'], $rowBg)->addText((string) $rowIndex, $bodyFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
-            $table->addCell($colWidths['Hari'], $rowBg)->addText('Hari '.($session ? $session->day_number : '-'), $bodyFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
-            $table->addCell($colWidths['Tanggal & Waktu'], $rowBg)->addText($waktu, $bodyFont, $leftPara);
-            $table->addCell($colWidths['Nama Sesi'], $rowBg)->addText($session ? $session->session_name : '-', $bodyFont, $leftPara);
-            $table->addCell($colWidths['Tipe'], $rowBg)->addText($session ? strtoupper($session->session_type) : '-', $bodyFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
-            $table->addCell($colWidths['Status'], $rowBg)->addText($statusLabel, $boldFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
-            $table->addCell($colWidths['Poin'], $rowBg)->addText('+'.((int) $sub->score_points).'p', $boldFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
-
+            $table->addCell($colArr[0], $rowBg)->addText((string) $rowIndex, $bodyFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colArr[1], $rowBg)->addText('Hari '.($session ? $session->day_number : '-'), $bodyFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colArr[2], $rowBg)->addText($waktu, $bodyFont, $leftPara);
+            $table->addCell($colArr[3], $rowBg)->addText($session ? $session->session_name : '-', $bodyFont, $leftPara);
+            $table->addCell($colArr[4], $rowBg)->addText($session ? strtoupper($session->session_type) : '-', $bodyFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colArr[5], $rowBg)->addText($statusLabel, $boldFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colArr[6], $rowBg)->addText('+'.((int) $sub->score_points).'p', $boldFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
             $rowIndex++;
         }
 
+        // Total row
         $totalBg = ['bgColor' => '6b0000', 'borderSize' => 6, 'borderColor' => '6b0000'];
+        $colArr  = array_values($colWidths);
         $table->addRow(Converter::cmToTwip(0.7));
-        $mergedCell = $table->addCell(
-            array_sum(array_slice(array_values($colWidths), 0, 6)),
+        $table->addCell(
+            array_sum(array_slice($colArr, 0, 6)),
             array_merge($totalBg, ['gridSpan' => 6])
-        );
-        $mergedCell->addText('TOTAL POIN KEHADIRAN', $headerFont, ['alignment' => Jc::RIGHT, 'spaceAfter' => 0]);
-        $table->addCell($colWidths['Poin'], $totalBg)
-            ->addText($totalPoints.'p', $headerFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+        )->addText('TOTAL POIN KEHADIRAN', $headerFont, ['alignment' => Jc::RIGHT, 'spaceAfter' => 0]);
+        $table->addCell($colArr[6], $totalBg)
+              ->addText($totalPoints.'p', $headerFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
 
+        // Ringkasan
         $section->addTextBreak(1);
-        $summaryText  = "Total Poin: {$totalPoints} / 100   |   Predikat: {$grade}";
-        $summaryText .= '   |   Status: '.strtoupper($attendance->status ?? 'PROSES');
-        $section->addText($summaryText, [
-            'bold'  => true,
-            'size'  => 11,
-            'name'  => 'Times New Roman',
-            'color' => '6b0000',
-        ], $centerPara);
+        $section->addText(
+            "Total Poin: {$totalPoints} / 100   |   Predikat: {$grade}   |   Status: ".strtoupper($attendance->status ?? 'PROSES'),
+            ['bold' => true, 'size' => 11, 'name' => 'Times New Roman', 'color' => '6b0000'],
+            $centerPara
+        );
 
+        // ── Simpan halaman histori ke file temp, lalu merge ke file utama ─────
+        $tempHistoryPath = $docxPath.'.history_tmp.docx';
         $writer = IOFactory::createWriter($phpWord, 'Word2007');
-        $writer->save($docxPath);
+        $writer->save($tempHistoryPath);
+
+        $this->mergeDocxAppend($docxPath, $tempHistoryPath);
+        @unlink($tempHistoryPath);
     }
+
+    /**
+     * Gabungkan appendFile ke mainFile menggunakan ZIP-level merge yang benar:
+     * - Remap semua relationship ID dari appendFile agar tidak konflik dengan mainFile
+     * - Salin semua file header, media dari appendFile ke mainFile
+     * - Sisipkan body content appendFile ke dalam body mainFile
+     */
+    private function mergeDocxAppend(string $mainFile, string $appendFile): void
+    {
+        $mainZip   = new ZipArchive;
+        $appendZip = new ZipArchive;
+
+        if ($mainZip->open($mainFile) !== true || $appendZip->open($appendFile) !== true) {
+            if ($mainZip->open($mainFile) === true) {
+                $mainZip->close();
+            }
+            return;
+        }
+
+        // ── 1. Baca rels dari main dan hitung offset ID ───────────────────────
+        $mainRelsXml = $mainZip->getFromName('word/_rels/document.xml.rels') ?: '';
+        preg_match_all('/Id="rId(\d+)"/', $mainRelsXml, $mainIdMatches);
+        $maxRId = empty($mainIdMatches[1]) ? 0 : (int) max($mainIdMatches[1]);
+        $offset = $maxRId;
+
+        // ── 2. Baca rels dari append dan buat peta ID baru ───────────────────
+        $appendRelsXml = $appendZip->getFromName('word/_rels/document.xml.rels') ?: '';
+        preg_match_all('/Id="rId(\d+)"/', $appendRelsXml, $appendIdMatches);
+        $appendIds = array_unique($appendIdMatches[1] ?? []);
+
+        // Peta: appendOldId => appendNewId
+        $idMap = [];
+        foreach ($appendIds as $oldId) {
+            $idMap['rId'.$oldId] = 'rId'.($oldId + $offset);
+        }
+
+        // ── 3. Salin files dari appendZip ke mainZip dengan rename ──────────
+        // Parse append rels untuk tahu file mana yang direferens
+        $appendRelsUpdated = $appendRelsXml;
+        foreach ($idMap as $oldId => $newId) {
+            $appendRelsUpdated = str_replace('Id="'.$oldId.'"', 'Id="'.$newId.'"', $appendRelsUpdated);
+        }
+
+        // Extract target dari append rels
+        preg_match_all('/Id="(rId\d+)"[^>]*Target="([^"]+)"/', $appendRelsUpdated, $relsTargets, PREG_SET_ORDER);
+        $appendFileMap = []; // appendPath => mainPath
+        foreach ($relsTargets as $rel) {
+            $newId  = $rel[1];
+            $target = $rel[2];
+            // Target bisa relative seperti "header1.xml", "media/image1.png"
+            $appendPath = 'word/'.$target;
+            // Rename file di main agar tidak konflik
+            $ext      = pathinfo($target, PATHINFO_EXTENSION);
+            $baseName = pathinfo($target, PATHINFO_FILENAME);
+            $dir      = pathinfo($target, PATHINFO_DIRNAME);
+            $newName  = ($dir && $dir !== '.') ? $dir.'/'.$baseName.'_app.'.$ext : $baseName.'_app.'.$ext;
+            $mainPath = 'word/'.$newName;
+            $appendFileMap[$appendPath] = $mainPath;
+
+            // Salin file
+            $fileContent = $appendZip->getFromName($appendPath);
+            if ($fileContent !== false) {
+                // Jika ini file header XML, update relationship ID di dalamnya juga
+                if (str_ends_with($appendPath, '.xml')) {
+                    foreach ($idMap as $oldId => $newId2) {
+                        $fileContent = str_replace('r:id="'.$oldId.'"', 'r:id="'.$newId2.'"', $fileContent);
+                    }
+                    // Update referensi ke media di dalam header
+                    foreach ($appendFileMap as $aPath => $mPath) {
+                        $aRel = str_replace('word/', '', $aPath);
+                        $mRel = str_replace('word/', '', $mPath);
+                        $fileContent = str_replace($aRel, $mRel, $fileContent);
+                    }
+                }
+                $mainZip->addFromString($mainPath, $fileContent);
+            }
+        }
+
+        // Juga salin media yang tidak di-rels langsung (embedded di header)
+        for ($i = 0; $i < $appendZip->numFiles; $i++) {
+            $name = $appendZip->getNameIndex($i);
+            if (str_starts_with($name, 'word/media/') && $mainZip->locateName($name) === false) {
+                $ext     = pathinfo($name, PATHINFO_EXTENSION);
+                $base    = pathinfo($name, PATHINFO_FILENAME);
+                $newName = 'word/media/'.$base.'_app.'.$ext;
+                if ($mainZip->locateName($newName) === false) {
+                    $mainZip->addFromString($newName, $appendZip->getFromIndex($i));
+                }
+            }
+        }
+
+        // ── 4. Tambahkan relasi baru ke main document.xml.rels ───────────────
+        $newRelsEntries = '';
+        // Parse append rels untuk ambil Type dan Target per relasi
+        preg_match_all('/<Relationship\s[^>]*Id="rId(\d+)"[^>]*Type="([^"]+)"[^>]*Target="([^"]+)"[^>]*\/>/', $appendRelsXml, $relMatches, PREG_SET_ORDER);
+        foreach ($relMatches as $rel) {
+            $oldId  = 'rId'.$rel[1];
+            $newId  = $idMap[$oldId] ?? $oldId;
+            $type   = $rel[2];
+            $target = $rel[3];
+            // Gunakan nama file baru jika ada
+            $appendPath = 'word/'.$target;
+            $mainPath   = $appendFileMap[$appendPath] ?? $appendPath;
+            $newTarget  = str_replace('word/', '', $mainPath);
+            $newRelsEntries .= '<Relationship Id="'.$newId.'" Type="'.$type.'" Target="'.$newTarget.'"/>'."\n";
+        }
+
+        // Sisipkan relasi baru sebelum </Relationships>
+        $mainRelsUpdated = str_replace('</Relationships>', $newRelsEntries.'</Relationships>', $mainRelsXml);
+        $mainZip->addFromString('word/_rels/document.xml.rels', $mainRelsUpdated);
+
+        // ── 5. Merge body XML ─────────────────────────────────────────────────
+        $mainDocXml   = $mainZip->getFromName('word/document.xml') ?: '';
+        $appendDocXml = $appendZip->getFromName('word/document.xml') ?: '';
+
+        // Remap ID di append body
+        foreach ($idMap as $oldId => $newId) {
+            $appendDocXml = str_replace('r:id="'.$oldId.'"', 'r:id="'.$newId.'"', $appendDocXml);
+            $appendDocXml = str_replace('r:embed="'.$oldId.'"', 'r:embed="'.$newId.'"', $appendDocXml);
+        }
+
+        // Ekstrak body content dari append (semua setelah <w:body> sebelum </w:body>)
+        preg_match('/<w:body>(.*)<\/w:body>/s', $appendDocXml, $appendBodyMatch);
+        $appendBodyContent = $appendBodyMatch[1] ?? '';
+
+        // Sisipkan ke main sebelum </w:body>
+        $mergedDocXml = str_replace('</w:body>', $appendBodyContent.'</w:body>', $mainDocXml);
+        $mainZip->addFromString('word/document.xml', $mergedDocXml);
+
+        $appendZip->close();
+        $mainZip->close();
+    }
+
 
     /**
      * Bangun array replacement placeholder → nilai untuk satu peserta.
@@ -377,11 +521,11 @@ class WordCertificateService
         $phpWord = new \PhpOffice\PhpWord\PhpWord;
         $section = $phpWord->addSection([
             'orientation' => 'landscape',
-            'marginTop' => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(2),
-            'marginBottom' => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(2),
-            'marginLeft' => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(2.5),
-            'marginRight' => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(2.5),
-            'headerHeight' => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(0),
+            'marginTop' => Converter::cmToTwip(2),
+            'marginBottom' => Converter::cmToTwip(2),
+            'marginLeft' => Converter::cmToTwip(2.5),
+            'marginRight' => Converter::cmToTwip(2.5),
+            'headerHeight' => Converter::cmToTwip(0),
         ]);
 
         $bgImagePath = public_path('img/background_history_points_attendance_on_certificate.png');
@@ -390,8 +534,8 @@ class WordCertificateService
             $pageWidthCm  = 29.7;
             $pageHeightCm = 21.0;
             $header->addImage($bgImagePath, [
-                'width'          => \PhpOffice\PhpWord\Shared\Converter::cmToPixel($pageWidthCm),
-                'height'         => \PhpOffice\PhpWord\Shared\Converter::cmToPixel($pageHeightCm),
+                'width'          => Converter::cmToPixel($pageWidthCm),
+                'height'         => Converter::cmToPixel($pageHeightCm),
                 'positioning'    => \PhpOffice\PhpWord\Style\Image::POSITION_ABSOLUTE,
                 'posHorizontal'  => \PhpOffice\PhpWord\Style\Image::POSITION_HORIZONTAL_LEFT,
                 'posVertical'    => \PhpOffice\PhpWord\Style\Image::POSITION_VERTICAL_TOP,
