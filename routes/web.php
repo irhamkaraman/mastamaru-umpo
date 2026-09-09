@@ -23,8 +23,22 @@ Route::get('/storage-link', function () {
         return redirect()->back()->with('error', 'Penyimpanan di server telah tersedia!');
     }
 })->name('storage-link');
+Route::get('/migrate', function () {
+    try {
+        Artisan::call('migrate', ['--force' => true]);
+        $output = Artisan::output();
+
+        return '<h1>✅ Database Migrated Successfully!</h1><pre>' . e($output) . '</pre>';
+    } catch (\Throwable $e) {
+        return '<h1>❌ Migration Failed!</h1><p>' . e($e->getMessage()) . '</p><pre>' . e($e->getTraceAsString()) . '</pre>';
+    }
+})->name('migrate');
+
 Route::get('/super-fix', function () {
     try {
+        Artisan::call('migrate', ['--force' => true]);
+        $migrateOutput = Artisan::output();
+
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
         $resources = [
             'api_configuration', 'api_data_record', 'attendance',
@@ -74,10 +88,11 @@ Route::get('/super-fix', function () {
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         return '<h1>✅ SUKSES (SUPER FIX PRODUCTION LEVEL)!</h1>'
+            . '<p><strong>Migrasi Database:</strong></p><pre>' . e($migrateOutput) . '</pre>'
             . '<p>Cache dibersihkan, seluruh Permission (' . $permissions->count() . ') di-generate, dan Role <strong>super_admin</strong> telah diberikan ke SEMUA akun admin:</p>'
             . $userListMsg
-            . '<p>Bypass Gate::before juga telah aktif. Silakan kembali ke <a href="/admin">Dashboard Admin</a> dan refresh halaman (Ctrl+F5).</p>';
-    } catch (Exception $e) {
+            . '<p>Silakan kembali ke <a href="/admin">Dashboard Admin</a> dan refresh halaman (Ctrl+F5).</p>';
+    } catch (\Throwable $e) {
         return '<h1>❌ ERROR!</h1><p>'.$e->getMessage().'</p>';
     }
 });
