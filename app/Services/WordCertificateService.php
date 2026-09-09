@@ -247,7 +247,7 @@ class WordCertificateService
         $bodyFont   = ['size' => 9,  'name' => 'Times New Roman'];
         $boldFont   = ['bold' => true, 'size' => 9, 'name' => 'Times New Roman'];
         $centerPara = ['alignment' => Jc::CENTER, 'spaceAfter' => 60];
-        $leftPara   = ['alignment' => Jc::START,  'spaceAfter' => 0];
+        $leftPara   = ['alignment' => Jc::LEFT,  'spaceAfter' => 0];
 
         $section->addText(
             'REKAP HISTORI KEHADIRAN - '.$attendance->name,
