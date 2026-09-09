@@ -459,6 +459,15 @@ class WordCertificateService
         if (preg_match('/<w:sectPr[^>]*>.*?<\/w:sectPr>/s', $mainDocXml, $mainSectPrMatch)) {
             $mainSectPr = $mainSectPrMatch[0];
             $mainDocXml = str_replace($mainSectPr, '', $mainDocXml);
+            
+            // Sisipkan tipe nextPage agar tidak menjadi continuous break yang menghilangkan header halaman 1
+            if (strpos($mainSectPr, '<w:type') === false) {
+                $mainSectPr = str_replace('<w:sectPr', '<w:sectPr><w:type w:val="nextPage"/>', $mainSectPr);
+            } else {
+                $mainSectPr = preg_replace('/<w:type\s+w:val="[^"]+"\s*\/>/', '<w:type w:val="nextPage"/>', $mainSectPr);
+            }
+
+            // Ubah sectPr menjadi paragraph sectPr (break antar dokumen)
             $sectionBreak = '<w:p><w:pPr>' . $mainSectPr . '</w:pPr></w:p>';
             $appendBodyContent = $sectionBreak . $appendBodyContent;
         }
