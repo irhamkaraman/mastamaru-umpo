@@ -178,117 +178,50 @@
                     <table class="w-full text-left text-xs sm:text-sm">
                         <thead class="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200">
                             <tr>
-                                <th class="px-4 py-3">Hari</th>
-                                <th class="px-4 py-3">Sesi Datang</th>
-                                <th class="px-4 py-3">Sesi Materi</th>
-                                <th class="px-4 py-3">Sesi Pulang</th>
-                                <th class="px-4 py-3 text-right">Total Poin</th>
+                                <th class="px-4 py-3">Hari & Tanggal</th>
+                                <th class="px-4 py-3">Sesi Kegiatan</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3">Oleh (Pemandu)</th>
+                                <th class="px-4 py-3 text-right">Poin</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 bg-white">
-                            @php
-                                $participantDays = collect($matrix['days'])->filter(function($d) {
-                                    return $d['datang']['session'] !== null || $d['materi']['session'] !== null || $d['pulang']['session'] !== null;
-                                });
-                            @endphp
-                            
-                            @forelse($participantDays as $dayNum => $d)
+                            @forelse($submissions as $submission)
                                 <tr class="hover:bg-gray-50/80 transition">
-                                    <td class="px-4 py-3 font-bold text-gray-900">Hari {{ $dayNum }}</td>
-                                    
-                                    <!-- Sesi Datang -->
                                     <td class="px-4 py-3">
-                                        @if($d['datang']['status_type'] === 'hadir')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">
-                                                Hadir (+{{ $d['datang']['points'] }}p)
-                                            </span>
-                                        @elseif($d['datang']['status_type'] === 'terlambat')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
-                                                Terlambat (+{{ $d['datang']['points'] }}p)
-                                            </span>
-                                        @elseif($d['datang']['status_type'] === 'sakit')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">
-                                                Sakit (+{{ $d['datang']['points'] }}p)
-                                            </span>
-                                        @elseif($d['datang']['status_type'] === 'izin')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
-                                                Izin (+{{ $d['datang']['points'] }}p)
-                                            </span>
-                                        @elseif($d['datang']['status_type'] === 'alpha')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
-                                                Alpha (0p)
-                                            </span>
-                                        @elseif($d['datang']['status_type'] === 'pending')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-200">
-                                                Belum Presensi
-                                            </span>
+                                        <div class="font-bold text-gray-900">Hari {{ $submission->presenceSession->day_number }}</div>
+                                        <div class="text-xs text-gray-500">{{ $submission->submitted_at ? $submission->submitted_at->locale('id')->isoFormat('D MMM YYYY, HH:mm') : '-' }}</div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="font-medium text-gray-800">{{ $submission->presenceSession->session_name }}</div>
+                                        <div class="text-[10px] uppercase tracking-wider text-gray-500 mt-0.5">{{ $submission->presenceSession->session_type }}</div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        @if($submission->status === 'hadir')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">Hadir</span>
+                                        @elseif($submission->status === 'terlambat')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">Terlambat</span>
+                                        @elseif($submission->status === 'sakit')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">Sakit</span>
+                                        @elseif($submission->status === 'izin')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">Izin</span>
+                                        @elseif($submission->status === 'alpha')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">Alpha</span>
                                         @else
-                                            <span class="text-xs text-gray-400 italic">-</span>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{{ ucfirst($submission->status) }}</span>
                                         @endif
                                     </td>
-
-                                    <!-- Sesi Materi -->
-                                    <td class="px-4 py-3">
-                                        @if($d['materi']['status_type'] === 'hadir')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800">
-                                                Hadir (+{{ $d['materi']['points'] }}p)
-                                            </span>
-                                        @elseif($d['materi']['status_type'] === 'sakit')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">
-                                                Sakit (+{{ $d['materi']['points'] }}p)
-                                            </span>
-                                        @elseif($d['materi']['status_type'] === 'izin')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
-                                                Izin (+{{ $d['materi']['points'] }}p)
-                                            </span>
-                                        @elseif($d['materi']['status_type'] === 'alpha')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
-                                                Alpha (0p)
-                                            </span>
-                                        @elseif($d['materi']['status_type'] === 'pending')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-200">
-                                                Belum Presensi
-                                            </span>
-                                        @else
-                                            <span class="text-xs text-gray-400 italic">-</span>
-                                        @endif
+                                    <td class="px-4 py-3 text-sm text-gray-600">
+                                        {{ $submission->mentor->name ?? '-' }}
                                     </td>
-
-                                    <!-- Sesi Pulang -->
-                                    <td class="px-4 py-3">
-                                        @if($d['pulang']['status_type'] === 'hadir')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
-                                                Hadir (+{{ $d['pulang']['points'] }}p)
-                                            </span>
-                                        @elseif($d['pulang']['status_type'] === 'sakit')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">
-                                                Sakit (+{{ $d['pulang']['points'] }}p)
-                                            </span>
-                                        @elseif($d['pulang']['status_type'] === 'izin')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
-                                                Izin (+{{ $d['pulang']['points'] }}p)
-                                            </span>
-                                        @elseif($d['pulang']['status_type'] === 'alpha')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
-                                                Alpha (0p)
-                                            </span>
-                                        @elseif($d['pulang']['status_type'] === 'pending')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-200">
-                                                Belum Presensi
-                                            </span>
-                                        @else
-                                            <span class="text-xs text-gray-400 italic">-</span>
-                                        @endif
-                                    </td>
-
-                                    <td class="px-4 py-3 text-right font-bold text-indigo-600">
-                                        {{ $d['total'] }} Poin
+                                    <td class="px-4 py-3 text-right font-bold {{ $submission->score_points > 0 ? 'text-indigo-600' : 'text-gray-400' }}">
+                                        +{{ $submission->score_points }}p
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
                                     <td colspan="5" class="px-4 py-6 text-center text-gray-500 text-sm">
-                                        Belum ada jadwal sesi presensi yang dibuka.
+                                        Belum ada riwayat presensi untuk peserta ini.
                                     </td>
                                 </tr>
                             @endforelse
