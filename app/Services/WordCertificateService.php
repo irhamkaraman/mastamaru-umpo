@@ -342,100 +342,94 @@ class WordCertificateService
         @unlink($tempHistoryPath);
     }
 
-    /**
-     * Gabungkan appendFile ke mainFile menggunakan ZIP-level merge yang benar:
-     * - Remap semua relationship ID dari appendFile agar tidak konflik dengan mainFile
-     * - Salin semua file header, media dari appendFile ke mainFile
-     * - Sisipkan body content appendFile ke dalam body mainFile
-     */
-    private function mergeDocxAppend(string $mainFile, string $appendFile): void
+    private function mergeDocxAppend(string $mainDocxPath, string $appendDocxPath): void
     {
-        $mainZip   = new ZipArchive;
-        $appendZip = new ZipArchive;
+        $mainZip   = new ZipArchive();
+        $appendZip = new ZipArchive();
 
-        if ($mainZip->open($mainFile) !== true || $appendZip->open($appendFile) !== true) {
-            if ($mainZip->open($mainFile) === true) {
-                $mainZip->close();
-            }
+        if ($mainZip->open($mainDocxPath) !== true || $appendZip->open($appendDocxPath) !== true) {
             return;
         }
 
         $mainRelsXml = $mainZip->getFromName('word/_rels/document.xml.rels') ?: '';
         preg_match_all('/Id="rId(\d+)"/', $mainRelsXml, $mainIdMatches);
         $maxRId = empty($mainIdMatches[1]) ? 0 : (int) max($mainIdMatches[1]);
-        $offset = $maxRId;
+        $offset = $maxRId + 10;
 
         $appendRelsXml = $appendZip->getFromName('word/_rels/document.xml.rels') ?: '';
-        preg_match_all('/Id="rId(\d+)"/', $appendRelsXml, $appendIdMatches);
-        $appendIds = array_unique($appendIdMatches[1] ?? []);
+        preg_match_all('/<Relationship\s[^>]*Id="rId(\d+)"[^>]*Type="([^"]+)"[^>]*Target="([^"]+)"[^>]*\/>/', $appendRelsXml, $relMatches, PREG_SET_ORDER);
 
         $idMap = [];
-        foreach ($appendIds as $oldId) {
-            $idMap['rId'.$oldId] = 'rId'.($oldId + $offset);
-        }
-
-        $appendRelsUpdated = $appendRelsXml;
-        foreach ($idMap as $oldId => $newId) {
-            $appendRelsUpdated = str_replace('Id="'.$oldId.'"', 'Id="'.$newId.'"', $appendRelsUpdated);
-        }
-
-        preg_match_all('/Id="(rId\d+)"[^>]*Target="([^"]+)"/', $appendRelsUpdated, $relsTargets, PREG_SET_ORDER);
+        $newRelsEntries = '';
         $appendFileMap = [];
-        foreach ($relsTargets as $rel) {
-            $newId  = $rel[1];
-            $target = $rel[2];
-            $appendPath = 'word/'.$target;
-            $ext      = pathinfo($target, PATHINFO_EXTENSION);
-            $baseName = pathinfo($target, PATHINFO_FILENAME);
-            $dir      = pathinfo($target, PATHINFO_DIRNAME);
-            $newName  = ($dir && $dir !== '.') ? $dir.'/'.$baseName.'_app.'.$ext : $baseName.'_app.'.$ext;
-            $mainPath = 'word/'.$newName;
-            $appendFileMap[$appendPath] = $mainPath;
 
-            $fileContent = $appendZip->getFromName($appendPath);
-            if ($fileContent !== false) {
-                if (str_ends_with($appendPath, '.xml')) {
-                    foreach ($idMap as $oldId => $newId2) {
-                        $fileContent = str_replace('r:id="'.$oldId.'"', 'r:id="'.$newId2.'"', $fileContent);
-                    }
-                    foreach ($appendFileMap as $aPath => $mPath) {
-                        $aRel = str_replace('word/', '', $aPath);
-                        $mRel = str_replace('word/', '', $mPath);
-                        $fileContent = str_replace($aRel, $mRel, $fileContent);
-                    }
-                }
-                $mainZip->addFromString($mainPath, $fileContent);
-            }
-        }
-
+        // 1. Salin media
         for ($i = 0; $i < $appendZip->numFiles; $i++) {
             $name = $appendZip->getNameIndex($i);
-            if (str_starts_with($name, 'word/media/') && $mainZip->locateName($name) === false) {
+            if (str_starts_with($name, 'word/media/')) {
                 $ext     = pathinfo($name, PATHINFO_EXTENSION);
                 $base    = pathinfo($name, PATHINFO_FILENAME);
-                $newName = 'word/media/'.$base.'_app.'.$ext;
-                if ($mainZip->locateName($newName) === false) {
-                    $mainZip->addFromString($newName, $appendZip->getFromIndex($i));
-                }
+                $newName = 'word/media/app_'.$base.'.'.$ext;
+                $mainZip->addFromString($newName, $appendZip->getFromIndex($i));
             }
         }
 
-        $newRelsEntries = '';
-        preg_match_all('/<Relationship\s[^>]*Id="rId(\d+)"[^>]*Type="([^"]+)"[^>]*Target="([^"]+)"[^>]*\/>/', $appendRelsXml, $relMatches, PREG_SET_ORDER);
+        // 2. Petakan dan salin relasi document.xml
         foreach ($relMatches as $rel) {
             $oldId  = 'rId'.$rel[1];
-            $newId  = $idMap[$oldId] ?? $oldId;
+            $newId  = 'rId'.($rel[1] + $offset);
+            $idMap[$oldId] = $newId;
             $type   = $rel[2];
-            $target = $rel[3];
-            $appendPath = 'word/'.$target;
-            $mainPath   = $appendFileMap[$appendPath] ?? $appendPath;
-            $newTarget  = str_replace('word/', '', $mainPath);
+            $target = $rel[3]; // e.g., "header1.xml", "media/image1.png"
+
+            if (str_starts_with($target, 'media/')) {
+                $newTarget = 'media/app_' . basename($target);
+            } elseif (str_ends_with($target, '.xml')) {
+                $newTarget = 'app_' . basename($target);
+                $appendFileMap['word/'.$target] = 'word/'.$newTarget;
+            } else {
+                $newTarget = $target;
+            }
+
             $newRelsEntries .= '<Relationship Id="'.$newId.'" Type="'.$type.'" Target="'.$newTarget.'"/>'."\n";
         }
 
         $mainRelsUpdated = str_replace('</Relationships>', $newRelsEntries.'</Relationships>', $mainRelsXml);
         $mainZip->addFromString('word/_rels/document.xml.rels', $mainRelsUpdated);
 
+        // 3. Salin file XML tambahan (header/footer) dan .rels-nya
+        $mainContentTypes = $mainZip->getFromName('[Content_Types].xml') ?: '';
+        $appendContentTypes = $appendZip->getFromName('[Content_Types].xml') ?: '';
+        $newContentTypes = '';
+
+        foreach ($appendFileMap as $appendPath => $mainPath) {
+            $fileContent = $appendZip->getFromName($appendPath);
+            if ($fileContent !== false) {
+                // Jangan ubah rId di dalam header1.xml, karena rId-nya lokal terhadap header1.xml.rels!
+                $mainZip->addFromString($mainPath, $fileContent);
+
+                // Tambahkan Override ke [Content_Types].xml
+                if (preg_match('/<Override\s[^>]*PartName="' . preg_quote('/'.$appendPath, '/') . '"[^>]*ContentType="([^"]+)"[^>]*\/>/i', $appendContentTypes, $ctMatch)) {
+                    $newContentTypes .= '<Override PartName="/' . $mainPath . '" ContentType="' . $ctMatch[1] . '"/>';
+                }
+
+                // Cek apakah ada file .rels untuk XML ini
+                $relsPath = 'word/_rels/' . basename($appendPath) . '.rels';
+                $relsContent = $appendZip->getFromName($relsPath);
+                if ($relsContent !== false) {
+                    // Update target media di dalam .rels ini
+                    $relsContent = preg_replace('/Target="media\/([^"]+)"/', 'Target="media/app_$1"', $relsContent);
+                    $mainRelsPath = 'word/_rels/' . basename($mainPath) . '.rels';
+                    $mainZip->addFromString($mainRelsPath, $relsContent);
+                }
+            }
+        }
+        if ($newContentTypes !== '') {
+            $mainContentTypes = str_replace('</Types>', $newContentTypes . '</Types>', $mainContentTypes);
+            $mainZip->addFromString('[Content_Types].xml', $mainContentTypes);
+        }
+
+        // 4. Merge body XML
         $mainDocXml   = $mainZip->getFromName('word/document.xml') ?: '';
         $appendDocXml = $appendZip->getFromName('word/document.xml') ?: '';
 
@@ -447,13 +441,19 @@ class WordCertificateService
         preg_match('/<w:body>(.*)<\/w:body>/s', $appendDocXml, $appendBodyMatch);
         $appendBodyContent = $appendBodyMatch[1] ?? '';
 
+        if (preg_match('/<w:sectPr[^>]*>.*?<\/w:sectPr>/s', $mainDocXml, $mainSectPrMatch)) {
+            $mainSectPr = $mainSectPrMatch[0];
+            $mainDocXml = str_replace($mainSectPr, '', $mainDocXml);
+            $sectionBreak = '<w:p><w:pPr>' . $mainSectPr . '</w:pPr></w:p>';
+            $appendBodyContent = $sectionBreak . $appendBodyContent;
+        }
+
         $mergedDocXml = str_replace('</w:body>', $appendBodyContent.'</w:body>', $mainDocXml);
         $mainZip->addFromString('word/document.xml', $mergedDocXml);
 
         $appendZip->close();
         $mainZip->close();
     }
-
 
     /**
      * Bangun array replacement placeholder → nilai untuk satu peserta.
