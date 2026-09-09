@@ -3,10 +3,16 @@
 namespace App\Services;
 
 use App\Models\Attendance;
+use App\Models\AttendanceSubmission;
 use App\Models\CertificateTemplate;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\Settings;
+use PhpOffice\PhpWord\Shared\Converter;
+use PhpOffice\PhpWord\SimpleType\Jc;
+use PhpOffice\PhpWord\Style\Image as ImageStyle;
 use PhpOffice\PhpWord\TemplateProcessor;
 use ZipArchive;
 
@@ -36,6 +42,8 @@ class WordCertificateService
 
     /**
      * Generate sertifikat Word (.docx) untuk satu peserta.
+     * Halaman 1: template yang diupload admin (sudah diisi placeholder).
+     * Halaman 2: rekap histori presensi + total poin otomatis dengan background MASTAMARU.
      * Mengembalikan path absolut ke file hasil.
      */
     public function generate(Attendance $attendance, CertificateTemplate $template): string
@@ -44,6 +52,7 @@ class WordCertificateService
         if (! file_exists($wordFilePath)) {
             throw new Exception("File template Word tidak ditemukan: {$wordFilePath}");
         }
+
         $nomorSertifikat = $template->generateNextNumber();
         $replacements = $this->buildReplacements($attendance, $nomorSertifikat);
         $processor = new TemplateProcessor($wordFilePath);
@@ -51,21 +60,25 @@ class WordCertificateService
             $key = str_replace(['{{', '}}'], '', $placeholder);
             try {
                 $processor->setValue($key, $value);
-            } catch (Exception $e) {
-            }
+            } catch (Exception $e) {}
         }
+
         $outputDir = storage_path('app/public/certificates');
         if (! is_dir($outputDir)) {
             mkdir($outputDir, 0755, true);
         }
+
         $oldFiles = glob($outputDir.'/'.$attendance->student_id.'_sertifikat_*.{docx,pdf}', GLOB_BRACE);
         foreach ($oldFiles as $old) {
             @unlink($old);
         }
-        $slugName = Str::slug($attendance->name, '_');
-        $docxFileName = "{$attendance->student_id}_sertifikat_{$slugName}.docx";
+
+        $slugName       = Str::slug($attendance->name, '_');
+        $docxFileName   = "{$attendance->student_id}_sertifikat_{$slugName}.docx";
         $docxOutputPath = $outputDir.'/'.$docxFileName;
         $processor->saveAs($docxOutputPath);
+
+        $this->appendHistoryPage($docxOutputPath, $attendance);
 
         $attendance->update([
             'certificate_file' => 'certificates/'.$docxFileName,
@@ -116,7 +129,9 @@ class WordCertificateService
             $docxFileName = "{$attendance->student_id}_sertifikat_{$slugName}.docx";
             $docxFilePath = $tempDir.'/'.$docxFileName;
             $processor->saveAs($docxFilePath);
-            
+
+            $this->appendHistoryPage($docxFilePath, $attendance);
+
             $attendance->update([
                 'certificate_file' => 'certificates/'.$docxFileName,
             ]);
@@ -141,6 +156,157 @@ class WordCertificateService
         @rmdir($tempDir);
 
         return $zipPath;
+    }
+
+    /**
+     * Append halaman ke-2 ke dalam file .docx yang sudah ada:
+     * Background gambar MASTAMARU + tabel rekap histori presensi peserta.
+     */
+    private function appendHistoryPage(string $docxPath, Attendance $attendance): void
+    {
+        if (! file_exists($docxPath)) {
+            return;
+        }
+
+        $submissions = AttendanceSubmission::where('student_id', $attendance->id)
+            ->with('presenceSession')
+            ->orderBy('submitted_at')
+            ->get();
+
+        if (! $attendance->relationLoaded('assessment')) {
+            $attendance->load('assessment');
+        }
+        if (! $attendance->relationLoaded('group')) {
+            $attendance->load('group');
+        }
+        if (! $attendance->relationLoaded('mentor')) {
+            $attendance->load('mentor');
+        }
+
+        $assessment  = $attendance->assessment;
+        $totalPoints = $assessment ? $assessment->total_presence_points : $submissions->sum('score_points');
+        $grade       = $assessment ? strtoupper($assessment->grade) : 'D';
+        $phpWord = new \PhpOffice\PhpWord\PhpWord;
+        $section = $phpWord->addSection([
+            'orientation'  => 'landscape',
+            'marginTop'    => Converter::cmToTwip(1.5),
+            'marginBottom' => Converter::cmToTwip(1.5),
+            'marginLeft'   => Converter::cmToTwip(2),
+            'marginRight'  => Converter::cmToTwip(2),
+            'headerHeight' => Converter::cmToTwip(0),
+        ]);
+
+        $bgPath = public_path('img/background_history_points_attendance_on_certificate.png');
+        if (file_exists($bgPath)) {
+            $header = $section->addHeader();
+            $header->addImage($bgPath, [
+                'width'            => Converter::cmToPixel(29.7),
+                'height'           => Converter::cmToPixel(21.0),
+                'positioning'      => ImageStyle::POSITION_ABSOLUTE,
+                'posHorizontal'    => ImageStyle::POSITION_HORIZONTAL_LEFT,
+                'posVertical'      => ImageStyle::POSITION_VERTICAL_TOP,
+                'posHorizontalRel' => 'page',
+                'posVerticalRel'   => 'page',
+                'wrappingStyle'    => ImageStyle::WRAPPING_STYLE_BEHIND,
+            ]);
+        }
+
+        $titleFont  = ['bold' => true, 'size' => 14, 'name' => 'Times New Roman', 'color' => '6b0000'];
+        $headerFont = ['bold' => true, 'size' => 10, 'name' => 'Times New Roman', 'color' => 'ffffff'];
+        $bodyFont   = ['size' => 9, 'name' => 'Times New Roman'];
+        $boldFont   = ['bold' => true, 'size' => 9, 'name' => 'Times New Roman'];
+        $centerPara = ['alignment' => Jc::CENTER, 'spaceAfter' => 60];
+        $leftPara   = ['alignment' => Jc::START, 'spaceAfter' => 0];
+
+        $section->addText(
+            'REKAP HISTORI KEHADIRAN — '.$attendance->name,
+            $titleFont,
+            $centerPara
+        );
+        $section->addText(
+            'NIM: '.$attendance->student_id.' | Kelompok: '.($attendance->group->name ?? '-').' | Pemandu: '.($attendance->mentor->name ?? '-'),
+            $bodyFont,
+            $centerPara
+        );
+
+        $tableStyle = [
+            'borderSize'  => 6,
+            'borderColor' => 'cccccc',
+            'cellMargin'  => 60,
+        ];
+        $table = $section->addTable($tableStyle);
+
+        $headerBg = ['bgColor' => '6b0000', 'borderSize' => 6, 'borderColor' => '6b0000'];
+
+        $colWidths = [
+            'No'              => Converter::cmToTwip(0.8),
+            'Hari'            => Converter::cmToTwip(1.5),
+            'Tanggal & Waktu' => Converter::cmToTwip(4.5),
+            'Nama Sesi'       => Converter::cmToTwip(8.5),
+            'Tipe'            => Converter::cmToTwip(2.5),
+            'Status'          => Converter::cmToTwip(2.5),
+            'Poin'            => Converter::cmToTwip(2),
+        ];
+
+        $table->addRow(Converter::cmToTwip(0.7));
+        foreach ($colWidths as $label => $width) {
+            $cell = $table->addCell($width, $headerBg);
+            $cell->addText($label, $headerFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+        }
+
+        $rowIndex = 1;
+        foreach ($submissions as $sub) {
+            $session  = $sub->presenceSession;
+            $rowBg    = ($rowIndex % 2 === 0)
+                ? ['bgColor' => 'fdf2f2', 'borderSize' => 4, 'borderColor' => 'e5e7eb']
+                : ['bgColor' => 'ffffff', 'borderSize' => 4, 'borderColor' => 'e5e7eb'];
+
+            $statusLabel = match ($sub->status) {
+                'hadir'     => 'Hadir',
+                'terlambat' => 'Terlambat',
+                'sakit'     => 'Sakit',
+                'izin'      => 'Izin',
+                'alpha'     => 'Alpha',
+                default     => ucfirst($sub->status),
+            };
+            $waktu = $sub->submitted_at
+                ? $sub->submitted_at->locale('id')->isoFormat('D MMM YYYY, HH:mm')
+                : '-';
+
+            $table->addRow();
+            $table->addCell($colWidths['No'], $rowBg)->addText((string) $rowIndex, $bodyFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths['Hari'], $rowBg)->addText('Hari '.($session ? $session->day_number : '-'), $bodyFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths['Tanggal & Waktu'], $rowBg)->addText($waktu, $bodyFont, $leftPara);
+            $table->addCell($colWidths['Nama Sesi'], $rowBg)->addText($session ? $session->session_name : '-', $bodyFont, $leftPara);
+            $table->addCell($colWidths['Tipe'], $rowBg)->addText($session ? strtoupper($session->session_type) : '-', $bodyFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths['Status'], $rowBg)->addText($statusLabel, $boldFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+            $table->addCell($colWidths['Poin'], $rowBg)->addText('+'.((int) $sub->score_points).'p', $boldFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+
+            $rowIndex++;
+        }
+
+        $totalBg = ['bgColor' => '6b0000', 'borderSize' => 6, 'borderColor' => '6b0000'];
+        $table->addRow(Converter::cmToTwip(0.7));
+        $mergedCell = $table->addCell(
+            array_sum(array_slice(array_values($colWidths), 0, 6)),
+            array_merge($totalBg, ['gridSpan' => 6])
+        );
+        $mergedCell->addText('TOTAL POIN KEHADIRAN', $headerFont, ['alignment' => Jc::RIGHT, 'spaceAfter' => 0]);
+        $table->addCell($colWidths['Poin'], $totalBg)
+            ->addText($totalPoints.'p', $headerFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+
+        $section->addTextBreak(1);
+        $summaryText  = "Total Poin: {$totalPoints} / 100   |   Predikat: {$grade}";
+        $summaryText .= '   |   Status: '.strtoupper($attendance->status ?? 'PROSES');
+        $section->addText($summaryText, [
+            'bold'  => true,
+            'size'  => 11,
+            'name'  => 'Times New Roman',
+            'color' => '6b0000',
+        ], $centerPara);
+
+        $writer = IOFactory::createWriter($phpWord, 'Word2007');
+        $writer->save($docxPath);
     }
 
     /**
