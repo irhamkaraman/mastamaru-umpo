@@ -198,7 +198,6 @@ class WordCertificateService
             'headerHeight' => Converter::cmToTwip(0),
         ]);
 
-        // Background gambar (behind text) via header
         $bgPath = public_path('img/background_history_points_attendance_on_certificate.png');
         if (file_exists($bgPath)) {
             $header = $section->addHeader();
@@ -234,7 +233,6 @@ class WordCertificateService
             $centerPara
         );
 
-        // Tabel histori
         $headerBg  = ['bgColor' => '6b0000', 'borderSize' => 6, 'borderColor' => '6b0000'];
         $colWidths = [
             'No'      => Converter::cmToTwip(0.8),
@@ -253,14 +251,12 @@ class WordCertificateService
             'cellMargin'  => 60,
         ]);
 
-        // Header row
         $table->addRow(Converter::cmToTwip(0.7));
         foreach (array_values($colWidths) as $i => $width) {
             $table->addCell($width, $headerBg)
                   ->addText($labels[$i], $headerFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
         }
 
-        // Data rows
         $rowIndex = 1;
         foreach ($submissions as $sub) {
             $session = $sub->presenceSession;
@@ -292,7 +288,6 @@ class WordCertificateService
             $rowIndex++;
         }
 
-        // Total row
         $totalBg = ['bgColor' => '6b0000', 'borderSize' => 6, 'borderColor' => '6b0000'];
         $colArr  = array_values($colWidths);
         $table->addRow(Converter::cmToTwip(0.7));
@@ -303,7 +298,6 @@ class WordCertificateService
         $table->addCell($colArr[6], $totalBg)
               ->addText($totalPoints.'p', $headerFont, ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
 
-        // Ringkasan
         $section->addTextBreak(1);
         $section->addText(
             "Total Poin: {$totalPoints} / 100   |   Predikat: {$grade}   |   Status: ".strtoupper($attendance->status ?? 'PROSES'),
@@ -311,7 +305,6 @@ class WordCertificateService
             $centerPara
         );
 
-        // ── Simpan halaman histori ke file temp, lalu merge ke file utama ─────
         $tempHistoryPath = $docxPath.'.history_tmp.docx';
         $writer = IOFactory::createWriter($phpWord, 'Word2007');
         $writer->save($tempHistoryPath);
@@ -338,39 +331,31 @@ class WordCertificateService
             return;
         }
 
-        // ── 1. Baca rels dari main dan hitung offset ID ───────────────────────
         $mainRelsXml = $mainZip->getFromName('word/_rels/document.xml.rels') ?: '';
         preg_match_all('/Id="rId(\d+)"/', $mainRelsXml, $mainIdMatches);
         $maxRId = empty($mainIdMatches[1]) ? 0 : (int) max($mainIdMatches[1]);
         $offset = $maxRId;
 
-        // ── 2. Baca rels dari append dan buat peta ID baru ───────────────────
         $appendRelsXml = $appendZip->getFromName('word/_rels/document.xml.rels') ?: '';
         preg_match_all('/Id="rId(\d+)"/', $appendRelsXml, $appendIdMatches);
         $appendIds = array_unique($appendIdMatches[1] ?? []);
 
-        // Peta: appendOldId => appendNewId
         $idMap = [];
         foreach ($appendIds as $oldId) {
             $idMap['rId'.$oldId] = 'rId'.($oldId + $offset);
         }
 
-        // ── 3. Salin files dari appendZip ke mainZip dengan rename ──────────
-        // Parse append rels untuk tahu file mana yang direferens
         $appendRelsUpdated = $appendRelsXml;
         foreach ($idMap as $oldId => $newId) {
             $appendRelsUpdated = str_replace('Id="'.$oldId.'"', 'Id="'.$newId.'"', $appendRelsUpdated);
         }
 
-        // Extract target dari append rels
         preg_match_all('/Id="(rId\d+)"[^>]*Target="([^"]+)"/', $appendRelsUpdated, $relsTargets, PREG_SET_ORDER);
-        $appendFileMap = []; // appendPath => mainPath
+        $appendFileMap = [];
         foreach ($relsTargets as $rel) {
             $newId  = $rel[1];
             $target = $rel[2];
-            // Target bisa relative seperti "header1.xml", "media/image1.png"
             $appendPath = 'word/'.$target;
-            // Rename file di main agar tidak konflik
             $ext      = pathinfo($target, PATHINFO_EXTENSION);
             $baseName = pathinfo($target, PATHINFO_FILENAME);
             $dir      = pathinfo($target, PATHINFO_DIRNAME);
@@ -378,15 +363,12 @@ class WordCertificateService
             $mainPath = 'word/'.$newName;
             $appendFileMap[$appendPath] = $mainPath;
 
-            // Salin file
             $fileContent = $appendZip->getFromName($appendPath);
             if ($fileContent !== false) {
-                // Jika ini file header XML, update relationship ID di dalamnya juga
                 if (str_ends_with($appendPath, '.xml')) {
                     foreach ($idMap as $oldId => $newId2) {
                         $fileContent = str_replace('r:id="'.$oldId.'"', 'r:id="'.$newId2.'"', $fileContent);
                     }
-                    // Update referensi ke media di dalam header
                     foreach ($appendFileMap as $aPath => $mPath) {
                         $aRel = str_replace('word/', '', $aPath);
                         $mRel = str_replace('word/', '', $mPath);
@@ -397,7 +379,6 @@ class WordCertificateService
             }
         }
 
-        // Juga salin media yang tidak di-rels langsung (embedded di header)
         for ($i = 0; $i < $appendZip->numFiles; $i++) {
             $name = $appendZip->getNameIndex($i);
             if (str_starts_with($name, 'word/media/') && $mainZip->locateName($name) === false) {
@@ -410,41 +391,33 @@ class WordCertificateService
             }
         }
 
-        // ── 4. Tambahkan relasi baru ke main document.xml.rels ───────────────
         $newRelsEntries = '';
-        // Parse append rels untuk ambil Type dan Target per relasi
         preg_match_all('/<Relationship\s[^>]*Id="rId(\d+)"[^>]*Type="([^"]+)"[^>]*Target="([^"]+)"[^>]*\/>/', $appendRelsXml, $relMatches, PREG_SET_ORDER);
         foreach ($relMatches as $rel) {
             $oldId  = 'rId'.$rel[1];
             $newId  = $idMap[$oldId] ?? $oldId;
             $type   = $rel[2];
             $target = $rel[3];
-            // Gunakan nama file baru jika ada
             $appendPath = 'word/'.$target;
             $mainPath   = $appendFileMap[$appendPath] ?? $appendPath;
             $newTarget  = str_replace('word/', '', $mainPath);
             $newRelsEntries .= '<Relationship Id="'.$newId.'" Type="'.$type.'" Target="'.$newTarget.'"/>'."\n";
         }
 
-        // Sisipkan relasi baru sebelum </Relationships>
         $mainRelsUpdated = str_replace('</Relationships>', $newRelsEntries.'</Relationships>', $mainRelsXml);
         $mainZip->addFromString('word/_rels/document.xml.rels', $mainRelsUpdated);
 
-        // ── 5. Merge body XML ─────────────────────────────────────────────────
         $mainDocXml   = $mainZip->getFromName('word/document.xml') ?: '';
         $appendDocXml = $appendZip->getFromName('word/document.xml') ?: '';
 
-        // Remap ID di append body
         foreach ($idMap as $oldId => $newId) {
             $appendDocXml = str_replace('r:id="'.$oldId.'"', 'r:id="'.$newId.'"', $appendDocXml);
             $appendDocXml = str_replace('r:embed="'.$oldId.'"', 'r:embed="'.$newId.'"', $appendDocXml);
         }
 
-        // Ekstrak body content dari append (semua setelah <w:body> sebelum </w:body>)
         preg_match('/<w:body>(.*)<\/w:body>/s', $appendDocXml, $appendBodyMatch);
         $appendBodyContent = $appendBodyMatch[1] ?? '';
 
-        // Sisipkan ke main sebelum </w:body>
         $mergedDocXml = str_replace('</w:body>', $appendBodyContent.'</w:body>', $mainDocXml);
         $mainZip->addFromString('word/document.xml', $mergedDocXml);
 
