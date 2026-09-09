@@ -215,7 +215,26 @@ class WordCertificateService
             'marginBottom' => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(2),
             'marginLeft' => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(2.5),
             'marginRight' => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(2.5),
+            'headerHeight' => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(0),
         ]);
+
+        $bgImagePath = public_path('img/background_history_points_attendance_on_certificate.png');
+        if (file_exists($bgImagePath)) {
+            $header = $section->addHeader();
+            $pageWidthCm  = 29.7;
+            $pageHeightCm = 21.0;
+            $header->addImage($bgImagePath, [
+                'width'          => \PhpOffice\PhpWord\Shared\Converter::cmToPixel($pageWidthCm),
+                'height'         => \PhpOffice\PhpWord\Shared\Converter::cmToPixel($pageHeightCm),
+                'positioning'    => \PhpOffice\PhpWord\Style\Image::POSITION_ABSOLUTE,
+                'posHorizontal'  => \PhpOffice\PhpWord\Style\Image::POSITION_HORIZONTAL_LEFT,
+                'posVertical'    => \PhpOffice\PhpWord\Style\Image::POSITION_VERTICAL_TOP,
+                'posHorizontalRel' => 'page',
+                'posVerticalRel'   => 'page',
+                'wrappingStyle'  => \PhpOffice\PhpWord\Style\Image::WRAPPING_STYLE_BEHIND,
+            ]);
+        }
+        // ─────────────────────────────────────────────────────────────────────
         $titleStyle = ['bold' => true, 'size' => 20, 'name' => 'Times New Roman', 'color' => '1a3a5c'];
         $headStyle = ['bold' => true, 'size' => 14, 'name' => 'Times New Roman', 'color' => '1a3a5c'];
         $bodyStyle = ['size' => 12, 'name' => 'Times New Roman'];
