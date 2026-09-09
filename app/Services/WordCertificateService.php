@@ -14,6 +14,7 @@ use PhpOffice\PhpWord\Shared\Converter;
 use PhpOffice\PhpWord\SimpleType\Jc;
 use PhpOffice\PhpWord\Style\Image as ImageStyle;
 use PhpOffice\PhpWord\TemplateProcessor;
+use NcJoes\OfficeConverter\OfficeConverter;
 use ZipArchive;
 
 class WordCertificateService
@@ -80,11 +81,13 @@ class WordCertificateService
 
         $this->appendHistoryPage($docxOutputPath, $attendance);
 
+        $finalPath = $this->convertToPdfIfPossible($docxOutputPath);
+
         $attendance->update([
-            'certificate_file' => 'certificates/'.$docxFileName,
+            'certificate_file' => 'certificates/'.basename($finalPath),
         ]);
 
-        return $docxOutputPath;
+        return $finalPath;
     }
 
     /**
@@ -132,10 +135,13 @@ class WordCertificateService
 
             $this->appendHistoryPage($docxFilePath, $attendance);
 
+            $finalPath = $this->convertToPdfIfPossible($docxFilePath);
+            $finalName = basename($finalPath);
+
             $attendance->update([
-                'certificate_file' => 'certificates/'.$docxFileName,
+                'certificate_file' => 'certificates/'.$finalName,
             ]);
-            $generatedFiles[] = ['path' => $docxFilePath, 'name' => $docxFileName];
+            $generatedFiles[] = ['path' => $finalPath, 'name' => $finalName];
         }
         if (empty($generatedFiles)) {
             @rmdir($tempDir);
@@ -156,6 +162,29 @@ class WordCertificateService
         @rmdir($tempDir);
 
         return $zipPath;
+    }
+
+    /**
+     * Coba convert file .docx ke .pdf jika LibreOffice terinstall di server.
+     * Mengembalikan path PDF jika sukses, atau tetap path DOCX jika gagal/tidak ada LibreOffice.
+     */
+    private function convertToPdfIfPossible(string $docxPath): string
+    {
+        try {
+            $converter = new OfficeConverter($docxPath);
+            $pdfName = basename($docxPath, '.docx').'.pdf';
+            $pdfPath = $converter->convertTo($pdfName);
+
+            if (file_exists($pdfPath)) {
+                @unlink($docxPath); // Hapus docx aslinya agar hemat tempat
+                return $pdfPath;
+            }
+        } catch (\Exception $e) {
+            // Abaikan error (biasanya karena LibreOffice tidak ada/gagal)
+            // Sistem akan otomatis fallback menggunakan docx
+        }
+
+        return $docxPath;
     }
 
     /**

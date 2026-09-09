@@ -14,6 +14,7 @@
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "maatwebsite/excel": "^3.1",
+        "ncjoes/office-converter": "^1.0",
         "phpoffice/phpword": "^1.4"
     },
     "require-dev": {

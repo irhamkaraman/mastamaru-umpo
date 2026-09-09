@@ -78,10 +78,13 @@ class EditAttendance extends EditRecord
                         $filePath = $service->generate($record, $template);
                         $slugName = Str::slug($record->name, '_');
 
+                        $extension = pathinfo($filePath, PATHINFO_EXTENSION);
+                        $mimeType = $extension === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
                         return response()->download(
                             $filePath,
-                            "sertifikat_{$record->student_id}_{$slugName}.docx",
-                            ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+                            "sertifikat_{$record->student_id}_{$slugName}.{$extension}",
+                            ['Content-Type' => $mimeType]
                         );
                     } catch (Exception $e) {
                         Notification::make()
