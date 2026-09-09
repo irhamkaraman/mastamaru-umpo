@@ -339,7 +339,7 @@ class WordCertificateService
         $writer->save($tempHistoryPath);
 
         $this->mergeDocxAppend($docxPath, $tempHistoryPath);
-        @unlink($tempHistoryPath);
+        // @unlink($tempHistoryPath);
     }
 
     private function mergeDocxAppend(string $mainDocxPath, string $appendDocxPath): void
@@ -375,12 +375,27 @@ class WordCertificateService
         }
 
         // 2. Petakan dan salin relasi document.xml
+        $singletonTypes = ['styles', 'numbering', 'settings', 'theme', 'webSettings', 'fontTable'];
+        
         foreach ($relMatches as $rel) {
             $oldId  = 'rId'.$rel[1];
-            $newId  = 'rId'.($rel[1] + $offset);
-            $idMap[$oldId] = $newId;
             $type   = $rel[2];
             $target = $rel[3]; // e.g., "header1.xml", "media/image1.png"
+
+            // Skip singleton relationships
+            $isSingleton = false;
+            foreach ($singletonTypes as $singleton) {
+                if (str_ends_with($type, $singleton)) {
+                    $isSingleton = true;
+                    break;
+                }
+            }
+            if ($isSingleton) {
+                continue;
+            }
+
+            $newId  = 'rId'.($rel[1] + $offset);
+            $idMap[$oldId] = $newId;
 
             if (str_starts_with($target, 'media/')) {
                 $newTarget = 'media/app_' . basename($target);
