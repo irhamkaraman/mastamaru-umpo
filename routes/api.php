@@ -1,11 +1,18 @@
 <?php
 
+use App\Http\Controllers\Api\CertificateApiController;
 use App\Http\Controllers\PresenceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/certificates/pending', [CertificateApiController::class, 'pending']);
+    Route::get('/certificates/participant/{id}', [CertificateApiController::class, 'participant']);
+    Route::post('/certificates/upload/{id}', [CertificateApiController::class, 'upload']);
 });
 Route::prefix('presence')->group(function () {
     Route::get('/{slug}/attendance-data', [PresenceController::class, 'getAttendanceData'])->name('api.presence.attendance-data');

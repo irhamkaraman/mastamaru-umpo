@@ -12,6 +12,7 @@
         "filament/filament": "3.3",
         "intervention/image": "^4.2",
         "laravel/framework": "^12.0",
+        "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "maatwebsite/excel": "^3.1",
         "ncjoes/office-converter": "^1.0",
