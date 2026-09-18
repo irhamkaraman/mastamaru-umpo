@@ -40,8 +40,16 @@ class CertificateApiController extends Controller
         });
 
         $riwayat = $grouped->map(function ($subs, $day) {
-            $firstSub = $subs->first();
-            $date = $firstSub->submitted_at ? $firstSub->submitted_at->format('d M Y') : '-';
+            $dates = $subs->map(function($sub) {
+                return $sub->submitted_at ? $sub->submitted_at->format('d M Y') : null;
+            })->filter();
+
+            $date = '-';
+            if ($dates->isNotEmpty()) {
+                $dateCounts = $dates->countBy();
+                $date = $dateCounts->sortDesc()->keys()->first();
+            }
+
             $hari_tanggal = 'Hari ' . $day . "\n" . $date;
             
             $sesiList = $subs->map(function($s) {

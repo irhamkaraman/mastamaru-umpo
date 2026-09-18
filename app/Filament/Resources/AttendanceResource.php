@@ -524,6 +524,33 @@ class AttendanceResource extends Resource
                             ['Content-Type' => 'application/pdf']
                         );
                     }),
+                Tables\Actions\Action::make('regenerate_sertifikat')
+                    ->label('Regenerate Sertifikat')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('warning')
+                    ->visible(fn (Attendance $record) => in_array($record->status, ['lulus', 'gagal']) && $record->hasCertificate())
+                    ->requiresConfirmation()
+                    ->modalHeading('Regenerate Sertifikat')
+                    ->modalDescription('File sertifikat lama akan dihapus dan status akan direset ke proses. Anda bisa mencetak ulang sertifikatnya dengan data baru.')
+                    ->action(function (Attendance $record) {
+                        $certDir = storage_path('app/public/certificates');
+                        $files = glob($certDir.'/'.$record->student_id.'_sertifikat_*.{docx,pdf}', GLOB_BRACE);
+                        if (is_array($files) && count($files) > 0) {
+                            foreach ($files as $file) {
+                                @unlink($file);
+                            }
+                        }
+                        $record->update([
+                            'certificate_file' => null,
+                            'status' => 'proses'
+                        ]);
+                        Cache::forget('student_data_'.$record->student_id);
+                        Notification::make()
+                            ->title('Sertifikat Berhasil Direset')
+                            ->body('Status dikembalikan ke proses. Silakan Generate/Cetak ulang sertifikat untuk mendapatkan file dengan data terbaru.')
+                            ->success()
+                            ->send();
+                    }),
                 Tables\Actions\Action::make('mark_gagal')
                     ->label('Gagal')
                     ->icon('heroicon-o-x-circle')

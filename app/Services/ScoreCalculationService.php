@@ -72,7 +72,9 @@ class ScoreCalculationService
         if (! $student) {
             return null;
         }
-        $submissions = AttendanceSubmission::where('student_id', $studentDbId)->get();
+        $submissions = AttendanceSubmission::where('student_id', $studentDbId)
+            ->whereHas('presenceSession')
+            ->get();
         $totalPoints = (int) $submissions->sum('score_points');
         $totalSessionsCount = PresenceSession::count();
         $maxPossiblePoints = $totalSessionsCount > 0 ? ($totalSessionsCount * 10) : 100;
@@ -103,12 +105,12 @@ class ScoreCalculationService
     }
 
     /**
-     * Ambil rincian matriks presensi per hari (Datang & Pulang) untuk peserta.
+     * Ambil rincian matriks presensi per hari untuk peserta (menampilkan semua sesi).
      */
     public static function getStudentPresenceMatrix(int $studentDbId): array
     {
         $sessions = PresenceSession::orderBy('day_number', 'asc')
-            ->orderBy('session_type', 'asc')
+            ->orderBy('start_time', 'asc')
             ->get();
         $submissions = AttendanceSubmission::where('student_id', $studentDbId)
             ->with(['presenceSession', 'mentor'])
@@ -118,72 +120,50 @@ class ScoreCalculationService
         $totalEarned = 0;
         $groupedByDay = $sessions->groupBy('day_number');
         $maxDay = $groupedByDay->keys()->max() ?? 0;
-        for ($day = 1; $day <= $maxDay; $day++) {
-            $daySessions = $groupedByDay->get($day, collect());
-            $datangSession = $daySessions->where('session_type', 'datang')->first(function ($session) use ($submissions) {
-                return $submissions->has($session->id);
-            }) ?? $daySessions->firstWhere('session_type', 'datang');
-            $pulangSession = $daySessions->where('session_type', 'pulang')->first(function ($session) use ($submissions) {
-                return $submissions->has($session->id);
-            }) ?? $daySessions->firstWhere('session_type', 'pulang');
-            $materiSession = $daySessions->where('session_type', 'materi')->first(function ($session) use ($submissions) {
-                return $submissions->has($session->id);
-            }) ?? $daySessions->firstWhere('session_type', 'materi');
 
-            $datangSub = $datangSession ? $submissions->get($datangSession->id) : null;
-            $pulangSub = $pulangSession ? $submissions->get($pulangSession->id) : null;
-            $materiSub = $materiSession ? $submissions->get($materiSession->id) : null;
-
-            $formatSessionSlot = function (?PresenceSession $session, ?AttendanceSubmission $sub) {
-                if ($sub) {
-                    return [
-                        'session' => $session,
-                        'submission' => $sub,
-                        'status' => ucfirst($sub->status),
-                        'status_type' => strtolower($sub->status),
-                        'points' => (int) $sub->score_points,
-                        'time' => $sub->submitted_at ? $sub->submitted_at->format('H:i:s') : null,
-                        'is_closed' => true,
-                    ];
-                }
-
-                if (! $session) {
-                    return [
-                        'session' => null,
-                        'submission' => null,
-                        'status' => '-',
-                        'status_type' => 'empty',
-                        'points' => 0,
-                        'time' => null,
-                        'is_closed' => false,
-                    ];
-                }
-
-                $isClosed = (! $session->is_active || ($session->end_time && $session->end_time < now()));
-
+        $formatSessionSlot = function (PresenceSession $session, ?AttendanceSubmission $sub) {
+            if ($sub) {
                 return [
                     'session' => $session,
-                    'submission' => null,
-                    'status' => $isClosed ? 'Alpha' : 'Belum Presensi',
-                    'status_type' => $isClosed ? 'alpha' : 'pending',
-                    'points' => 0,
-                    'time' => null,
-                    'is_closed' => $isClosed,
+                    'submission' => $sub,
+                    'status' => ucfirst($sub->status),
+                    'status_type' => strtolower($sub->status),
+                    'points' => (int) $sub->score_points,
+                    'time' => $sub->submitted_at ? $sub->submitted_at->format('H:i:s') : null,
+                    'is_closed' => true,
                 ];
-            };
+            }
 
-            $datangData = $formatSessionSlot($datangSession, $datangSub);
-            $pulangData = $formatSessionSlot($pulangSession, $pulangSub);
-            $materiData = $formatSessionSlot($materiSession, $materiSub);
+            $isClosed = (! $session->is_active || ($session->end_time && $session->end_time < now()));
 
-            $dayTotal = $datangData['points'] + $pulangData['points'] + $materiData['points'];
+            return [
+                'session' => $session,
+                'submission' => null,
+                'status' => $isClosed ? 'Alpha' : 'Belum Presensi',
+                'status_type' => $isClosed ? 'alpha' : 'pending',
+                'points' => 0,
+                'time' => null,
+                'is_closed' => $isClosed,
+            ];
+        };
+
+        for ($day = 1; $day <= $maxDay; $day++) {
+            $daySessions = $groupedByDay->get($day, collect());
+            $daySlots = [];
+            $dayTotal = 0;
+
+            foreach ($daySessions as $session) {
+                $sub = $submissions->get($session->id);
+                $slotData = $formatSessionSlot($session, $sub);
+                $daySlots[] = $slotData;
+                $dayTotal += $slotData['points'];
+            }
+
             $totalEarned += $dayTotal;
 
             $days[$day] = [
                 'day' => $day,
-                'datang' => $datangData,
-                'pulang' => $pulangData,
-                'materi' => $materiData,
+                'sessions' => $daySlots,
                 'total' => $dayTotal,
             ];
         }
