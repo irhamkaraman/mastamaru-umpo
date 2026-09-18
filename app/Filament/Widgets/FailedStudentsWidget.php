@@ -47,6 +47,21 @@ class FailedStudentsWidget extends BaseWidget
                     ->color('danger'),
             ])
             ->defaultSort('name', 'asc')
+            ->filters([
+                Tables\Filters\SelectFilter::make('faculty')
+                    ->label('Fakultas')
+                    ->options(fn () => Attendance::select('faculty')->distinct()->whereNotNull('faculty')->pluck('faculty', 'faculty')->toArray())
+                    ->searchable(),
+                Tables\Filters\SelectFilter::make('study_program')
+                    ->label('Prodi')
+                    ->options(fn () => Attendance::select('study_program')->distinct()->whereNotNull('study_program')->pluck('study_program', 'study_program')->toArray())
+                    ->searchable(),
+                Tables\Filters\SelectFilter::make('group_id')
+                    ->label('Kelompok')
+                    ->relationship('group', 'name')
+                    ->searchable()
+                    ->preload(),
+            ])
             ->emptyStateHeading('Tidak ada peserta gagal');
     }
 }
