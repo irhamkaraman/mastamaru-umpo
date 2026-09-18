@@ -23,6 +23,7 @@ class FailedStudentsWidget extends BaseWidget
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama')
+                    ->description(fn (Attendance $record): string => $record->phone_number ?? '-')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('student_id')
@@ -37,6 +38,7 @@ class FailedStudentsWidget extends BaseWidget
                     ->searchable(),
                 Tables\Columns\TextColumn::make('group.name')
                     ->label('Kelompok')
+                    ->description(fn (Attendance $record): string => $record->group ? $record->group->mentors->pluck('name')->join(', ') : '-')
                     ->searchable()
                     ->sortable()
                     ->placeholder('-'),
