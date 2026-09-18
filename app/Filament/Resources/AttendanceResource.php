@@ -520,8 +520,8 @@ class AttendanceResource extends Resource
 
                         return response()->download(
                             $filePath,
-                            "sertifikat_{$record->student_id}_{$slugName}.docx",
-                            ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+                            "sertifikat_{$record->student_id}_{$slugName}.pdf",
+                            ['Content-Type' => 'application/pdf']
                         );
                     }),
                 Tables\Actions\Action::make('mark_gagal')
