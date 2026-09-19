@@ -59,6 +59,7 @@ class CertificateApiController extends Controller
             $sesi_kegiatan = "Seluruh Rangkaian Kegiatan\n(" . $sesiList . ")";
             
             $status = $subs->every(fn($s) => strtolower($s->status) == 'hadir') ? 'Hadir Penuh' : 'Hadir Sebagian';
+            $firstSub = $subs->first();
             $pemandu = $firstSub->mentor ? $firstSub->mentor->name : 'Sistem';
             $poin = '+' . $subs->sum('score_points') . 'p';
 
