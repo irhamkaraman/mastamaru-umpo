@@ -35,11 +35,14 @@ class CertificateApiController extends Controller
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        $grouped = $attendance->attendanceSubmissions->groupBy(function($sub) {
-            return $sub->presenceSession->day_number ?? 1;
-        });
+        $grouped = $attendance->attendanceSubmissions->sortBy(function($sub) {
+            return $sub->submitted_at ? $sub->submitted_at->timestamp : 0;
+        })->groupBy(function($sub) {
+            return $sub->submitted_at ? $sub->submitted_at->format('Y-m-d') : 'unknown';
+        })->values();
 
-        $riwayat = $grouped->map(function ($subs, $day) {
+        $riwayat = $grouped->map(function ($subs, $index) {
+            $day = $index + 1;
             $dates = $subs->map(function($sub) {
                 return $sub->submitted_at ? $sub->submitted_at->format('d M Y') : null;
             })->filter();
