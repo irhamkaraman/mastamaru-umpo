@@ -35,23 +35,18 @@ class CertificateApiController extends Controller
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        $grouped = $attendance->attendanceSubmissions->sortBy(function($sub) {
-            return $sub->submitted_at ? $sub->submitted_at->timestamp : 0;
-        })->groupBy(function($sub) {
-            return $sub->submitted_at ? $sub->submitted_at->format('Y-m-d') : 'unknown';
-        })->values();
+        $grouped = $attendance->attendanceSubmissions->groupBy(function($sub) {
+            return $sub->presenceSession->day_number ?? 1;
+        })->sortBy(function($subs, $day) {
+            return $day;
+        });
 
-        $riwayat = $grouped->map(function ($subs, $index) {
-            $day = $index + 1;
+        $riwayat = $grouped->map(function ($subs, $day) {
             $dates = $subs->map(function($sub) {
                 return $sub->submitted_at ? $sub->submitted_at->format('d M Y') : null;
-            })->filter();
+            })->filter()->unique()->values();
 
-            $date = '-';
-            if ($dates->isNotEmpty()) {
-                $dateCounts = $dates->countBy();
-                $date = $dateCounts->sortDesc()->keys()->first();
-            }
+            $date = $dates->isNotEmpty() ? $dates->implode(' & ') : '-';
 
             $hari_tanggal = 'Hari ' . $day . "\n" . $date;
             
